@@ -8,11 +8,9 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 5000,
         host: '0.0.0.0',
+        allowedHosts: true,
         hmr: {
           protocol: 'wss',
-          host: typeof process !== 'undefined' && process.env.REPL_SLUG 
-            ? `${process.env.REPL_SLUG}.replit.dev` 
-            : 'localhost',
           clientPort: 443,
         },
       },
