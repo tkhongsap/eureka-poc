@@ -409,21 +409,9 @@ Once both servers are running:
 - **API Documentation (Swagger)**: http://localhost:8000/docs
 - **API Documentation (ReDoc)**: http://localhost:8000/redoc
 
-### Login Credentials
-
-The system includes demo accounts for testing:
-
-| Role | Username | Password | Access Level |
-|------|----------|----------|--------------|
-| **Admin** | `admin` | `admin123` | Full system access |
-| **Technician** | `tech` | `tech123` | Work order management, inventory |
-| **Requester** | `user` | `user123` | Request submission, view assigned work |
-
-> 📝 **Note:** Login credentials are displayed on the login page for convenience.
-
 ### Basic Workflow
 
-1. **Login** → Use one of the demo accounts
+1. **Login** → Access the login page and authenticate
 2. **Submit Request** → Navigate to Request Portal, fill form, attach images
 3. **View Work Orders** → Work order automatically created, visible in Kanban board
 4. **Assign Technician** → Drag work order to technician or use assignment dropdown
