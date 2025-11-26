@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -7,7 +8,6 @@ import WorkRequestPortal from './components/WorkRequestPortal';
 import AssetHierarchy from './components/AssetHierarchy';
 import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
-import Login from './components/Login';
 import { WorkOrder, Status, Priority, User, UserRole } from './types';
 import { UserCircle2, ShieldCheck, HardHat, ClipboardList } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
@@ -66,6 +66,13 @@ const TECHNICIANS = ALL_USERS
   .filter(u => u.userRole === 'Technician')
   .map(u => ({ id: u.id, name: u.name }));
 
+// USERS object for role-based lookup (used by login flow)
+const USERS: Record<UserRole, User> = {
+  Admin: ALL_USERS.find(u => u.userRole === 'Admin')!,
+  Technician: ALL_USERS.find(u => u.userRole === 'Technician')!,
+  Requester: ALL_USERS.find(u => u.userRole === 'Requester')!,
+};
+
 // Fallback mock work orders when API is unavailable
 const MOCK_WOS: WorkOrder[] = [
   {
@@ -110,9 +117,11 @@ const MOCK_WOS: WorkOrder[] = [
 ];
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User>(USERS.Admin);
+  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(MOCK_WOS);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Check for logged in user from LoginPage on mount
   useEffect(() => {
@@ -123,18 +132,14 @@ const App: React.FC = () => {
         if (role && USERS[role as UserRole]) {
           setCurrentUser(USERS[role as UserRole]);
           setIsLoggedIn(true);
+          // เมื่อล็อกอินสำเร็จ ให้เข้า dashboard เสมอ
+          setCurrentView('dashboard');
         }
       } catch (e) {
         console.error('Failed to parse stored user:', e);
       }
     }
   }, []);
-
-  // Handle login (for Login component fallback)
-  const handleLogin = (username: string, role: UserRole) => {
-    setCurrentUser(USERS[role]);
-    setIsLoggedIn(true);
-  };
 
   // Handle logout
   const handleLogout = () => {
@@ -239,9 +244,20 @@ const App: React.FC = () => {
     }
   }, [currentUser, isLoggedIn]);
 
-  // Show login page if not logged in (redirect to /login)
-  if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
+  // Redirect to login page if not logged in
+  useEffect(() => {
+    if (!isLoggedIn && currentUser === null) {
+      // Check if we already tried to load from sessionStorage
+      const storedUser = sessionStorage.getItem('loggedInUser');
+      if (!storedUser) {
+        navigate('/login');
+      }
+    }
+  }, [isLoggedIn, currentUser, navigate]);
+
+  // Show nothing while checking login status or redirecting
+  if (!isLoggedIn || !currentUser) {
+    return null;
   }
 
   const renderContent = () => {
