@@ -4,40 +4,40 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Eureka CMMS Platform</title>
+
+    <!-- Google Fonts: Refined Typography Pairing -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
-            colors: {
-              brand: {
-                50: '#f0f9ff',
-                100: '#e0f2fe',
-                500: '#0ea5e9',
-                600: '#0284c7',
-                700: '#0369a1',
-                900: '#0c4a6e',
-              }
-            }
+            fontFamily: {
+              sans: ['DM Sans', 'system-ui', 'sans-serif'],
+              serif: ['DM Serif Display', 'Georgia', 'serif'],
+            },
           }
         }
       }
     </script>
     <style>
-      /* Custom scrollbar for better aesthetics */
+      /* Warm Refined Scrollbar */
       ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+        width: 8px;
+        height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #f1f5f9; 
+        background: #fafaf9;
       }
       ::-webkit-scrollbar-thumb {
-        background: #cbd5e1; 
-        border-radius: 3px;
+        background: #d6d3d1;
+        border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8; 
+        background: #a8a29e;
       }
     </style>
   <script type="importmap">
@@ -54,7 +54,7 @@
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-slate-50 text-slate-900 antialiased">
+  <body class="bg-stone-50 text-stone-900 antialiased font-sans">
     <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
