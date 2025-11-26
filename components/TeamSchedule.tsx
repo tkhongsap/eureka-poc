@@ -40,8 +40,8 @@ const TeamSchedule: React.FC = () => {
                     <div key={member.id} className="bg-white rounded-2xl border border-stone-200/60 p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
 
                         <div className="flex justify-between items-start mb-4">
-                            <div className="w-16 h-16 rounded-xl bg-stone-100 p-1 border border-stone-100">
-                                <img src={member.avatarUrl} alt={member.name} className="w-full h-full rounded-lg bg-white" />
+                            <div className="w-16 h-16 rounded-xl bg-stone-100 p-1 border border-stone-100 flex items-center justify-center">
+                                <UserCircle size={60} className="text-stone-400" />
                             </div>
                             <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${statusColors[member.status]}`}>
                                 {member.status}
