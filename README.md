@@ -1,7 +1,3 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 # Eureka CMMS - ระบบจัดการงานซ่อมบำรุง
 
 **Eureka CMMS** (Computerized Maintenance Management System) เป็นระบบจัดการงานซ่อมบำรุงที่ช่วยติดตามคำขอซ่อม (Requests), ใบสั่งงาน (Work Orders), สินค้าคงคลัง (Inventory) และตารางทีมช่าง พร้อมระบบ AI สำหรับวิเคราะห์และทำนายปัญหาการซ่อมบำรุง
