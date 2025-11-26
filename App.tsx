@@ -7,6 +7,7 @@ import WorkRequestPortal from './components/WorkRequestPortal';
 import AssetHierarchy from './components/AssetHierarchy';
 import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
+import Login from './components/Login';
 import { WorkOrder, Status, Priority, User, UserRole } from './types';
 import { UserCircle2, ShieldCheck, HardHat, ClipboardList } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
@@ -109,9 +110,40 @@ const MOCK_WOS: WorkOrder[] = [
 ];
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User>(ALL_USERS[0]); // Default to Admin
+  const [currentUser, setCurrentUser] = useState<User>(USERS.Admin);
   const [currentView, setCurrentView] = useState('dashboard');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(MOCK_WOS);
+
+  // Check for logged in user from LoginPage on mount
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem('loggedInUser');
+    if (storedUser) {
+      try {
+        const { role } = JSON.parse(storedUser);
+        if (role && USERS[role as UserRole]) {
+          setCurrentUser(USERS[role as UserRole]);
+          setIsLoggedIn(true);
+        }
+      } catch (e) {
+        console.error('Failed to parse stored user:', e);
+      }
+    }
+  }, []);
+
+  // Handle login (for Login component fallback)
+  const handleLogin = (username: string, role: UserRole) => {
+    setCurrentUser(USERS[role]);
+    setIsLoggedIn(true);
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    sessionStorage.removeItem('loggedInUser');
+    setIsLoggedIn(false);
+    setCurrentView('dashboard');
+    // Navigate to landing page
+    window.location.href = '/';
+  };
 
   // Load work orders from backend on mount
   useEffect(() => {
@@ -196,14 +228,21 @@ const App: React.FC = () => {
 
   // Reset view when role changes
   useEffect(() => {
-    if (currentUser.userRole === 'Requester') {
-      setCurrentView('requests');
-    } else if (currentUser.userRole === 'Technician') {
-      setCurrentView('work-orders');
-    } else {
-      setCurrentView('dashboard');
+    if (isLoggedIn) {
+      if (currentUser.userRole === 'Requester') {
+        setCurrentView('requests');
+      } else if (currentUser.userRole === 'Technician') {
+        setCurrentView('work-orders');
+      } else {
+        setCurrentView('dashboard');
+      }
     }
-  }, [currentUser]);
+  }, [currentUser, isLoggedIn]);
+
+  // Show login page if not logged in (redirect to /login)
+  if (!isLoggedIn) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   const renderContent = () => {
     switch (currentView) {
@@ -264,7 +303,7 @@ const App: React.FC = () => {
         userRole={currentUser.userRole}
         currentUser={currentUser}
         onSwitchUser={setCurrentUser}
-        allUsers={ALL_USERS}
+        allUsers={Object.values(USERS)}
       />
       
       <div className="flex-1 ml-64 flex flex-col h-screen">

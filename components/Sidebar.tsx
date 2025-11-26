@@ -24,9 +24,10 @@ interface SidebarProps {
   currentUser: User;
   onSwitchUser: (user: User) => void;
   allUsers: User[];
+  onLogout: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, currentUser, onSwitchUser, allUsers }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, currentUser, onSwitchUser, allUsers, onLogout }) => {
   const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false);
   
   // Define all possible items
@@ -114,7 +115,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
         </div>
 
         {/* Sign Out Button */}
-        <button className="flex items-center space-x-3 text-slate-400 hover:text-red-400 hover:bg-slate-800 w-full px-4 py-3 rounded-lg transition-colors">
+        <button onClick={onLogout} className="flex items-center space-x-3 text-slate-400 hover:text-red-400 hover:bg-slate-800 w-full px-4 py-3 rounded-lg transition-colors">
           <LogOut size={20} />
           <span className="font-medium text-sm">Sign Out</span>
         </button>
