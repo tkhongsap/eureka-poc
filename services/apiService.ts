@@ -1,5 +1,24 @@
 // API Service for connecting to FastAPI backend
-const API_BASE_URL = 'http://localhost:8000/api';
+const getBackendUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    const replitDomains = ['replit.dev', 'repl.co', 'replit.app'];
+    const isReplitHosted = replitDomains.some(domain => hostname.includes(domain));
+    
+    if (isReplitHosted) {
+      const protocol = window.location.protocol;
+      const parts = hostname.split('.');
+      const slugWithPort = parts[0];
+      const baseSlug = slugWithPort.replace(/-5000$/, '');
+      const restOfDomain = parts.slice(1).join('.');
+      return `${protocol}//${baseSlug}-8000.${restOfDomain}/api`;
+    }
+  }
+  return 'http://localhost:8000/api';
+};
+
+const API_BASE_URL = getBackendUrl();
 
 // --- Image API ---
 export interface ImageInfo {

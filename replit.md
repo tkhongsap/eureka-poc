@@ -1,0 +1,180 @@
+# Eureka CMMS - Computerized Maintenance Management System
+
+## Overview
+
+Eureka CMMS is a comprehensive maintenance management system that helps track repair requests, work orders, inventory, and team schedules. The system features AI-powered analysis using Google Gemini to help diagnose maintenance issues.
+
+**Current Status**: ✅ Fully configured and running on Replit
+
+## Project Architecture
+
+### Tech Stack
+- **Frontend**: React 19.2 + TypeScript + Vite 6.2 + Tailwind CSS
+- **Backend**: Python 3.11 + FastAPI 0.104 + Uvicorn
+- **AI Integration**: Google Gemini API
+- **Charts**: Recharts 3.5
+- **Icons**: Lucide React
+- **Storage**: File-based JSON storage
+
+### Project Structure
+```
+eureka-cmms/
+├── components/          # React UI components
+│   ├── Dashboard.tsx
+│   ├── WorkOrders.tsx
+│   ├── WorkRequestPortal.tsx
+│   ├── Inventory.tsx
+│   ├── TeamSchedule.tsx
+│   ├── AssetHierarchy.tsx
+│   ├── Sidebar.tsx
+│   └── Header.tsx
+├── services/           # Frontend services
+│   ├── apiService.ts   # Backend API client (auto-detects Replit URL)
+│   └── geminiService.ts
+├── backend/           # FastAPI backend
+│   ├── main.py        # FastAPI app entry point
+│   ├── routes/        # API route handlers
+│   ├── models/        # Pydantic data models
+│   └── utils/         # Helper utilities
+├── storage/           # Auto-generated data storage
+│   ├── pictures/      # Uploaded images
+│   └── information/   # JSON data files
+└── App.tsx           # Main React application
+```
+
+## Features
+
+### Core Functionality
+- **Work Orders Management** - Kanban board (Open, In Progress, Completed)
+- **Request Portal** - Submit repair requests with image attachments
+- **Inventory Management** - Track parts and supplies
+- **Team Scheduling** - Manage technician schedules
+- **AI Analysis** - Gemini-powered issue diagnosis
+- **Image Upload** - Attach photos to work orders and requests
+
+### API Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check |
+| POST | `/api/images/upload` | Upload image |
+| GET | `/api/images/{id}` | Get image |
+| GET | `/api/images` | List all images |
+| POST | `/api/requests` | Create repair request |
+| GET | `/api/requests` | List all requests |
+| PUT | `/api/requests/{id}` | Update request |
+| DELETE | `/api/requests/{id}` | Delete request |
+| POST | `/api/workorders` | Create work order |
+| GET | `/api/workorders` | List all work orders |
+| PUT | `/api/workorders/{id}` | Update work order |
+| DELETE | `/api/workorders/{id}` | Delete work order |
+
+## Recent Changes
+
+### November 26, 2025 - Replit Setup
+- ✅ Installed Node.js 20 and Python 3.11 modules
+- ✅ Configured Vite to run on port 5000 for Replit webview
+- ✅ Updated API service to auto-detect Replit backend URL
+- ✅ Configured HMR WebSocket for Replit proxy
+- ✅ Updated .gitignore for Node.js and Python artifacts
+- ✅ Installed all frontend and backend dependencies
+- ✅ Created "Backend API" workflow (localhost:8000)
+- ✅ Created "Frontend" workflow (0.0.0.0:5000)
+- ✅ Configured autoscale deployment
+- ✅ Verified application is running successfully
+
+## Configuration
+
+### Environment Variables
+The app supports the following environment variable:
+- `GEMINI_API_KEY` - Optional API key for Google Gemini AI analysis features
+
+### Workflows
+Two workflows are configured to run the application:
+
+1. **Backend API** (Console)
+   - Command: `cd backend && python -m uvicorn main:app --host localhost --port 8000 --reload`
+   - Port: 8000 (internal)
+   - Status: ✅ Running
+
+2. **Frontend** (Webview)
+   - Command: `npm run dev`
+   - Port: 5000 (exposed to web)
+   - Status: ✅ Running
+
+### Development vs Production
+- **Development**: Both workflows run with hot-reload enabled
+- **Production**: Deployment uses autoscale with built frontend and FastAPI backend
+
+## Storage
+
+The application uses file-based storage in the `storage/` directory:
+
+```
+storage/
+├── pictures/            # Uploaded images (IMG-xxx.jpg/png)
+└── information/         # JSON data files
+    ├── requests.json    # Repair requests
+    ├── workorders.json  # Work orders
+    └── images.json      # Image metadata
+```
+
+⚠️ **Note**: The `storage/` directory is auto-created on first run and excluded from git.
+
+## How to Use
+
+### Running the App
+The application starts automatically with two workflows:
+1. Backend API runs on port 8000 (internal)
+2. Frontend runs on port 5000 (webview)
+
+### Adding Dependencies
+
+**Frontend:**
+```bash
+npm install <package-name>
+```
+
+**Backend:**
+```bash
+cd backend
+pip install <package-name>
+# Add to requirements.txt
+```
+
+### API Testing
+Access the FastAPI documentation at:
+- Swagger UI: `https://<your-repl>-8000.replit.dev/docs`
+- ReDoc: `https://<your-repl>-8000.replit.dev/redoc`
+
+## Deployment
+
+The app is configured for Replit autoscale deployment:
+- **Build**: `npm run build` (builds Vite frontend)
+- **Run**: Starts both backend and frontend servers
+- **Type**: Autoscale (scales based on traffic)
+
+To publish: Click the "Deploy" button in Replit
+
+## User Preferences
+
+None specified yet.
+
+## Troubleshooting
+
+### Frontend not loading
+- Check that Frontend workflow is running
+- Verify port 5000 is not blocked
+- Check browser console for errors
+
+### Backend API errors
+- Check Backend API workflow logs
+- Verify Python dependencies are installed
+- Check storage directory permissions
+
+### Images not uploading
+- Ensure storage/pictures directory exists
+- Check file size limits
+- Verify backend API is accessible
+
+## Original Repository
+This is a GitHub import configured for the Replit environment.
