@@ -40,8 +40,8 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
             <div className="text-sm font-semibold text-stone-800">{user.name}</div>
             <div className="text-xs text-stone-500">{user.role}</div>
           </div>
-          <div className="h-10 w-10 bg-stone-200 rounded-xl overflow-hidden border-2 border-white shadow-md">
-            <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+          <div className="h-10 w-10 bg-stone-200 rounded-xl flex items-center justify-center border-2 border-white shadow-md">
+            <UserCircle size={40} className="text-stone-400" />
           </div>
         </div>
       </div>
