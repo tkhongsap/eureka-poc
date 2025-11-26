@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -65,6 +66,13 @@ const TECHNICIANS = ALL_USERS
   .filter(u => u.userRole === 'Technician')
   .map(u => ({ id: u.id, name: u.name }));
 
+// USERS object for role-based lookup (used by login flow)
+const USERS: Record<UserRole, User> = {
+  Admin: ALL_USERS.find(u => u.userRole === 'Admin')!,
+  Technician: ALL_USERS.find(u => u.userRole === 'Technician')!,
+  Requester: ALL_USERS.find(u => u.userRole === 'Requester')!,
+};
+
 // Fallback mock work orders when API is unavailable
 const MOCK_WOS: WorkOrder[] = [
   {
@@ -109,9 +117,38 @@ const MOCK_WOS: WorkOrder[] = [
 ];
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User>(ALL_USERS[0]); // Default to Admin
+  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(MOCK_WOS);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check for logged in user from LoginPage on mount
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem('loggedInUser');
+    if (storedUser) {
+      try {
+        const { role } = JSON.parse(storedUser);
+        if (role && USERS[role as UserRole]) {
+          setCurrentUser(USERS[role as UserRole]);
+          setIsLoggedIn(true);
+          // เมื่อล็อกอินสำเร็จ ให้เข้า dashboard เสมอ
+          setCurrentView('dashboard');
+        }
+      } catch (e) {
+        console.error('Failed to parse stored user:', e);
+      }
+    }
+  }, []);
+
+  // Handle logout
+  const handleLogout = () => {
+    sessionStorage.removeItem('loggedInUser');
+    setIsLoggedIn(false);
+    setCurrentView('dashboard');
+    // Navigate to landing page
+    window.location.href = '/';
+  };
 
   // Load work orders from backend on mount
   useEffect(() => {
@@ -196,14 +233,32 @@ const App: React.FC = () => {
 
   // Reset view when role changes
   useEffect(() => {
-    if (currentUser.userRole === 'Requester') {
-      setCurrentView('requests');
-    } else if (currentUser.userRole === 'Technician') {
-      setCurrentView('work-orders');
-    } else {
-      setCurrentView('dashboard');
+    if (isLoggedIn) {
+      if (currentUser.userRole === 'Requester') {
+        setCurrentView('requests');
+      } else if (currentUser.userRole === 'Technician') {
+        setCurrentView('work-orders');
+      } else {
+        setCurrentView('dashboard');
+      }
     }
-  }, [currentUser]);
+  }, [currentUser, isLoggedIn]);
+
+  // Redirect to login page if not logged in
+  useEffect(() => {
+    if (!isLoggedIn && currentUser === null) {
+      // Check if we already tried to load from sessionStorage
+      const storedUser = sessionStorage.getItem('loggedInUser');
+      if (!storedUser) {
+        navigate('/login');
+      }
+    }
+  }, [isLoggedIn, currentUser, navigate]);
+
+  // Show nothing while checking login status or redirecting
+  if (!isLoggedIn || !currentUser) {
+    return null;
+  }
 
   const renderContent = () => {
     switch (currentView) {
@@ -264,7 +319,7 @@ const App: React.FC = () => {
         userRole={currentUser.userRole}
         currentUser={currentUser}
         onSwitchUser={setCurrentUser}
-        allUsers={ALL_USERS}
+        allUsers={Object.values(USERS)}
       />
       
       <div className="flex-1 ml-64 flex flex-col h-screen">
