@@ -13,18 +13,18 @@ interface WorkOrdersProps {
 }
 
 const statusColors = {
-  [Status.OPEN]: 'bg-blue-100 text-blue-700 border-blue-200',
-  [Status.IN_PROGRESS]: 'bg-purple-100 text-purple-700 border-purple-200',
-  [Status.PENDING]: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  [Status.COMPLETED]: 'bg-green-100 text-green-700 border-green-200',
-  [Status.CLOSED]: 'bg-slate-100 text-slate-700 border-slate-200',
+  [Status.OPEN]: 'bg-teal-50 text-teal-700 border-teal-200',
+  [Status.IN_PROGRESS]: 'bg-violet-50 text-violet-700 border-violet-200',
+  [Status.PENDING]: 'bg-amber-50 text-amber-700 border-amber-200',
+  [Status.COMPLETED]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  [Status.CLOSED]: 'bg-stone-100 text-stone-700 border-stone-200',
 };
 
 const priorityColors = {
   [Priority.CRITICAL]: 'text-red-700 bg-red-50 border-red-100',
   [Priority.HIGH]: 'text-orange-700 bg-orange-50 border-orange-100',
-  [Priority.MEDIUM]: 'text-blue-700 bg-blue-50 border-blue-100',
-  [Priority.LOW]: 'text-slate-700 bg-slate-50 border-slate-100',
+  [Priority.MEDIUM]: 'text-teal-700 bg-teal-50 border-teal-100',
+  [Priority.LOW]: 'text-stone-700 bg-stone-50 border-stone-100',
 };
 
 // Mock parts for selection
@@ -219,68 +219,66 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const columns = [Status.OPEN, Status.IN_PROGRESS, Status.PENDING, Status.COMPLETED];
 
   return (
-    <div className="p-8 h-full flex flex-col bg-slate-50/50">
+    <div className="p-8 h-full flex flex-col bg-stone-50/50">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Work Orders</h2>
-          <p className="text-slate-500">
+          <h2 className="font-serif text-3xl text-stone-900">Work Orders</h2>
+          <p className="text-stone-500 mt-1">
              {currentUser?.userRole === 'Technician' ? 'My Assigned Tasks' : 'Manage Maintenance Tasks'}
           </p>
         </div>
         <div className="flex items-center gap-3">
              {currentUser?.userRole !== 'Technician' && (
-                <button className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-all">
+                <button className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200">
                     <Plus size={18} />
-                    <span>Create Order</span>
+                    <span className="font-semibold">Create Order</span>
                 </button>
              )}
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="mb-6 flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+      <div className="mb-6 flex justify-between items-center bg-white p-3 rounded-2xl border border-stone-200/60 shadow-sm">
          <div className="flex items-center space-x-4">
              {/* View Toggles */}
-             <div className="bg-slate-100 p-1 rounded-lg flex border border-slate-200">
-                <button 
+             <div className="bg-stone-100 p-1 rounded-xl flex border border-stone-200">
+                <button
                     onClick={() => setViewMode('list')}
-                    className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
                 >
                     <List size={18} />
                 </button>
-                <button 
+                <button
                     onClick={() => setViewMode('board')}
-                    className={`p-1.5 rounded-md transition-all ${viewMode === 'board' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'board' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
                 >
                     <LayoutGrid size={18} />
                 </button>
              </div>
-             
+
              {/* Role Filter */}
              {currentUser?.userRole === 'Technician' && (
-                 <div className="flex items-center space-x-2 border-l border-slate-200 pl-4">
+                 <div className="flex items-center space-x-2 border-l border-stone-200 pl-4">
                     <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <input 
-                            type="checkbox" 
-                            checked={showOnlyMyJobs} 
+                        <input
+                            type="checkbox"
+                            checked={showOnlyMyJobs}
                             onChange={(e) => setShowOnlyMyJobs(e.target.checked)}
-                            className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-gray-300" 
+                            className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-stone-300"
                         />
-                        <span className="text-sm text-slate-700 font-medium">Assigned to Me</span>
+                        <span className="text-sm text-stone-700 font-medium">Assigned to Me</span>
                     </label>
                  </div>
              )}
 
-                
-             
              {currentUser?.userRole === 'Admin' && (
-                 <button className="flex items-center space-x-2 px-3 py-1.5 hover:bg-slate-50 rounded-md text-sm text-slate-600 transition-colors">
+                 <button className="flex items-center space-x-2 px-3 py-1.5 hover:bg-stone-50 rounded-lg text-sm text-stone-600 transition-colors duration-200">
                     <Filter size={16} />
                     <span>Filter All</span>
                 </button>
              )}
           </div>
-          <div className="text-sm text-slate-500 font-medium px-2">
+          <div className="text-sm text-stone-500 font-medium px-3 py-1 bg-stone-50 rounded-lg">
             {filteredWorkOrders.length} Orders
           </div>
       </div>
@@ -290,45 +288,45 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         
         {/* LIST VIEW */}
         {viewMode === 'list' && (
-             <div className="bg-white rounded-xl shadow-sm border border-slate-200 h-full flex flex-col overflow-hidden animate-fade-in">
+             <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 h-full flex flex-col overflow-hidden">
                 <div className="overflow-auto flex-1">
                 <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-50 sticky top-0 z-10">
+                    <thead className="bg-stone-50 sticky top-0 z-10">
                     <tr>
-                        <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">ID</th>
-                        <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Title</th>
-                        <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Asset</th>
-                        <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Priority</th>
-                        <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Status</th>
-                        <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Assignee</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">ID</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Title</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Asset</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Priority</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Status</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Assignee</th>
                     </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-stone-100">
                     {filteredWorkOrders.map((wo) => (
-                        <tr 
-                        key={wo.id} 
+                        <tr
+                        key={wo.id}
                         onClick={() => setSelectedWO(wo)}
-                        className="hover:bg-brand-50 cursor-pointer transition-colors group"
+                        className="hover:bg-teal-50/50 cursor-pointer transition-colors duration-200 group"
                         >
-                        <td className="px-6 py-4 text-sm font-medium text-slate-900">{wo.id}</td>
-                        <td className="px-6 py-4 text-sm text-slate-700 font-medium">
+                        <td className="px-6 py-4 text-sm font-medium text-stone-900">{wo.id}</td>
+                        <td className="px-6 py-4 text-sm text-stone-700 font-medium">
                             {wo.title}
-                            <div className="text-xs text-slate-400 truncate max-w-[200px]">{wo.description}</div>
+                            <div className="text-xs text-stone-400 truncate max-w-[200px]">{wo.description}</div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{wo.assetName}</td>
+                        <td className="px-6 py-4 text-sm text-stone-600">{wo.assetName}</td>
                         <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded border text-xs font-semibold ${priorityColors[wo.priority]}`}>
+                            <span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${priorityColors[wo.priority]}`}>
                             {wo.priority}
                             </span>
                         </td>
                         <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded border text-xs font-semibold ${statusColors[wo.status]}`}>
+                            <span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${statusColors[wo.status]}`}>
                             {wo.status}
                             </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
+                        <td className="px-6 py-4 text-sm text-stone-600">
                             <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
+                            <div className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center text-xs font-bold text-stone-600">
                                 {wo.assignedTo?.charAt(0) || '?'}
                             </div>
                             <span>{wo.assignedTo}</span>
@@ -349,18 +347,18 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                     {columns.map(status => {
                         const columnWos = filteredWorkOrders.filter(wo => wo.status === status);
                         return (
-                            <div 
+                            <div
                                 key={status}
-                                className="flex-1 min-w-[280px] bg-slate-100/70 rounded-xl flex flex-col max-h-full border border-slate-200/60"
+                                className="flex-1 min-w-[280px] bg-stone-100/70 rounded-2xl flex flex-col max-h-full border border-stone-200/60"
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDrop(e, status)}
                             >
                                 {/* Column Header */}
-                                <div className="p-4 flex items-center justify-between sticky top-0 bg-slate-100/70 backdrop-blur-sm z-10 rounded-t-xl">
+                                <div className="p-4 flex items-center justify-between sticky top-0 bg-stone-100/70 backdrop-blur-sm z-10 rounded-t-2xl">
                                     <div className="flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${statusColors[status].split(' ')[0].replace('bg-', 'bg-')}`}></div>
-                                        <h3 className="font-semibold text-slate-700 text-sm">{status}</h3>
-                                        <span className="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full">{columnWos.length}</span>
+                                        <div className={`w-2.5 h-2.5 rounded-full ${statusColors[status].split(' ')[0].replace('bg-', 'bg-')}`}></div>
+                                        <h3 className="font-semibold text-stone-700 text-sm">{status}</h3>
+                                        <span className="bg-stone-200 text-stone-600 text-xs px-2 py-0.5 rounded-full">{columnWos.length}</span>
                                     </div>
                                 </div>
 
@@ -372,37 +370,37 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                             draggable
                                             onDragStart={(e) => handleDragStart(e, wo.id)}
                                             onClick={() => setSelectedWO(wo)}
-                                            className={`bg-white p-4 rounded-lg shadow-sm border border-slate-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-all group relative animate-fade-in
-                                                ${draggedWoId === wo.id ? 'opacity-50 border-dashed border-slate-400' : ''}
-                                                ${currentUser?.name === wo.assignedTo ? 'border-l-4 border-l-brand-500' : ''}
+                                            className={`bg-white p-4 rounded-xl shadow-sm border border-stone-200/60 cursor-grab active:cursor-grabbing hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group relative
+                                                ${draggedWoId === wo.id ? 'opacity-50 border-dashed border-stone-400' : ''}
+                                                ${currentUser?.name === wo.assignedTo ? 'border-l-4 border-l-teal-500' : ''}
                                             `}
                                         >
                                             <div className="flex justify-between items-start mb-2">
-                                                <span className="text-xs font-mono text-slate-400">{wo.id}</span>
-                                                <button 
+                                                <span className="text-xs font-mono text-stone-400">{wo.id}</span>
+                                                <button
                                                     title="Drag to reorder"
                                                     aria-label="Drag to reorder"
-                                                    className="text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    className="text-stone-300 hover:text-stone-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                                 >
                                                     <GripVertical size={14} />
                                                 </button>
                                             </div>
-                                            
-                                            <h4 className="font-medium text-slate-800 text-sm mb-3 leading-snug">{wo.title}</h4>
-                                            
+
+                                            <h4 className="font-medium text-stone-800 text-sm mb-3 leading-snug">{wo.title}</h4>
+
                                             <div className="flex items-center gap-2 mb-3">
-                                                 <span className={`px-2 py-0.5 rounded border text-[10px] uppercase font-bold tracking-wider ${priorityColors[wo.priority]}`}>
+                                                 <span className={`px-2 py-0.5 rounded-lg border text-[10px] uppercase font-bold tracking-wider ${priorityColors[wo.priority]}`}>
                                                     {wo.priority}
                                                 </span>
                                             </div>
 
-                                            <div className="flex items-center justify-between pt-3 border-t border-slate-50 mt-3">
-                                                <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                                                     <div className={`w-5 h-5 rounded-full border border-slate-200 flex items-center justify-center text-[10px] font-bold ${wo.assignedTo === currentUser?.name ? 'bg-brand-100 text-brand-700 border-brand-200' : 'bg-slate-100 text-slate-600'}`}>
+                                            <div className="flex items-center justify-between pt-3 border-t border-stone-100 mt-3">
+                                                <div className="flex items-center gap-1.5 text-xs text-stone-500">
+                                                     <div className={`w-5 h-5 rounded-lg border border-stone-200 flex items-center justify-center text-[10px] font-bold ${wo.assignedTo === currentUser?.name ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-stone-100 text-stone-600'}`}>
                                                         {wo.assignedTo?.charAt(0) || '?'}
                                                      </div>
                                                 </div>
-                                                <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                                                <div className="flex items-center gap-1 text-[10px] text-stone-400">
                                                     <Calendar size={12} />
                                                     <span>{new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                                                 </div>
@@ -410,7 +408,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                         </div>
                                     ))}
                                     {columnWos.length === 0 && (
-                                        <div className="h-24 border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-xs italic">
+                                        <div className="h-24 border-2 border-dashed border-stone-200 rounded-xl flex items-center justify-center text-stone-400 text-xs italic">
                                             No orders
                                         </div>
                                     )}
@@ -427,67 +425,67 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       {selectedWO && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" onClick={() => setSelectedWO(null)}></div>
-          <div className="relative w-full max-w-2xl bg-white shadow-2xl h-full overflow-y-auto flex flex-col animate-slide-in-right">
-            
+          <div className="relative w-full max-w-2xl bg-white shadow-2xl h-full overflow-y-auto flex flex-col">
+
             {/* Modal Header */}
-            <div className="p-6 border-b border-slate-100 bg-white sticky top-0 z-20 flex justify-between items-start">
+            <div className="p-6 border-b border-stone-100 bg-white sticky top-0 z-20 flex justify-between items-start">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                   <h2 className="text-xl font-bold text-slate-800">{selectedWO.id}: {selectedWO.title}</h2>
-                   <span className={`px-2 py-0.5 rounded text-xs font-bold border ${statusColors[selectedWO.status]}`}>{selectedWO.status}</span>
+                   <h2 className="font-serif text-xl text-stone-900">{selectedWO.id}: {selectedWO.title}</h2>
+                   <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${statusColors[selectedWO.status]}`}>{selectedWO.status}</span>
                 </div>
-                <p className="text-slate-500 text-sm">Created on {selectedWO.createdAt} • Due {selectedWO.dueDate}</p>
+                <p className="text-stone-500 text-sm">Created on {selectedWO.createdAt} • Due {selectedWO.dueDate}</p>
               </div>
-              <button 
-                onClick={() => setSelectedWO(null)} 
+              <button
+                onClick={() => setSelectedWO(null)}
                 title="Close panel"
                 aria-label="Close panel"
-                className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+                className="p-2 hover:bg-stone-100 rounded-xl text-stone-400 hover:text-stone-600 transition-colors duration-200"
               >
                 <X size={24} />
               </button>
             </div>
 
             <div className="p-6 space-y-8 flex-1">
-              
+
               {/* Description */}
               <div>
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-2">Description</h3>
-                <p className="text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-lg border border-slate-100">
+                <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2">Description</h3>
+                <p className="text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100">
                   {selectedWO.description}
                 </p>
               </div>
 
               {/* Technician Inline Update (visible to assigned Technician) */}
               {currentUser?.userRole === 'Technician' && selectedWO?.assignedTo === currentUser.name && selectedWO?.status !== Status.PENDING && selectedWO?.status !== Status.COMPLETED && (
-                <div className="bg-white border border-slate-200 rounded-xl p-4">
-                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} /> Technician Update
+                <div className="bg-white border border-stone-200/60 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <ImageIcon size={16} className="text-teal-600" /> Technician Update
                   </h3>
 
-                  <div className="mb-3">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
-                    <textarea value={technicianNotes} onChange={(e) => setTechnicianNotes(e.target.value)} rows={4} className="w-full border border-slate-200 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-brand-500" />
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Notes</label>
+                    <textarea value={technicianNotes} onChange={(e) => setTechnicianNotes(e.target.value)} rows={4} className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-stone-50" />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Add Images</label>
+                    <label className="block text-sm font-medium text-stone-700 mb-2">Add Images</label>
                     <div className="flex items-center gap-3 mb-3">
-                      <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                      <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm hover:bg-stone-100 transition-colors duration-200">
                         <Upload size={16} />
                         <span>{isUploading ? 'Uploading...' : 'Select images'}</span>
                         <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
                       </label>
-                      {isUploading && <span className="text-sm text-slate-500">Uploading...</span>}
-                      <button onClick={() => { setTechnicianImages([]); }} className="text-sm text-slate-500 hover:text-slate-700">Clear</button>
+                      {isUploading && <span className="text-sm text-stone-500">Uploading...</span>}
+                      <button onClick={() => { setTechnicianImages([]); }} className="text-sm text-stone-500 hover:text-stone-700 transition-colors">Clear</button>
                     </div>
 
                     {technicianImages.length > 0 && (
                       <div className="grid grid-cols-3 gap-3">
                         {technicianImages.map((id, idx) => (
-                          <div key={idx} className="relative rounded-lg overflow-hidden border border-slate-200">
+                          <div key={idx} className="relative rounded-xl overflow-hidden border border-stone-200">
                             <img src={getImageUrl(id)} alt={`tech-img-${idx}`} className="w-full h-28 object-cover" />
-                            <button onClick={() => removeTechnicianImage(idx)} className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1">
+                            <button onClick={() => removeTechnicianImage(idx)} className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
                               <Trash2 size={14} />
                             </button>
                           </div>
@@ -501,19 +499,19 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               {/* Attached Images */}
               {selectedWOImages.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} /> Attached Images ({selectedWOImages.length})
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <ImageIcon size={16} className="text-teal-600" /> Attached Images ({selectedWOImages.length})
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {selectedWOImages.map((imgUrl, idx) => (
                       <div
                         key={idx}
-                        className="relative group cursor-pointer overflow-hidden rounded-lg border-2 border-slate-200 hover:border-brand-400 transition-all duration-200"
+                        className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-stone-200 hover:border-teal-400 transition-all duration-200"
                         onClick={() => setFullscreenImage(imgUrl)}
                       >
-                        <img 
-                          src={imgUrl} 
-                          alt={`Attachment ${idx + 1}`} 
+                        <img
+                          src={imgUrl}
+                          alt={`Attachment ${idx + 1}`}
                           className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
@@ -530,26 +528,26 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               )}
 
               {/* AI Assistant Section */}
-              <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-100 relative overflow-hidden">
+              <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-6 border border-teal-100 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
-                   <BrainCircuit size={120} className="text-indigo-600" />
+                   <BrainCircuit size={120} className="text-teal-600" />
                 </div>
-                
+
                 <div className="relative z-10">
                   <div className="flex items-center gap-2 mb-4">
-                    <BrainCircuit className="text-indigo-600" size={24} />
-                    <h3 className="text-lg font-bold text-indigo-900">Eureka AI Assistant</h3>
+                    <BrainCircuit className="text-teal-600" size={24} />
+                    <h3 className="font-serif text-lg text-teal-900">Eureka AI Assistant</h3>
                   </div>
-                  
+
                   {!analysis ? (
                     <div>
-                      <p className="text-indigo-700 mb-4 text-sm">
+                      <p className="text-teal-700 mb-4 text-sm">
                         Use Gemini 2.5 AI to analyze the failure description, predict root causes, and generate a safety checklist.
                       </p>
-                      <button 
+                      <button
                         onClick={handleAnalyze}
                         disabled={isAnalyzing}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-medium transition-all shadow-md shadow-indigo-200 flex items-center gap-2 disabled:opacity-70"
+                        className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all duration-200 shadow-lg shadow-teal-600/20 flex items-center gap-2 disabled:opacity-70 hover:-translate-y-0.5"
                       >
                         {isAnalyzing ? (
                           <>
@@ -565,41 +563,41 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-4 animate-fade-in">
+                    <div className="space-y-4">
                       {/* Analysis Results */}
                       <div className="grid grid-cols-2 gap-4">
-                         <div className="bg-white/80 p-4 rounded-lg border border-indigo-100">
-                            <h4 className="text-xs font-bold text-indigo-500 uppercase mb-2 flex items-center gap-1">
+                         <div className="bg-white/80 p-4 rounded-xl border border-teal-100">
+                            <h4 className="text-xs font-bold text-teal-600 uppercase mb-2 flex items-center gap-1">
                                <AlertTriangle size={14} /> Potential Root Causes
                             </h4>
-                            <ul className="list-disc list-inside text-sm text-slate-700 space-y-1">
+                            <ul className="list-disc list-inside text-sm text-stone-700 space-y-1">
                               {analysis.rootCauses.map((cause, idx) => <li key={idx}>{cause}</li>)}
                             </ul>
                          </div>
-                         <div className="bg-white/80 p-4 rounded-lg border border-indigo-100">
-                            <h4 className="text-xs font-bold text-indigo-500 uppercase mb-2 flex items-center gap-1">
+                         <div className="bg-white/80 p-4 rounded-xl border border-teal-100">
+                            <h4 className="text-xs font-bold text-teal-600 uppercase mb-2 flex items-center gap-1">
                                <Clock size={14} /> Est. Repair Time
                             </h4>
-                            <div className="text-2xl font-bold text-slate-800">{analysis.estimatedTimeHours} Hours</div>
-                            <p className="text-xs text-slate-500 mt-1">Based on historical data for {selectedWO.assetName}</p>
+                            <div className="text-2xl font-bold text-stone-800">{analysis.estimatedTimeHours} Hours</div>
+                            <p className="text-xs text-stone-500 mt-1">Based on historical data for {selectedWO.assetName}</p>
                          </div>
                       </div>
 
-                      <div className="bg-white/80 p-4 rounded-lg border border-indigo-100">
-                        <h4 className="text-xs font-bold text-indigo-500 uppercase mb-2 flex items-center gap-1">
+                      <div className="bg-white/80 p-4 rounded-xl border border-teal-100">
+                        <h4 className="text-xs font-bold text-teal-600 uppercase mb-2 flex items-center gap-1">
                             <CheckSquare size={14} /> Recommended Actions
                         </h4>
                         <div className="space-y-2">
                            {analysis.recommendedActions.map((action, idx) => (
-                             <div key={idx} className="flex items-start gap-3 p-2 hover:bg-indigo-50 rounded transition-colors">
-                               <div className="mt-0.5 w-5 h-5 rounded-full border-2 border-indigo-200 flex items-center justify-center text-xs text-indigo-600 font-bold">{idx + 1}</div>
-                               <span className="text-sm text-slate-700">{action}</span>
+                             <div key={idx} className="flex items-start gap-3 p-2 hover:bg-teal-50 rounded-lg transition-colors duration-200">
+                               <div className="mt-0.5 w-5 h-5 rounded-full border-2 border-teal-200 flex items-center justify-center text-xs text-teal-600 font-bold">{idx + 1}</div>
+                               <span className="text-sm text-stone-700">{action}</span>
                              </div>
                            ))}
                         </div>
                       </div>
-                      
-                      <button onClick={handleAnalyze} className="text-xs text-indigo-600 hover:text-indigo-800 underline">
+
+                      <button onClick={handleAnalyze} className="text-xs text-teal-600 hover:text-teal-800 underline">
                         Re-analyze
                       </button>
                     </div>
@@ -609,49 +607,49 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
               {/* Spare Parts Usage Section */}
               <div>
-                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <Package size={16} /> Spare Parts & Materials
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <Package size={16} className="text-teal-600" /> Spare Parts & Materials
                   </h3>
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                  <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-4">
                       {/* List Used Parts */}
                       {(selectedWO.partsUsed && selectedWO.partsUsed.length > 0) ? (
                           <div className="space-y-2 mb-4">
                               {selectedWO.partsUsed.map((part, idx) => (
-                                  <div key={idx} className="flex justify-between items-center bg-white p-3 rounded border border-slate-200">
+                                  <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-xl border border-stone-200">
                                       <div>
-                                          <div className="font-medium text-sm text-slate-800">{part.name}</div>
-                                          <div className="text-xs text-slate-500">Qty: {part.quantity} • ${part.cost}/unit</div>
+                                          <div className="font-medium text-sm text-stone-800">{part.name}</div>
+                                          <div className="text-xs text-stone-500">Qty: {part.quantity} • ${part.cost}/unit</div>
                                       </div>
                                       <div className="flex items-center gap-4">
-                                          <span className="font-bold text-slate-700">${part.cost * part.quantity}</span>
-                                          <button 
+                                          <span className="font-bold text-stone-700">${part.cost * part.quantity}</span>
+                                          <button
                                             onClick={() => removePartFromWo(idx)}
                                             title="Remove part"
                                             aria-label="Remove part"
-                                            className="text-red-400 hover:text-red-600 p-1"
+                                            className="text-red-400 hover:text-red-600 p-1 transition-colors"
                                           >
                                               <Trash2 size={16} />
                                           </button>
                                       </div>
                                   </div>
                               ))}
-                              <div className="flex justify-between items-center pt-2 border-t border-slate-200 px-2">
-                                  <span className="text-sm font-medium text-slate-600">Total Cost</span>
-                                  <span className="text-lg font-bold text-slate-900">
+                              <div className="flex justify-between items-center pt-2 border-t border-stone-200 px-2">
+                                  <span className="text-sm font-medium text-stone-600">Total Cost</span>
+                                  <span className="text-lg font-bold text-stone-900">
                                       ${selectedWO.partsUsed.reduce((acc, p) => acc + (p.cost * p.quantity), 0).toFixed(2)}
                                   </span>
                               </div>
                           </div>
                       ) : (
-                          <div className="text-center py-4 text-slate-400 text-sm mb-4">No parts consumed yet</div>
+                          <div className="text-center py-4 text-stone-400 text-sm mb-4">No parts consumed yet</div>
                       )}
 
                       {/* Add Part Dropdown */}
                       <div className="flex gap-2">
-                          <select 
+                          <select
                             title="Add part from inventory"
                             aria-label="Add part from inventory"
-                            className="flex-1 text-sm border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                            className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white transition-all duration-200"
                             onChange={(e) => {
                                 addPartToWo(e.target.value);
                                 e.target.value = ''; // Reset
@@ -669,14 +667,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               {/* Checklist Section */}
               {checklist.length > 0 && (
                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <CheckSquare size={16} /> Maintenance Checklist
+                    <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <CheckSquare size={16} className="text-teal-600" /> Maintenance Checklist
                     </h3>
-                    <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
+                    <div className="bg-white border border-stone-200/60 rounded-2xl divide-y divide-stone-100 overflow-hidden">
                         {checklist.map((item, idx) => (
-                          <label key={idx} className="flex items-center gap-3 p-3 hover:bg-slate-50 cursor-pointer">
-                            <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
-                            <span className="text-sm text-slate-700">{item}</span>
+                          <label key={idx} className="flex items-center gap-3 p-3.5 hover:bg-stone-50 cursor-pointer transition-colors duration-200">
+                            <input type="checkbox" className="w-4 h-4 rounded border-stone-300 text-teal-600 focus:ring-teal-500" />
+                            <span className="text-sm text-stone-700">{item}</span>
                           </label>
                         ))}
                     </div>
@@ -686,10 +684,10 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 sticky bottom-0 z-20">
-               <button 
+            <div className="p-4 border-t border-stone-200 bg-stone-50 flex justify-end gap-3 sticky bottom-0 z-20">
+               <button
                  onClick={() => setSelectedWO(null)}
-                 className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50"
+                 className="px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-stone-700 text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200"
                >
                  Close
                </button>
@@ -698,7 +696,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                  if (currentUser?.userRole === 'Technician') {
                    if (selectedWO?.assignedTo === currentUser.name && selectedWO?.status !== Status.PENDING && selectedWO?.status !== Status.COMPLETED) {
                      return (
-                       <button onClick={submitTechnicianUpdate} disabled={isSubmitting} className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 shadow-sm flex items-center gap-2">
+                       <button onClick={submitTechnicianUpdate} disabled={isSubmitting} className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
                          <span>{isSubmitting ? 'Saving...' : 'Save & Update'}</span>
                          <ArrowRight size={16} />
                        </button>
@@ -710,7 +708,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
                  // Non-technician users still see the Save & Update button
                  return (
-                   <button className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 shadow-sm flex items-center gap-2">
+                   <button className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
                      <span>Save & Update</span>
                      <ArrowRight size={16} />
                    </button>
@@ -724,36 +722,36 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       {/* Technician Update Modal */}
       {showTechnicianModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowTechnicianModal(false)}></div>
-          <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-lg overflow-auto p-6 z-20">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowTechnicianModal(false)}></div>
+          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-auto p-6 z-20">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-bold">Update Work Order — Technician</h3>
-              <button onClick={() => setShowTechnicianModal(false)} className="p-2 rounded-full text-slate-500 hover:text-slate-800">
+              <h3 className="font-serif text-lg text-stone-900">Update Work Order — Technician</h3>
+              <button onClick={() => setShowTechnicianModal(false)} className="p-2 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors duration-200">
                 <X size={20} />
               </button>
             </div>
 
             <div className="space-y-4">
-              <label className="block text-sm font-medium text-slate-700">Notes</label>
-              <textarea value={technicianNotes} onChange={(e) => setTechnicianNotes(e.target.value)} rows={5} className="w-full border border-slate-200 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-brand-500" />
+              <label className="block text-sm font-medium text-stone-700">Notes</label>
+              <textarea value={technicianNotes} onChange={(e) => setTechnicianNotes(e.target.value)} rows={5} className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-stone-50 transition-all duration-200" />
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Add Images</label>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Add Images</label>
                 <div className="flex items-center gap-3">
-                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm hover:bg-stone-100 transition-colors duration-200">
                     <Upload size={16} />
                     <span>{isUploading ? 'Uploading...' : 'Select images'}</span>
                     <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
                   </label>
-                  {isUploading && <span className="text-sm text-slate-500">Uploading...</span>}
+                  {isUploading && <span className="text-sm text-stone-500">Uploading...</span>}
                 </div>
 
                 {technicianImages.length > 0 && (
                   <div className="grid grid-cols-3 gap-3 mt-3">
                     {technicianImages.map((id, idx) => (
-                      <div key={idx} className="relative rounded-lg overflow-hidden border border-slate-200">
+                      <div key={idx} className="relative rounded-xl overflow-hidden border border-stone-200">
                         <img src={getImageUrl(id)} alt={`img-${idx}`} className="w-full h-28 object-cover" />
-                        <button onClick={() => removeTechnicianImage(idx)} className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1">
+                        <button onClick={() => removeTechnicianImage(idx)} className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -764,8 +762,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setShowTechnicianModal(false)} className="px-4 py-2 bg-white border rounded-lg text-sm">Cancel</button>
-              <button onClick={submitTechnicianUpdate} disabled={isSubmitting} className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm flex items-center gap-2">
+              <button onClick={() => setShowTechnicianModal(false)} className="px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200">Cancel</button>
+              <button onClick={submitTechnicianUpdate} disabled={isSubmitting} className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:-translate-y-0.5 transition-all duration-200">
                 {isSubmitting ? 'Saving...' : 'Save & Update'}
                 <Save size={14} />
               </button>
@@ -776,13 +774,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
       {/* Fullscreen Image Modal */}
       {fullscreenImage && (
-        <div 
-          className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+        <div
+          className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setFullscreenImage(null)}
         >
           <button
             onClick={() => setFullscreenImage(null)}
-            className="absolute top-4 right-4 text-white hover:text-slate-300 bg-black/50 hover:bg-black/70 rounded-full p-3 transition-all z-10"
+            className="absolute top-4 right-4 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
             title="Close"
             aria-label="Close image"
           >
@@ -791,7 +789,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           <img
             src={fullscreenImage}
             alt="Full size"
-            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm bg-black/50 px-4 py-2 rounded-full">
