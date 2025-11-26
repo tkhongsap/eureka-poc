@@ -1,0 +1,41 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# environment files
+.env
+backend/venv/
+D:\TCC\Eureka\eureka\backend\utils\__pycache__/
+
+# josn files
+package-lock.json
+
+# Storage folder
+storage/
+
+# pycache
+backend/routes/__pycache__/
+backend/__pycache__/
+backend/models/__pycache__/
+backend/utils/__pycache__/
