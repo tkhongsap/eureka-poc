@@ -319,6 +319,81 @@ export const adminCloseWorkOrder = async (woId: string): Promise<WorkOrderItem> 
   return response.json();
 };
 
+// --- Notification API ---
+export interface NotificationItem {
+  id: string;
+  type: string;
+  workOrderId: string;
+  workOrderTitle: string;
+  message: string;
+  recipientRole: string;
+  recipientName?: string;
+  isRead: boolean;
+  createdAt: string;
+  triggeredBy: string;
+}
+
+export const getNotifications = async (): Promise<NotificationItem[]> => {
+  const response = await fetch(`${API_BASE_URL}/notifications`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch notifications');
+  }
+
+  return response.json();
+};
+
+export const createNotification = async (notification: Omit<NotificationItem, 'id'>): Promise<NotificationItem> => {
+  const response = await fetch(`${API_BASE_URL}/notifications`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(notification),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to create notification');
+  }
+
+  return response.json();
+};
+
+export const markNotificationAsRead = async (notificationId: string): Promise<NotificationItem> => {
+  const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}/read`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to mark notification as read');
+  }
+
+  return response.json();
+};
+
+export const markAllNotificationsAsRead = async (): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/notifications/read-all`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to mark all notifications as read');
+  }
+};
+
+export const deleteNotification = async (notificationId: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete notification');
+  }
+};
+
 // --- Health Check ---
 export const checkHealth = async (): Promise<boolean> => {
   try {
