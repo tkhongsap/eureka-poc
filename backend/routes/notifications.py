@@ -10,7 +10,7 @@ from datetime import datetime
 import json
 import os
 
-router = APIRouter()
+router = APIRouter(prefix="/api", tags=["Notifications"])
 
 # Path to notifications storage
 STORAGE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'storage', 'information', 'notifications.json')
