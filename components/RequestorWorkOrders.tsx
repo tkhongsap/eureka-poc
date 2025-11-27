@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { WorkOrder, Status, Priority } from '../types';
-import { Clock, CheckCircle, AlertCircle, XCircle, Package, Calendar, X, Image as ImageIcon, FileText, Wrench, Eye } from 'lucide-react';
-import { getImageUrl } from '../services/apiService';
+import { Clock, CheckCircle, AlertCircle, XCircle, Package, Calendar, X, Image as ImageIcon, FileText, Wrench, Eye, Edit2, Save, Lock } from 'lucide-react';
+import { getImageUrl, updateWorkOrder } from '../services/apiService';
+import { getWorkOrderPermissions } from '../utils/workflowRules';
 
 interface RequestorWorkOrdersProps {
   workOrders: WorkOrder[];
@@ -48,10 +49,21 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
   const [selectedWOImages, setSelectedWOImages] = useState<string[]>([]);
   const [technicianImages, setTechnicianImages] = useState<string[]>([]);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Edit form fields
+  const [editDescription, setEditDescription] = useState('');
+  const [editPriority, setEditPriority] = useState<Priority>(Priority.LOW);
 
   // Filter work orders that have a requestId (created from requests)
   // In a real app, we'd also match by the createdBy field from the request
   const myWorkOrders = workOrders.filter(wo => wo.requestId);
+
+  // Calculate permissions for selected work order
+  const permissions = selectedWO
+    ? getWorkOrderPermissions(selectedWO.status, 'Requester', selectedWO.assignedTo, requestorName)
+    : null;
 
   // Load images when selecting a work order
   useEffect(() => {
@@ -69,11 +81,47 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
       } else {
         setTechnicianImages([]);
       }
+
+      // Initialize edit fields
+      setEditDescription(selectedWO.description);
+      setEditPriority(selectedWO.priority);
+      setIsEditMode(false);
     } else {
       setSelectedWOImages([]);
       setTechnicianImages([]);
+      setIsEditMode(false);
     }
   }, [selectedWO]);
+
+  const handleSave = async () => {
+    if (!selectedWO || !permissions?.canEdit) return;
+
+    setIsSaving(true);
+    try {
+      const updatedWO = await updateWorkOrder(selectedWO.id, {
+        description: editDescription,
+        priority: editPriority,
+      });
+
+      // Update local state
+      const updatedWorkOrder = { ...selectedWO, description: editDescription, priority: editPriority };
+      setSelectedWO(updatedWorkOrder);
+      setIsEditMode(false);
+    } catch (error: any) {
+      console.error('Failed to update work order:', error);
+      alert(error.message || 'Failed to update work order');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (selectedWO) {
+      setEditDescription(selectedWO.description);
+      setEditPriority(selectedWO.priority);
+    }
+    setIsEditMode(false);
+  };
 
   if (myWorkOrders.length === 0) {
     return (
@@ -194,15 +242,30 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                   <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${statusConfig[selectedWO.status].color}`}>
                     {selectedWO.status}
                   </span>
-                  {/* Read-only indicator for requestors */}
-                  <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-stone-100 text-stone-600 border-stone-200">
-                    🔒 Read-only
-                  </span>
+                  {/* Permission indicator */}
+                  {permissions?.canEdit ? (
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-green-50 text-green-700 border-green-200 flex items-center gap-1">
+                      <Edit2 size={12} />
+                      Editable
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-stone-100 text-stone-600 border-stone-200 flex items-center gap-1">
+                      <Lock size={12} />
+                      Read-only
+                    </span>
+                  )}
                 </div>
                 <p className="text-stone-500 text-sm">Created on {selectedWO.createdAt} • Due {selectedWO.dueDate}</p>
                 {selectedWO.assignedTo && (
                   <p className="text-stone-600 text-sm mt-1">
                     Assigned to: <span className="font-medium">{selectedWO.assignedTo}</span>
+                  </p>
+                )}
+                {/* Permission explanation when locked */}
+                {!permissions?.canEdit && selectedWO.status !== Status.OPEN && (
+                  <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    You can only edit work orders when status is "Open"
                   </p>
                 )}
               </div>
@@ -223,9 +286,19 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                 <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
                   <FileText size={16} className="text-teal-600" /> Description
                 </h3>
-                <p className="text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100">
-                  {selectedWO.description}
-                </p>
+                {isEditMode && permissions?.canEdit ? (
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    rows={6}
+                    className="w-full text-stone-600 leading-relaxed bg-white p-4 rounded-xl border-2 border-teal-300 focus:border-teal-500 outline-none transition-all duration-200 resize-none"
+                    placeholder="Describe the issue in detail..."
+                  />
+                ) : (
+                  <p className="text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100">
+                    {selectedWO.description}
+                  </p>
+                )}
               </div>
 
               {/* Asset Information */}
@@ -240,11 +313,24 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                     <span className="text-sm text-stone-500">Location:</span>
                     <span className="text-sm font-medium text-stone-800">{selectedWO.location}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-sm text-stone-500">Priority:</span>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${priorityColors[selectedWO.priority]}`}>
-                      {selectedWO.priority}
-                    </span>
+                    {isEditMode && permissions?.canEdit ? (
+                      <select
+                        value={editPriority}
+                        onChange={(e) => setEditPriority(e.target.value as Priority)}
+                        className="text-sm font-bold px-3 py-1.5 rounded-lg border-2 border-teal-300 focus:border-teal-500 outline-none bg-white transition-all duration-200"
+                      >
+                        <option value={Priority.LOW}>Low</option>
+                        <option value={Priority.MEDIUM}>Medium</option>
+                        <option value={Priority.HIGH}>High</option>
+                        <option value={Priority.CRITICAL}>Critical</option>
+                      </select>
+                    ) : (
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${priorityColors[selectedWO.priority]}`}>
+                        {selectedWO.priority}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -369,12 +455,44 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
 
             {/* Footer */}
             <div className="p-4 border-t border-stone-200 bg-stone-50 sticky bottom-0 z-20">
-              <button
-                onClick={() => setSelectedWO(null)}
-                className="w-full px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-stone-700 text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200"
-              >
-                Close
-              </button>
+              <div className="flex gap-3">
+                {permissions?.canEdit && !isEditMode && (
+                  <button
+                    onClick={() => setIsEditMode(true)}
+                    className="flex-1 px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700 transition-all duration-200 flex items-center justify-center gap-2"
+                  >
+                    <Edit2 size={16} />
+                    Edit Work Order
+                  </button>
+                )}
+                {isEditMode && permissions?.canEdit && (
+                  <>
+                    <button
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className="flex-1 px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Save size={16} />
+                      {isSaving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      disabled={isSaving}
+                      className="flex-1 px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-stone-700 text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+                {!isEditMode && (
+                  <button
+                    onClick={() => setSelectedWO(null)}
+                    className="flex-1 px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-stone-700 text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200"
+                  >
+                    Close
+                  </button>
+                )}
+              </div>
             </div>
 
           </div>
