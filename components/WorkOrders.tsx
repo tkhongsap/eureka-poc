@@ -57,6 +57,16 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Get permissions for selected work order
+  const selectedWOPermissions = selectedWO && currentUser
+    ? getWorkOrderPermissions(
+        selectedWO.status,
+        currentUser.userRole,
+        selectedWO.assignedTo,
+        currentUser.name
+      )
+    : null;
+
   // Sync props to state
   useEffect(() => {
     setWorkOrders(initialWorkOrders);
@@ -195,6 +205,30 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
   // Drag and Drop Handlers
   const handleDragStart = (e: React.DragEvent, id: string) => {
+    if (!currentUser) {
+      e.preventDefault();
+      return;
+    }
+    
+    const wo = workOrders.find(w => w.id === id);
+    if (!wo) {
+      e.preventDefault();
+      return;
+    }
+    
+    // Check if user has permission to change status for this work order
+    const permissions = getWorkOrderPermissions(
+      wo.status,
+      currentUser.userRole,
+      wo.assignedTo,
+      currentUser.name
+    );
+    
+    if (!permissions.canChangeStatus) {
+      e.preventDefault();
+      return;
+    }
+    
     setDraggedWoId(id);
     e.dataTransfer.setData('text/plain', id);
     e.dataTransfer.effectAllowed = 'move';
@@ -382,26 +416,38 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
                                 {/* Cards Area */}
                                 <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
-                                    {columnWos.map(wo => (
+                                    {columnWos.map(wo => {
+                                        const woPermissions = currentUser ? getWorkOrderPermissions(
+                                          wo.status,
+                                          currentUser.userRole,
+                                          wo.assignedTo,
+                                          currentUser.name
+                                        ) : null;
+                                        const isDraggable = woPermissions?.canChangeStatus ?? false;
+                                        
+                                        return (
                                         <div
                                             key={wo.id}
-                                            draggable
+                                            draggable={isDraggable}
                                             onDragStart={(e) => handleDragStart(e, wo.id)}
                                             onClick={() => setSelectedWO(wo)}
-                                            className={`bg-white p-4 rounded-xl shadow-sm border border-stone-200/60 cursor-grab active:cursor-grabbing hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group relative
+                                            className={`bg-white p-4 rounded-xl shadow-sm border border-stone-200/60 ${isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group relative
                                                 ${draggedWoId === wo.id ? 'opacity-50 border-dashed border-stone-400' : ''}
                                                 ${currentUser?.name === wo.assignedTo ? 'border-l-4 border-l-teal-500' : ''}
+                                                ${!isDraggable ? 'opacity-75' : ''}
                                             `}
                                         >
                                             <div className="flex justify-between items-start mb-2">
                                                 <span className="text-xs font-mono text-stone-400">{wo.id}</span>
-                                                <button
-                                                    title="Drag to reorder"
-                                                    aria-label="Drag to reorder"
-                                                    className="text-stone-300 hover:text-stone-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <GripVertical size={14} />
-                                                </button>
+                                                {isDraggable && (
+                                                  <button
+                                                      title="Drag to change status"
+                                                      aria-label="Drag to change status"
+                                                      className="text-stone-300 hover:text-stone-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                  >
+                                                      <GripVertical size={14} />
+                                                  </button>
+                                                )}
                                             </div>
 
                                             <h4 className="font-medium text-stone-800 text-sm mb-3 leading-snug">{wo.title}</h4>
@@ -424,7 +470,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
+                                    )})}
                                     {columnWos.length === 0 && (
                                         <div className="h-24 border-2 border-dashed border-stone-200 rounded-xl flex items-center justify-center text-stone-400 text-xs italic">
                                             No orders
@@ -447,12 +493,29 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
             {/* Modal Header */}
             <div className="p-6 border-b border-stone-100 bg-white sticky top-0 z-20 flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2 flex-wrap">
                    <h2 className="font-serif text-xl text-stone-900">{selectedWO.id}: {selectedWO.title}</h2>
                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${statusColors[selectedWO.status]}`}>{selectedWO.status}</span>
+                   {selectedWOPermissions && (
+                     <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${
+                       selectedWOPermissions.canEdit 
+                         ? 'bg-green-50 text-green-700 border-green-200' 
+                         : 'bg-stone-100 text-stone-600 border-stone-200'
+                     }`}>
+                       {selectedWOPermissions.canEdit ? '✓ Editable' : '🔒 Read-only'}
+                     </span>
+                   )}
                 </div>
                 <p className="text-stone-500 text-sm">Created on {selectedWO.createdAt} • Due {selectedWO.dueDate}</p>
+                {selectedWO.assignedTo && (
+                  <p className="text-stone-600 text-sm mt-1">
+                    Assigned to: <span className="font-medium">{selectedWO.assignedTo}</span>
+                    {selectedWO.assignedTo === currentUser?.name && (
+                      <span className="ml-2 text-teal-600 font-medium">(You)</span>
+                    )}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => setSelectedWO(null)}
@@ -474,8 +537,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 </p>
               </div>
 
-              {/* Technician Inline Update (visible to assigned Technician) */}
-              {currentUser?.userRole === 'Technician' && selectedWO?.assignedTo === currentUser.name && selectedWO?.status !== Status.PENDING && selectedWO?.status !== Status.COMPLETED && (
+              {/* Technician Inline Update (visible to assigned Technician with edit permission) */}
+              {selectedWOPermissions?.canEdit && currentUser?.userRole === 'Technician' && selectedWO?.status === Status.IN_PROGRESS && (
                 <div className="bg-white border border-stone-200/60 rounded-2xl p-5">
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
                     <ImageIcon size={16} className="text-teal-600" /> Technician Update
@@ -483,19 +546,38 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-stone-700 mb-1.5">Notes</label>
-                    <textarea value={technicianNotes} onChange={(e) => setTechnicianNotes(e.target.value)} rows={4} className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-stone-50" />
+                    <textarea 
+                      value={technicianNotes} 
+                      onChange={(e) => setTechnicianNotes(e.target.value)} 
+                      rows={4} 
+                      className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-stone-50" 
+                      disabled={!selectedWOPermissions?.canEdit}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-stone-700 mb-2">Add Images</label>
                     <div className="flex items-center gap-3 mb-3">
-                      <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm hover:bg-stone-100 transition-colors duration-200">
+                      <label className={`inline-flex items-center gap-2 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm transition-colors duration-200 ${selectedWOPermissions?.canEdit ? 'cursor-pointer hover:bg-stone-100' : 'opacity-50 cursor-not-allowed'}`}>
                         <Upload size={16} />
                         <span>{isUploading ? 'Uploading...' : 'Select images'}</span>
-                        <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          multiple 
+                          onChange={handleImageUpload} 
+                          className="hidden" 
+                          disabled={!selectedWOPermissions?.canEdit || isUploading}
+                        />
                       </label>
                       {isUploading && <span className="text-sm text-stone-500">Uploading...</span>}
-                      <button onClick={() => { setTechnicianImages([]); }} className="text-sm text-stone-500 hover:text-stone-700 transition-colors">Clear</button>
+                      <button 
+                        onClick={() => { setTechnicianImages([]); }} 
+                        className="text-sm text-stone-500 hover:text-stone-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!selectedWOPermissions?.canEdit}
+                      >
+                        Clear
+                      </button>
                     </div>
 
                     {technicianImages.length > 0 && (
@@ -710,27 +792,42 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                  Close
                </button>
                {(() => {
-                 // Technicians should not see Save & Update when the WO is Pending or Completed
+                 // Show save button only if user has edit permission
+                 if (!selectedWOPermissions?.canEdit) {
+                   return null;
+                 }
+
+                 // Technicians: show Save & Update when they can edit (In Progress and assigned)
                  if (currentUser?.userRole === 'Technician') {
-                   if (selectedWO?.assignedTo === currentUser.name && selectedWO?.status !== Status.PENDING && selectedWO?.status !== Status.COMPLETED) {
+                   if (selectedWO?.status === Status.IN_PROGRESS) {
                      return (
-                       <button onClick={submitTechnicianUpdate} disabled={isSubmitting} className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
-                         <span>{isSubmitting ? 'Saving...' : 'Save & Update'}</span>
+                       <button 
+                         onClick={submitTechnicianUpdate} 
+                         disabled={isSubmitting || !selectedWOPermissions.canEdit} 
+                         className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                       >
+                         <span>{isSubmitting ? 'Saving...' : 'Complete & Submit'}</span>
                          <ArrowRight size={16} />
                        </button>
                      );
                    }
-                   // otherwise show nothing for technicians
                    return null;
                  }
 
-                 // Non-technician users still see the Save & Update button
-                 return (
-                   <button className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
-                     <span>Save & Update</span>
-                     <ArrowRight size={16} />
-                   </button>
-                 );
+                 // Admin/Requester: show Save & Update button if they can edit
+                 if (selectedWOPermissions.canEdit) {
+                   return (
+                     <button 
+                       className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
+                       disabled={!selectedWOPermissions.canEdit}
+                     >
+                       <span>Save & Update</span>
+                       <ArrowRight size={16} />
+                     </button>
+                   );
+                 }
+                 
+                 return null;
                })()}
             </div>
 
