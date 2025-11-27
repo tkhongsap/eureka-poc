@@ -10,7 +10,8 @@ export enum Status {
   IN_PROGRESS = 'In Progress',
   PENDING = 'Pending',
   COMPLETED = 'Completed',
-  CLOSED = 'Closed'
+  CLOSED = 'Closed',
+  CANCELED = 'Canceled'
 }
 
 export type UserRole = 'Admin' | 'Technician' | 'Requester';
@@ -46,6 +47,7 @@ export interface WorkOrder {
   requestId?: string;   // Original request ID if created from request
   technicianNotes?: string;  // Notes added by technician
   technicianImages?: string[];  // Images added by technician
+  adminReview?: string; // Review/approval notes by admin
 }
 
 export interface Asset {
@@ -90,4 +92,27 @@ export interface TeamMember {
   currentTask?: string; // WO ID
   skills: string[];
   avatarUrl: string;
+}
+
+// Work Order Workflow Types
+export interface WorkOrderStatusTransition {
+  from: Status;
+  to: Status;
+  allowedRoles: UserRole[];
+}
+
+export interface WorkOrderPermissions {
+  canEdit: boolean;
+  canChangeStatus: boolean;
+  canAssign: boolean;
+  canDelete: boolean;
+  canView: boolean;
+}
+
+export interface WorkOrderNotification {
+  type: 'created' | 'assigned' | 'updated' | 'completed' | 'rejected' | 'closed';
+  workOrderId: string;
+  recipients: UserRole[];
+  message: string;
+  timestamp: string;
 }

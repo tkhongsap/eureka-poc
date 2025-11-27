@@ -20,6 +20,35 @@ const getBackendUrl = () => {
 
 const API_BASE_URL = getBackendUrl();
 
+// User context for API calls
+let currentUserRole: string | null = null;
+let currentUserName: string | null = null;
+
+export const setUserContext = (role: string, name: string) => {
+  currentUserRole = role;
+  currentUserName = name;
+};
+
+export const getUserContext = () => ({
+  role: currentUserRole,
+  name: currentUserName
+});
+
+const getAuthHeaders = (): Record<string, string> => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (currentUserRole) {
+    headers['X-User-Role'] = currentUserRole;
+  }
+  if (currentUserName) {
+    headers['X-User-Name'] = currentUserName;
+  }
+  
+  return headers;
+};
+
 // --- Image API ---
 export interface ImageInfo {
   id: string;
@@ -155,6 +184,7 @@ export interface WorkOrderItem {
   technicianNotes?: string;
   technicianImages?: string[];
   partsUsed?: { id: string; name: string; quantity: number }[];
+  adminReview?: string;
 }
 
 export interface CreateWorkOrderData {
@@ -222,9 +252,7 @@ export const getWorkOrder = async (woId: string): Promise<WorkOrderItem> => {
 export const updateWorkOrder = async (woId: string, updates: Partial<WorkOrderItem>): Promise<WorkOrderItem> => {
   const response = await fetch(`${API_BASE_URL}/workorders/${woId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(updates),
   });
 
@@ -250,17 +278,71 @@ export interface TechnicianUpdateData {
   technicianImages?: string[];
 }
 
-export const technicianUpdateWorkOrder = async (woId: string, data: TechnicianUpdateData): Promise<WorkOrderItem> => {
+export const technicianUpdateWorkOrder = async (
+  woId: string,
+  data: TechnicianUpdateData,
+  userRole?: string,
+  userName?: string
+): Promise<WorkOrderItem> => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (userRole) headers['X-User-Role'] = userRole;
+  if (userName) headers['X-User-Name'] = userName;
+
   const response = await fetch(`${API_BASE_URL}/workorders/${woId}/technician-update`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
     throw new Error('Failed to update work order as technician');
+  }
+
+  return response.json();
+};
+
+// --- Admin Review API ---
+export const adminApproveWorkOrder = async (woId: string): Promise<WorkOrderItem> => {
+  const response = await fetch(`${API_BASE_URL}/workorders/${woId}/approve`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to approve work order');
+  }
+
+  return response.json();
+};
+
+export interface AdminRejectData {
+  rejectionReason: string;
+}
+
+export const adminRejectWorkOrder = async (woId: string, data: AdminRejectData): Promise<WorkOrderItem> => {
+  const response = await fetch(`${API_BASE_URL}/workorders/${woId}/reject`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to reject work order');
+  }
+
+  return response.json();
+};
+
+export const adminCloseWorkOrder = async (woId: string): Promise<WorkOrderItem> => {
+  const response = await fetch(`${API_BASE_URL}/workorders/${woId}/close`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to close work order');
   }
 
   return response.json();
