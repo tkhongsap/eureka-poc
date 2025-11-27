@@ -114,12 +114,12 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
       {/* Bell Icon Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-xl hover:bg-stone-100 transition-colors duration-200"
+        className="relative p-2 rounded-xl hover:bg-stone-100 transition-all duration-200 hover:scale-105 active:scale-95"
         title="Notifications"
       >
         <Bell size={20} className="text-stone-600" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+          <span className="notification-badge">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -130,19 +130,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 animate-fade-in"
             onClick={() => setIsOpen(false)}
           />
 
           {/* Notification Panel */}
-          <div className="absolute right-0 mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-stone-200 z-50 max-h-[32rem] flex flex-col">
+          <div className="absolute right-0 mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-stone-200 z-50 max-h-[32rem] flex flex-col animate-scale-in overflow-hidden">
             {/* Header */}
-            <div className="p-4 border-b border-stone-200 flex items-center justify-between">
+            <div className="p-4 border-b border-stone-200 flex items-center justify-between bg-gradient-to-r from-teal-50 to-blue-50">
               <div className="flex items-center gap-2">
-                <Bell size={18} className="text-stone-700" />
+                <Bell size={18} className="text-teal-700" />
                 <h3 className="font-semibold text-stone-900">Notifications</h3>
                 {unreadCount > 0 && (
-                  <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
                     {unreadCount}
                   </span>
                 )}
@@ -151,42 +151,46 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 <button
                   onClick={handleMarkAllAsRead}
                   disabled={isProcessing}
-                  className="text-xs text-teal-600 hover:text-teal-700 font-medium transition-colors disabled:opacity-50"
+                  className="text-xs text-teal-600 hover:text-teal-700 font-medium transition-colors disabled:opacity-50 px-3 py-1.5 hover:bg-white/50 rounded-lg"
                 >
-                  Mark all read
+                  {isProcessing ? 'Marking...' : 'Mark all read'}
                 </button>
               )}
             </div>
 
             {/* Notification List */}
-            <div className="overflow-y-auto flex-1">
+            <div className="overflow-y-auto flex-1 custom-scrollbar">
               {notifications.length === 0 ? (
-                <div className="p-8 text-center">
-                  <Bell size={48} className="text-stone-300 mx-auto mb-3" />
-                  <p className="text-stone-500 text-sm">No notifications</p>
+                <div className="p-12 text-center animate-fade-in">
+                  <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-stone-200 border-dashed">
+                    <Bell size={32} className="text-stone-300" />
+                  </div>
+                  <p className="text-stone-600 font-medium mb-1">All caught up!</p>
+                  <p className="text-stone-400 text-sm">No new notifications</p>
                 </div>
               ) : (
                 <div className="divide-y divide-stone-100">
-                  {notifications.map((notification) => (
+                  {notifications.map((notification, index) => (
                     <div
                       key={notification.id}
-                      className={`p-4 hover:bg-stone-50 transition-colors cursor-pointer relative ${
-                        !notification.isRead ? 'bg-blue-50/30' : ''
+                      className={`p-4 hover:bg-stone-50 transition-all duration-200 cursor-pointer relative group ${
+                        !notification.isRead ? 'bg-blue-50/40' : ''
                       }`}
+                      style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <div className="flex gap-3">
                         {/* Icon */}
-                        <div className={`w-8 h-8 rounded-lg border flex items-center justify-center flex-shrink-0 ${getNotificationColor(notification.type)}`}>
+                        <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 ${getNotificationColor(notification.type)}`}>
                           {getNotificationIcon(notification.type)}
                         </div>
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-stone-900 leading-relaxed">
+                          <p className="text-sm text-stone-900 leading-relaxed font-medium">
                             {notification.message}
                           </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <p className="text-xs text-stone-500">
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <p className="text-xs text-stone-500 font-medium">
                               {formatTimestamp(notification.createdAt)}
                             </p>
                             {notification.triggeredBy && (
@@ -201,12 +205,12 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-start gap-1 flex-shrink-0">
+                        <div className="flex items-start gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           {!notification.isRead && (
                             <button
                               onClick={(e) => handleMarkAsRead(notification.id, e)}
                               disabled={isProcessing}
-                              className="p-1.5 rounded-lg hover:bg-teal-100 text-teal-600 transition-colors disabled:opacity-50"
+                              className="p-1.5 rounded-lg hover:bg-teal-100 text-teal-600 transition-all hover:scale-110 disabled:opacity-50"
                               title="Mark as read"
                             >
                               <Check size={14} />
@@ -215,7 +219,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                           <button
                             onClick={(e) => handleDelete(notification.id, e)}
                             disabled={isProcessing}
-                            className="p-1.5 rounded-lg hover:bg-red-100 text-red-600 transition-colors disabled:opacity-50"
+                            className="p-1.5 rounded-lg hover:bg-red-100 text-red-600 transition-all hover:scale-110 disabled:opacity-50"
                             title="Delete"
                           >
                             <X size={14} />
@@ -225,7 +229,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
                       {/* Unread Indicator */}
                       {!notification.isRead && (
-                        <div className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                        <div className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 bg-blue-600 rounded-full shadow-sm animate-pulse-ring" />
                       )}
                     </div>
                   ))}
