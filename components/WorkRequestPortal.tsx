@@ -212,16 +212,16 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-8 pb-16 animate-fade-in grid grid-cols-1 lg:grid-cols-3 gap-8">
-       
+    <div className="max-w-5xl mx-auto p-8 pb-16 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
        {/* Success Toast Notification */}
        {showSuccessToast && (
-         <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
-           <div className="bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3">
+         <div className="fixed bottom-8 right-8 z-50">
+           <div className="bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
              <CheckCircle size={24} className="flex-shrink-0" />
              <div>
-               <p className="font-bold">ส่งคำขอสำเร็จ!</p>
-               <p className="text-sm text-green-50">Request submitted successfully</p>
+               <p className="font-semibold">Request Submitted!</p>
+               <p className="text-sm text-emerald-50">Your request is being processed</p>
              </div>
            </div>
          </div>
@@ -230,34 +230,34 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
        {/* Left Column: Form */}
        <div className="md:col-span-2 space-y-8">
             <div className="mb-6">
-                <h2 className="text-3xl font-bold text-slate-800">Submit a Request</h2>
-                <p className="text-slate-500 mt-2">Describe the issue and we'll assign a technician.</p>
+                <h2 className="font-serif text-3xl text-stone-900">Submit a Request</h2>
+                <p className="text-stone-500 mt-2">Describe the issue and we'll assign a technician.</p>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-slate-100">
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-stone-200/60">
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Location / Asset</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">Location / Asset</label>
                         <div className="relative">
-                            <MapPin className="absolute left-3 top-3 text-slate-400" size={18} />
-                            <input 
-                              type="text" 
+                            <MapPin className="absolute left-3.5 top-3.5 text-stone-400" size={18} />
+                            <input
+                              type="text"
                               value={location}
                               onChange={(e) => setLocation(e.target.value)}
-                              placeholder="e.g. Line 1 Conveyor" 
-                              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all" 
+                              placeholder="e.g. Line 1 Conveyor"
+                              className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                             />
                         </div>
                         </div>
                         <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Priority</label>
-                        <select 
+                        <label className="block text-sm font-medium text-stone-700 mb-2">Priority</label>
+                        <select
                           value={priority}
                           onChange={(e) => setPriority(e.target.value)}
                           title="Select priority level"
                           aria-label="Priority"
-                          className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                          className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                         >
                             <option>Low - Cosmetic issue</option>
                             <option>Medium - Affects performance</option>
@@ -270,21 +270,21 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                     {/* Assign Technician - Only visible for Admin and Technician */}
                     {canAssign && (
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <label className="block text-sm font-medium text-stone-700 mb-2">
                           Assign Technician
                           {currentUser?.userRole === 'Technician' && (
-                            <span className="text-xs text-slate-400 ml-2">(Auto-assigned to you)</span>
+                            <span className="text-xs text-stone-400 ml-2">(Auto-assigned to you)</span>
                           )}
                         </label>
                         <div className="relative">
-                          <UserCheck className="absolute left-3 top-3 text-slate-400" size={18} />
+                          <UserCheck className="absolute left-3.5 top-3.5 text-stone-400" size={18} />
                           {currentUser?.userRole === 'Admin' ? (
                             <select
                               value={assignedTo}
                               onChange={(e) => setAssignedTo(e.target.value)}
                               title="Assign technician"
                               aria-label="Assign technician"
-                              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                              className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                             >
                               <option value="">-- Select Technician --</option>
                               {technicians.map(tech => (
@@ -298,7 +298,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                               readOnly
                               title="Assigned technician"
                               aria-label="Assigned technician"
-                              className="w-full pl-10 pr-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 cursor-not-allowed"
+                              className="w-full pl-10 pr-4 py-3 bg-stone-100 border border-stone-200 rounded-xl text-stone-600 cursor-not-allowed"
                             />
                           )}
                         </div>
@@ -306,18 +306,18 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Issue Description</label>
-                        <textarea 
-                          rows={4} 
+                        <label className="block text-sm font-medium text-stone-700 mb-2">Issue Description</label>
+                        <textarea
+                          rows={4}
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
-                          placeholder="Describe what happened, any strange noises, etc." 
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"
+                          placeholder="Describe what happened, any strange noises, etc."
+                          className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200 resize-none"
                         ></textarea>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Photos / Videos</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">Photos / Videos</label>
                         <input
                           type="file"
                           ref={fileInputRef}
@@ -328,13 +328,13 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                           aria-label="Upload photos or videos"
                           className="hidden"
                         />
-                        
+
                         {/* Image Previews */}
                         {tempImages.length > 0 && (
                           <div className="flex flex-wrap gap-3 mb-4">
                             {tempImages.map((img, idx) => (
                               <div key={idx} className="relative group">
-                                <img src={img.preview} alt={`Upload ${idx + 1}`} className="w-20 h-20 object-cover rounded-lg border border-slate-200" />
+                                <img src={img.preview} alt={`Upload ${idx + 1}`} className="w-20 h-20 object-cover rounded-xl border border-stone-200" />
                                 <button
                                   type="button"
                                   onClick={() => removeImage(idx)}
@@ -349,23 +349,23 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                           </div>
                         )}
 
-                        <div 
+                        <div
                           onClick={() => fileInputRef.current?.click()}
-                          className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:bg-slate-50 transition-colors cursor-pointer group"
+                          className="border-2 border-dashed border-stone-300 rounded-2xl p-8 text-center hover:bg-stone-50 transition-colors duration-200 cursor-pointer group"
                         >
-                          <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-brand-50 group-hover:text-brand-500 transition-colors">
+                          <div className="w-12 h-12 bg-stone-100 text-stone-400 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-50 group-hover:text-teal-500 transition-colors duration-200">
                             <Camera size={24} />
                           </div>
-                          <p className="text-sm text-slate-600 font-medium">Click to upload or drag & drop</p>
-                          <p className="text-xs text-slate-400 mt-1">JPG, PNG, MP4 up to 50MB</p>
+                          <p className="text-sm text-stone-600 font-medium">Click to upload or drag & drop</p>
+                          <p className="text-xs text-stone-400 mt-1">JPG, PNG, MP4 up to 50MB</p>
                         </div>
                     </div>
 
                     <div className="pt-4">
-                        <button 
-                          type="submit" 
+                        <button
+                          type="submit"
                           disabled={!location.trim() || !description.trim() || isLoading}
-                          className="w-full bg-brand-600 hover:bg-brand-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-200 transition-all flex items-center justify-center gap-2"
+                          className="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-teal-600/25 hover:shadow-xl hover:shadow-teal-600/30 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
                         >
                           <Send size={20} />
                           {isLoading ? 'Submitting...' : 'Submit Request'}
@@ -373,60 +373,60 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                     </div>
                 </form>
             </div>
-            
-            <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start gap-3">
-                <AlertCircle className="text-blue-600 mt-0.5" size={20} />
+
+            <div className="bg-teal-50 border border-teal-100 p-4 rounded-2xl flex items-start gap-3">
+                <AlertCircle className="text-teal-600 mt-0.5" size={20} />
                 <div>
-                    <h4 className="font-bold text-blue-900 text-sm">Need immediate assistance?</h4>
-                    <p className="text-sm text-blue-700 mt-1">For safety emergencies, please call the EOC hotline at <span className="font-mono font-bold">555-0199</span> immediately.</p>
+                    <h4 className="font-semibold text-teal-900 text-sm">Need immediate assistance?</h4>
+                    <p className="text-sm text-teal-700 mt-1">For safety emergencies, please call the EOC hotline at <span className="font-mono font-bold">555-0199</span> immediately.</p>
                 </div>
             </div>
        </div>
 
        {/* Right Column: History */}
        <div className="md:col-span-1">
-            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <History size={20} className="text-slate-400" /> My Recent Requests
+            <h3 className="font-semibold text-stone-800 mb-4 flex items-center gap-2">
+                <History size={20} className="text-stone-400" /> My Recent Requests
             </h3>
             <div className="space-y-4">
                 {requests.map(req => (
-                    <div 
-                      key={req.id} 
+                    <div
+                      key={req.id}
                       onClick={() => setSelectedRequest(req)}
-                      className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      className="bg-white p-4 rounded-2xl border border-stone-200/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
                     >
                         <div className="flex justify-between items-start mb-2">
-                            <span className="text-xs font-mono text-slate-400">{req.id}</span>
+                            <span className="text-xs font-mono text-stone-400">{req.id}</span>
                             <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
-                              req.status === 'Completed' ? 'bg-green-100 text-green-700' : 
-                              req.status === 'In Progress' ? 'bg-blue-100 text-blue-700' : 
-                              'bg-yellow-100 text-yellow-700'
+                              req.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                              req.status === 'In Progress' ? 'bg-teal-50 text-teal-700' :
+                              'bg-amber-50 text-amber-700'
                             }`}>
                                 {req.status}
                             </span>
                         </div>
-                        <p className="text-sm font-medium text-slate-800 mb-1">{req.desc}</p>
-                        <p className="text-xs text-slate-500 mb-2">📍 {req.location} • Priority: {req.priority}</p>
+                        <p className="text-sm font-medium text-stone-800 mb-1">{req.desc}</p>
+                        <p className="text-xs text-stone-500 mb-2">📍 {req.location} • Priority: {req.priority}</p>
                         {req.assignedTo && (
-                          <div className="flex items-center gap-1 text-xs text-brand-600 mb-2">
+                          <div className="flex items-center gap-1 text-xs text-teal-600 mb-2">
                             <UserCheck size={12} />
                             <span>{req.assignedTo}</span>
                           </div>
                         )}
                         {req.imageIds.length > 0 && (
-                          <div className="flex items-center gap-1 text-xs text-slate-400 mb-2">
+                          <div className="flex items-center gap-1 text-xs text-stone-400 mb-2">
                             <ImageIcon size={12} />
                             <span>{req.imageIds.length} image(s)</span>
                           </div>
                         )}
-                        <div className="flex items-center gap-2 text-xs text-slate-500 pt-2 border-t border-slate-50">
-                            {req.status === 'Completed' ? <CheckCircle size={14} className="text-green-500" /> : <Clock size={14} className="text-blue-500" />}
+                        <div className="flex items-center gap-2 text-xs text-stone-500 pt-2 border-t border-stone-100">
+                            {req.status === 'Completed' ? <CheckCircle size={14} className="text-emerald-500" /> : <Clock size={14} className="text-teal-500" />}
                             <span>{req.date}</span>
                         </div>
                     </div>
                 ))}
-                
-                <button className="w-full py-2 text-sm text-slate-500 hover:text-brand-600 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition-all">
+
+                <button className="w-full py-2.5 text-sm text-stone-500 hover:text-teal-600 hover:bg-stone-50 rounded-xl border border-transparent hover:border-stone-200 transition-all duration-200">
                     View All History
                 </button>
             </div>
@@ -436,74 +436,74 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
        {selectedRequest && (
          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSelectedRequest(null)}></div>
-           <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto animate-fade-in">
-             <div className="p-6 border-b border-slate-100 flex justify-between items-start sticky top-0 bg-white z-10">
+           <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto">
+             <div className="p-6 border-b border-stone-100 flex justify-between items-start sticky top-0 bg-white z-10 rounded-t-2xl">
                <div>
                  <div className="flex items-center gap-2 mb-1">
-                   <h3 className="text-lg font-bold text-slate-800">{selectedRequest.id}</h3>
+                   <h3 className="font-serif text-lg text-stone-900">{selectedRequest.id}</h3>
                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
-                     selectedRequest.status === 'Completed' ? 'bg-green-100 text-green-700' : 
-                     selectedRequest.status === 'In Progress' ? 'bg-blue-100 text-blue-700' : 
-                     'bg-yellow-100 text-yellow-700'
+                     selectedRequest.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                     selectedRequest.status === 'In Progress' ? 'bg-teal-50 text-teal-700' :
+                     'bg-amber-50 text-amber-700'
                    }`}>
                      {selectedRequest.status}
                    </span>
                  </div>
-                 <p className="text-sm text-slate-500">{selectedRequest.date}</p>
+                 <p className="text-sm text-stone-500">{selectedRequest.date}</p>
                </div>
-               <button 
-                 onClick={() => setSelectedRequest(null)} 
+               <button
+                 onClick={() => setSelectedRequest(null)}
                  title="Close dialog"
                  aria-label="Close dialog"
-                 className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+                 className="p-2 hover:bg-stone-100 rounded-xl text-stone-400 hover:text-stone-600 transition-colors duration-200"
                >
                  <X size={20} />
                </button>
              </div>
-             
+
              <div className="p-6 space-y-4">
                <div>
-                 <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Location</label>
-                 <p className="text-slate-800">{selectedRequest.location}</p>
+                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Location</label>
+                 <p className="text-stone-800">{selectedRequest.location}</p>
                </div>
-               
+
                <div>
-                 <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Priority</label>
-                 <span className={`text-xs font-bold px-2 py-1 rounded ${
-                   selectedRequest.priority === 'Critical' ? 'bg-red-100 text-red-700' :
-                   selectedRequest.priority === 'High' ? 'bg-orange-100 text-orange-700' :
-                   selectedRequest.priority === 'Medium' ? 'bg-blue-100 text-blue-700' :
-                   'bg-slate-100 text-slate-700'
+                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Priority</label>
+                 <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
+                   selectedRequest.priority === 'Critical' ? 'bg-red-50 text-red-700' :
+                   selectedRequest.priority === 'High' ? 'bg-orange-50 text-orange-700' :
+                   selectedRequest.priority === 'Medium' ? 'bg-teal-50 text-teal-700' :
+                   'bg-stone-100 text-stone-700'
                  }`}>
                    {selectedRequest.priority}
                  </span>
                </div>
-               
+
                <div>
-                 <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Description</label>
-                 <p className="text-slate-800 bg-slate-50 p-3 rounded-lg">{selectedRequest.desc}</p>
+                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Description</label>
+                 <p className="text-stone-800 bg-stone-50 p-4 rounded-xl">{selectedRequest.desc}</p>
                </div>
 
                {selectedRequest.assignedTo && (
                  <div>
-                   <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Assigned To</label>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Assigned To</label>
                    <div className="flex items-center gap-2">
-                     <UserCheck size={16} className="text-brand-500" />
-                     <span className="text-slate-800 font-medium">{selectedRequest.assignedTo}</span>
+                     <UserCheck size={16} className="text-teal-500" />
+                     <span className="text-stone-800 font-medium">{selectedRequest.assignedTo}</span>
                    </div>
                  </div>
                )}
-               
+
                {selectedRequestImages.length > 0 && (
                  <div>
-                   <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Attached Images</label>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">Attached Images</label>
                    <div className="grid grid-cols-2 gap-3">
                      {selectedRequestImages.map((imgUrl, idx) => (
-                       <img 
-                         key={idx} 
-                         src={imgUrl} 
-                         alt={`Attachment ${idx + 1}`} 
-                         className="w-full h-32 object-cover rounded-lg border border-slate-200"
+                       <img
+                         key={idx}
+                         src={imgUrl}
+                         alt={`Attachment ${idx + 1}`}
+                         className="w-full h-32 object-cover rounded-xl border border-stone-200"
                        />
                      ))}
                    </div>
@@ -511,10 +511,10 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                )}
              </div>
 
-             <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
-               <button 
+             <div className="p-4 border-t border-stone-100 bg-stone-50 rounded-b-2xl">
+               <button
                  onClick={() => setSelectedRequest(null)}
-                 className="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg transition-colors"
+                 className="w-full py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-700 font-medium rounded-xl transition-colors duration-200"
                >
                  Close
                </button>

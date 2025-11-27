@@ -45,9 +45,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
   const filteredItems = allMenuItems.filter(item => item.roles.includes(userRole));
 
   return (
-    <div className="w-64 bg-slate-900 text-white flex flex-col h-screen fixed left-0 top-0 shadow-xl z-20 transition-all duration-300">
-      <div className="p-6 border-b border-slate-700 flex items-center space-x-3">
-        <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
+    <div className="w-64 bg-stone-900 text-white flex flex-col h-screen fixed left-0 top-0 shadow-xl z-20 transition-all duration-300">
+      <div className="p-6 border-b border-stone-700 flex items-center space-x-3">
+        <div className="w-9 h-9 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-teal-600/20">
           <Factory size={20} className="text-white" />
         </div>
         <span className="text-xl font-bold tracking-tight">Eureka CMMS</span>
@@ -61,10 +61,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
             <button
               key={item.id}
               onClick={() => onChangeView(item.id)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                isActive 
-                  ? 'bg-brand-600 text-white shadow-md transform scale-[1.02]' 
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                isActive
+                  ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20'
+                  : 'text-stone-400 hover:bg-stone-800 hover:text-white'
               }`}
             >
               <Icon size={20} />
@@ -74,12 +74,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-700">
+      <div className="p-4 border-t border-stone-700">
         {/* Role Switcher */}
         <div className="relative mb-2">
-          <button 
+          <button
             onClick={() => setIsRoleSwitcherOpen(!isRoleSwitcherOpen)}
-            className="flex items-center justify-between w-full px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors"
+            className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-stone-300 hover:bg-stone-800 transition-all duration-200"
           >
             <div className="flex items-center space-x-3">
               <UserCircle2 size={20} />
@@ -89,8 +89,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
           </button>
           
           {isRoleSwitcherOpen && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden shadow-xl">
-              <div className="p-2 bg-slate-850 border-b border-slate-700 text-xs font-bold text-slate-400 uppercase px-3">
+            <div className="absolute bottom-full left-0 right-0 mb-2 bg-stone-800 rounded-xl border border-stone-700 overflow-hidden shadow-xl">
+              <div className="p-2 bg-stone-800/80 border-b border-stone-700 text-xs font-bold text-stone-400 uppercase px-3">
                 Switch Role
               </div>
               <div className="p-1">
@@ -98,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
                   <button
                     key={u.userRole}
                     onClick={() => { onSwitchUser(u); setIsRoleSwitcherOpen(false); }}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${currentUser.userRole === u.userRole ? 'bg-brand-600 text-white' : 'hover:bg-slate-700 text-slate-300'}`}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 ${currentUser.userRole === u.userRole ? 'bg-teal-600 text-white' : 'hover:bg-stone-700 text-stone-300'}`}
                   >
                     <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-500/20 text-purple-400' : u.userRole === 'Technician' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
                       {u.userRole === 'Admin' ? <ShieldCheck size={14} /> : u.userRole === 'Technician' ? <HardHat size={14} /> : <ClipboardList size={14} />}
@@ -115,11 +115,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
         </div>
 
         {/* Sign Out Button */}
-        <button onClick={onLogout} className="flex items-center space-x-3 text-slate-400 hover:text-red-400 hover:bg-slate-800 w-full px-4 py-3 rounded-lg transition-colors">
+        <button onClick={onLogout} className="flex items-center space-x-3 text-stone-400 hover:text-red-400 hover:bg-stone-800 w-full px-4 py-3 rounded-xl transition-all duration-200">
           <LogOut size={20} />
           <span className="font-medium text-sm">Sign Out</span>
         </button>
-        <div className="mt-4 px-4 text-xs text-slate-500 text-center">
+        <div className="mt-4 px-4 text-xs text-stone-500 text-center">
           v2.5.0 • Tenant: Acme Corp
         </div>
       </div>
