@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 
-from routes import images_router, requests_router, workorders_router
+from routes import images_router, requests_router, workorders_router, notifications_router
 from utils import PICTURES_DIR
 
 app = FastAPI(
@@ -25,6 +25,7 @@ app.add_middleware(
 app.include_router(images_router)
 app.include_router(requests_router)
 app.include_router(workorders_router)
+app.include_router(notifications_router)
 
 
 # Health Check
