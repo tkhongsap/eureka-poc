@@ -286,6 +286,51 @@ export const technicianUpdateWorkOrder = async (
   return response.json();
 };
 
+// --- Admin Review API ---
+export const adminApproveWorkOrder = async (woId: string): Promise<WorkOrderItem> => {
+  const response = await fetch(`${API_BASE_URL}/workorders/${woId}/approve`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to approve work order');
+  }
+
+  return response.json();
+};
+
+export interface AdminRejectData {
+  rejectionReason: string;
+}
+
+export const adminRejectWorkOrder = async (woId: string, data: AdminRejectData): Promise<WorkOrderItem> => {
+  const response = await fetch(`${API_BASE_URL}/workorders/${woId}/reject`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to reject work order');
+  }
+
+  return response.json();
+};
+
+export const adminCloseWorkOrder = async (woId: string): Promise<WorkOrderItem> => {
+  const response = await fetch(`${API_BASE_URL}/workorders/${woId}/close`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to close work order');
+  }
+
+  return response.json();
+};
+
 // --- Health Check ---
 export const checkHealth = async (): Promise<boolean> => {
   try {

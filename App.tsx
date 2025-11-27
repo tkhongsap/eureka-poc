@@ -270,12 +270,13 @@ const App: React.FC = () => {
       case 'dashboard':
         return <Dashboard />;
       case 'work-orders':
-        return <WorkOrders workOrders={workOrders} currentUser={currentUser} />;
+        return <WorkOrders workOrders={workOrders} currentUser={currentUser} technicians={TECHNICIANS} />;
       case 'requests':
         return <WorkRequestPortal 
           onSubmitRequest={handleNewRequest} 
           currentUser={currentUser}
           technicians={TECHNICIANS}
+          workOrders={workOrders}
         />;
       case 'assets':
         return <AssetHierarchy />;
@@ -310,6 +311,7 @@ const App: React.FC = () => {
              onSubmitRequest={handleNewRequest} 
              currentUser={currentUser}
              technicians={TECHNICIANS}
+             workOrders={workOrders}
            />
         </main>
       </div>
