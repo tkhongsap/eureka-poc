@@ -11,7 +11,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificationsUpdate = () => {} }) => {
   return (
-    <header className="h-16 bg-white/80 backdrop-blur-md border-b border-stone-200/60 flex items-center justify-between px-6 fixed top-0 right-0 left-64 z-10">
+    <header className="h-16 bg-white/80 backdrop-blur-md border-b border-stone-200/60 flex items-center justify-between px-6 fixed top-0 right-0 left-64 z-[9]">
       {/* Search */}
       <div className="flex items-center w-96 relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-400" size={18} />

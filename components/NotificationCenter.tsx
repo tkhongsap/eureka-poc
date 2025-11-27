@@ -133,9 +133,14 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
       {/* Dropdown Panel */}
       {isOpen && (
         <>
+          {/* Backdrop to close on outside click */}
+          <div
+            className="fixed inset-0 z-[999998]"
+            onClick={() => setIsOpen(false)}
+          />
           {/* Notification Panel */}
           <div 
-            className="fixed top-20 right-12 w-96 bg-white rounded-2xl shadow-2xl border border-stone-200 z-[99999] max-h-[calc(100vh-7rem)] flex flex-col overflow-hidden"
+            className="fixed top-20 right-12 w-96 bg-white rounded-2xl shadow-2xl border border-stone-200 z-[999999] max-h-[calc(100vh-7rem)] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -239,11 +244,6 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
               )}
             </div>
           </div>
-          {/* Backdrop to close on outside click */}
-          <div
-            className="fixed inset-0 z-[99998]"
-            onClick={() => setIsOpen(false)}
-          />
         </>
       )}
     </div>
