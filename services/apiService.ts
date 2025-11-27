@@ -186,8 +186,25 @@ export const createWorkOrder = async (data: CreateWorkOrderData): Promise<WorkOr
   return response.json();
 };
 
-export const listWorkOrders = async (): Promise<WorkOrderItem[]> => {
-  const response = await fetch(`${API_BASE_URL}/workorders`);
+export interface WorkOrderQuery {
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  assignedTo?: string;
+  priority?: string;
+}
+
+export const listWorkOrders = async (query?: WorkOrderQuery): Promise<WorkOrderItem[]> => {
+  const params = new URLSearchParams();
+  if (query?.search) params.append('search', query.search);
+  if (query?.startDate) params.append('startDate', query.startDate);
+  if (query?.endDate) params.append('endDate', query.endDate);
+  if (query?.assignedTo) params.append('assignedTo', query.assignedTo);
+
+  const qs = params.toString();
+  const url = qs ? `${API_BASE_URL}/workorders?${qs}` : `${API_BASE_URL}/workorders`;
+
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Failed to list work orders');
   }
