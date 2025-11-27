@@ -156,7 +156,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 8.11 Create database migration files for all tables
   - [x] 8.12 Define indexes for performance optimization
 
-- [ ] 9.0 Type Definitions (Backend)
+- [x] 9.0 Type Definitions (Backend)
   - [x] 9.1 Create User type with all role enums
   - [x] 9.2 Create Tenant type with configuration options
   - [x] 9.3 Create Site type with location data
@@ -165,7 +165,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 9.6 Create InventoryPart type
   - [x] 9.7 Create PMSchedule type
   - [x] 9.8 Create WorkNotification type
-  - [ ] 9.9 Create API response wrapper types
+  - [x] 9.9 Create API response wrapper types
 
 - [ ] 10.0 Infrastructure Setup (Docker)
   - [ ] 10.1 Create docker-compose.yml with PostgreSQL service

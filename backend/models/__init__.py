@@ -79,6 +79,12 @@ from .work_notification import (
     WorkNotificationUpdate,
     WorkNotification,
 )
+from .response import (
+    APIResponse,
+    PaginatedResponse,
+    ErrorResponse,
+    ValidationErrorResponse,
+)
 
 __all__ = [
     # Request models
@@ -161,4 +167,9 @@ __all__ = [
     "WorkNotificationCreate",
     "WorkNotificationUpdate",
     "WorkNotification",
+    # API response wrapper models
+    "APIResponse",
+    "PaginatedResponse",
+    "ErrorResponse",
+    "ValidationErrorResponse",
 ]
