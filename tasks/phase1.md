@@ -64,7 +64,7 @@
   - [x] 8.1 Design tenants table schema
   - [x] 8.2 Design sites table schema
   - [x] 8.3 Design users table schema with role columns
-  - [ ] 8.4 Design work_orders table schema
+  - [x] 8.4 Design work_orders table schema
   - [ ] 8.5 Design assets table schema with hierarchy support
   - [ ] 8.6 Design functional_locations table schema
   - [ ] 8.7 Design inventory_parts table schema

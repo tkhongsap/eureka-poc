@@ -25,12 +25,15 @@ from .user import (
     UserCreate,
     UserUpdate,
     User,
+    UserResponse,
+    UserLogin,
+    UserPasswordChange,
 )
 
 __all__ = [
     # Request models
     "RequestCreate",
-    "RequestItem", 
+    "RequestItem",
     "RequestUpdate",
     # Work order models
     "WorkOrderCreate",
@@ -61,4 +64,7 @@ __all__ = [
     "UserCreate",
     "UserUpdate",
     "User",
+    "UserResponse",
+    "UserLogin",
+    "UserPasswordChange",
 ]
