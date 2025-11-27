@@ -62,6 +62,15 @@ from .inventory_transaction import (
     InventoryTransactionUpdate,
     InventoryTransaction,
 )
+from .pm_schedule import (
+    PMTriggerType,
+    PMFrequency,
+    PMStatus,
+    PMScheduleBase,
+    PMScheduleCreate,
+    PMScheduleUpdate,
+    PMSchedule,
+)
 
 __all__ = [
     # Request models
@@ -129,4 +138,12 @@ __all__ = [
     "InventoryTransactionCreate",
     "InventoryTransactionUpdate",
     "InventoryTransaction",
+    # PM schedule models
+    "PMTriggerType",
+    "PMFrequency",
+    "PMStatus",
+    "PMScheduleBase",
+    "PMScheduleCreate",
+    "PMScheduleUpdate",
+    "PMSchedule",
 ]
