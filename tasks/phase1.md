@@ -60,7 +60,7 @@
   - [ ] 7.6 Create package.json with all dependencies
   - [ ] 7.7 Set up ESLint and Prettier for frontend
 
-- [ ] 8.0 Database Schema Design (PostgreSQL)
+- [x] 8.0 Database Schema Design (PostgreSQL)
   - [x] 8.1 Design tenants table schema
   - [x] 8.2 Design sites table schema
   - [x] 8.3 Design users table schema with role columns
@@ -71,18 +71,18 @@
   - [x] 8.8 Design inventory_transactions table schema
   - [x] 8.9 Design pm_schedules table schema
   - [x] 8.10 Design work_notifications table schema
-  - [ ] 8.11 Create database migration files for all tables
-  - [ ] 8.12 Define indexes for performance optimization
+  - [x] 8.11 Create database migration files for all tables
+  - [x] 8.12 Define indexes for performance optimization
 
 - [ ] 9.0 Type Definitions (Backend)
-  - [ ] 9.1 Create User type with all role enums
-  - [ ] 9.2 Create Tenant type with configuration options
-  - [ ] 9.3 Create Site type with location data
-  - [ ] 9.4 Create WorkOrder type with status enum
-  - [ ] 9.5 Create Asset type with criticality levels
-  - [ ] 9.6 Create InventoryPart type
-  - [ ] 9.7 Create PMSchedule type
-  - [ ] 9.8 Create WorkNotification type
+  - [x] 9.1 Create User type with all role enums
+  - [x] 9.2 Create Tenant type with configuration options
+  - [x] 9.3 Create Site type with location data
+  - [x] 9.4 Create WorkOrder type with status enum
+  - [x] 9.5 Create Asset type with criticality levels
+  - [x] 9.6 Create InventoryPart type
+  - [x] 9.7 Create PMSchedule type
+  - [x] 9.8 Create WorkNotification type
   - [ ] 9.9 Create API response wrapper types
 
 - [ ] 10.0 Infrastructure Setup (Docker)
