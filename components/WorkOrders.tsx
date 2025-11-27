@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Filter, Download, MoreHorizontal, BrainCircuit, X, AlertTriangle, CheckSquare, Clock, ArrowRight, Zap,
-  LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, UserPlus
+  LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, UserPlus,
+  Loader2, CheckCircle2, XCircle
 } from 'lucide-react';
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
@@ -76,6 +77,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
   // Admin close state
   const [isClosing, setIsClosing] = useState(false);
+
+  // Success/Error toast state
+  const [toast, setToast] = useState<{message: string; type: 'success' | 'error'} | null>(null);
 
   // Get permissions for selected work order
   const selectedWOPermissions = selectedWO && currentUser
@@ -304,9 +308,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           : wo
       ));
       setSelectedWO({ ...selectedWO, status: Status.COMPLETED });
+      
+      // Show success toast
+      setToast({ message: 'Work order approved successfully!', type: 'success' });
+      setTimeout(() => setToast(null), 3000);
     } catch (error: any) {
       console.error('Failed to approve work order:', error);
-      alert(error.message || 'Failed to approve work order');
+      setToast({ message: error.message || 'Failed to approve work order', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
     } finally {
       setIsApproving(false);
     }
@@ -320,7 +329,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     
     // Validate rejection reason
     if (!rejectionReason.trim()) {
-      alert('Please provide a reason for rejection');
+      setToast({ message: 'Please provide a reason for rejection', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
       return;
     }
 
@@ -349,9 +359,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       ));
       setSelectedWO({ ...selectedWO, status: Status.IN_PROGRESS, rejectionReason: rejectionReason.trim() });
       setRejectionReason('');
+      
+      // Show success toast
+      setToast({ message: 'Work order rejected and sent back', type: 'success' });
+      setTimeout(() => setToast(null), 3000);
     } catch (error: any) {
       console.error('Failed to reject work order:', error);
-      alert(error.message || 'Failed to reject work order');
+      setToast({ message: error.message || 'Failed to reject work order', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
     } finally {
       setIsRejecting(false);
     }
@@ -384,9 +399,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           : wo
       ));
       setSelectedWO({ ...selectedWO, status: Status.CLOSED });
+      
+      // Show success toast
+      setToast({ message: 'Work order closed successfully!', type: 'success' });
+      setTimeout(() => setToast(null), 3000);
     } catch (error: any) {
       console.error('Failed to close work order:', error);
-      alert(error.message || 'Failed to close work order');
+      setToast({ message: error.message || 'Failed to close work order', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
     } finally {
       setIsClosing(false);
     }
