@@ -18,6 +18,14 @@ from .site import (
     SiteUpdate,
     Site,
 )
+from .user import (
+    UserRole,
+    UserStatus,
+    UserBase,
+    UserCreate,
+    UserUpdate,
+    User,
+)
 
 __all__ = [
     # Request models
@@ -46,4 +54,11 @@ __all__ = [
     "SiteCreate",
     "SiteUpdate",
     "Site",
+    # User models
+    "UserRole",
+    "UserStatus",
+    "UserBase",
+    "UserCreate",
+    "UserUpdate",
+    "User",
 ]
