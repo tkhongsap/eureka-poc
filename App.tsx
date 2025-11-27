@@ -274,6 +274,7 @@ const App: React.FC = () => {
           onSubmitRequest={handleNewRequest} 
           currentUser={currentUser}
           technicians={TECHNICIANS}
+          workOrders={workOrders}
         />;
       case 'assets':
         return <AssetHierarchy />;
@@ -308,6 +309,7 @@ const App: React.FC = () => {
              onSubmitRequest={handleNewRequest} 
              currentUser={currentUser}
              technicians={TECHNICIANS}
+             workOrders={workOrders}
            />
         </main>
       </div>
