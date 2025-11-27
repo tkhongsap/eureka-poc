@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { WorkOrder, Status, Priority } from '../types';
-import { Clock, CheckCircle, AlertCircle, XCircle, Package, Calendar } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, XCircle, Package, Calendar, X, Image as ImageIcon, FileText, Wrench, Eye } from 'lucide-react';
+import { getImageUrl } from '../services/apiService';
 
 interface RequestorWorkOrdersProps {
   workOrders: WorkOrder[];
@@ -43,9 +44,36 @@ const priorityColors = {
 };
 
 const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, requestorName }) => {
+  const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
+  const [selectedWOImages, setSelectedWOImages] = useState<string[]>([]);
+  const [technicianImages, setTechnicianImages] = useState<string[]>([]);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+
   // Filter work orders that have a requestId (created from requests)
   // In a real app, we'd also match by the createdBy field from the request
   const myWorkOrders = workOrders.filter(wo => wo.requestId);
+
+  // Load images when selecting a work order
+  useEffect(() => {
+    if (selectedWO) {
+      if (selectedWO.imageIds && selectedWO.imageIds.length > 0) {
+        const imageUrls = selectedWO.imageIds.map(id => getImageUrl(id));
+        setSelectedWOImages(imageUrls);
+      } else {
+        setSelectedWOImages([]);
+      }
+
+      if (selectedWO.technicianImages && selectedWO.technicianImages.length > 0) {
+        const techImgUrls = selectedWO.technicianImages.map(id => getImageUrl(id));
+        setTechnicianImages(techImgUrls);
+      } else {
+        setTechnicianImages([]);
+      }
+    } else {
+      setSelectedWOImages([]);
+      setTechnicianImages([]);
+    }
+  }, [selectedWO]);
 
   if (myWorkOrders.length === 0) {
     return (
@@ -79,7 +107,8 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
           return (
             <div
               key={wo.id}
-              className="bg-white p-4 rounded-2xl border border-stone-200/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              onClick={() => setSelectedWO(wo)}
+              className="bg-white p-4 rounded-2xl border border-stone-200/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group"
             >
               {/* Header with ID and Status */}
               <div className="flex justify-between items-start mb-3">
@@ -138,10 +167,245 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                   </span>
                 </div>
               )}
+
+              {/* View Details Indicator */}
+              <div className="mt-2 pt-2 border-t border-stone-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center justify-center gap-1 text-xs text-teal-600 font-medium">
+                  <Eye size={14} />
+                  <span>Click to view details</span>
+                </div>
+              </div>
             </div>
           );
         })}
       </div>
+
+      {/* Work Order Detail Modal */}
+      {selectedWO && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" onClick={() => setSelectedWO(null)}></div>
+          <div className="relative w-full max-w-2xl bg-white shadow-2xl h-full overflow-y-auto flex flex-col">
+
+            {/* Modal Header */}
+            <div className="p-6 border-b border-stone-100 bg-white sticky top-0 z-20 flex justify-between items-start">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2 flex-wrap">
+                  <h2 className="font-serif text-xl text-stone-900">{selectedWO.id}: {selectedWO.title}</h2>
+                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${statusConfig[selectedWO.status].color}`}>
+                    {selectedWO.status}
+                  </span>
+                  {/* Read-only indicator for requestors */}
+                  <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-stone-100 text-stone-600 border-stone-200">
+                    🔒 Read-only
+                  </span>
+                </div>
+                <p className="text-stone-500 text-sm">Created on {selectedWO.createdAt} • Due {selectedWO.dueDate}</p>
+                {selectedWO.assignedTo && (
+                  <p className="text-stone-600 text-sm mt-1">
+                    Assigned to: <span className="font-medium">{selectedWO.assignedTo}</span>
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedWO(null)}
+                title="Close panel"
+                aria-label="Close panel"
+                className="p-2 hover:bg-stone-100 rounded-xl text-stone-400 hover:text-stone-600 transition-colors duration-200"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6 flex-1">
+
+              {/* Description */}
+              <div>
+                <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
+                  <FileText size={16} className="text-teal-600" /> Description
+                </h3>
+                <p className="text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100">
+                  {selectedWO.description}
+                </p>
+              </div>
+
+              {/* Asset Information */}
+              <div>
+                <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2">Asset & Location</h3>
+                <div className="bg-stone-50 p-4 rounded-xl border border-stone-100 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-stone-500">Asset:</span>
+                    <span className="text-sm font-medium text-stone-800">{selectedWO.assetName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-stone-500">Location:</span>
+                    <span className="text-sm font-medium text-stone-800">{selectedWO.location}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-stone-500">Priority:</span>
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${priorityColors[selectedWO.priority]}`}>
+                      {selectedWO.priority}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Original Request Images */}
+              {selectedWOImages.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <ImageIcon size={16} className="text-teal-600" /> Original Request Images ({selectedWOImages.length})
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {selectedWOImages.map((imgUrl, idx) => (
+                      <div
+                        key={idx}
+                        className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-stone-200 hover:border-teal-400 transition-all duration-200"
+                        onClick={() => setFullscreenImage(imgUrl)}
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={`Request attachment ${idx + 1}`}
+                          className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
+                          <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
+                            <Eye size={20} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Technician Notes */}
+              {selectedWO.technicianNotes && (
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
+                    <Wrench size={16} className="text-violet-600" /> Technician Notes
+                  </h3>
+                  <div className="bg-violet-50 p-4 rounded-xl border border-violet-100">
+                    <p className="text-stone-700 text-sm leading-relaxed whitespace-pre-wrap">
+                      {selectedWO.technicianNotes}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Technician Images */}
+              {technicianImages.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <ImageIcon size={16} className="text-violet-600" /> Technician Work Images ({technicianImages.length})
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {technicianImages.map((imgUrl, idx) => (
+                      <div
+                        key={idx}
+                        className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-violet-200 hover:border-violet-400 transition-all duration-200"
+                        onClick={() => setFullscreenImage(imgUrl)}
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={`Technician image ${idx + 1}`}
+                          className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
+                          <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
+                            <Eye size={20} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Parts Used */}
+              {selectedWO.partsUsed && selectedWO.partsUsed.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <Package size={16} className="text-teal-600" /> Parts & Materials Used
+                  </h3>
+                  <div className="bg-stone-50 border border-stone-200/60 rounded-2xl overflow-hidden">
+                    <div className="divide-y divide-stone-100">
+                      {selectedWO.partsUsed.map((part, idx) => (
+                        <div key={idx} className="flex justify-between items-center p-3 bg-white">
+                          <div>
+                            <div className="font-medium text-sm text-stone-800">{part.name}</div>
+                            <div className="text-xs text-stone-500">Qty: {part.quantity} • ${part.cost}/unit</div>
+                          </div>
+                          <div className="font-bold text-stone-700">${(part.cost * part.quantity).toFixed(2)}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-stone-100 border-t border-stone-200">
+                      <span className="text-sm font-medium text-stone-600">Total Cost</span>
+                      <span className="text-lg font-bold text-stone-900">
+                        ${selectedWO.partsUsed.reduce((acc, p) => acc + (p.cost * p.quantity), 0).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Request Reference */}
+              {selectedWO.requestId && (
+                <div className="bg-teal-50 border border-teal-100 p-4 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="text-teal-600 mt-0.5 flex-shrink-0" size={16} />
+                    <div>
+                      <h4 className="font-semibold text-teal-900 text-sm mb-1">Original Request</h4>
+                      <p className="text-xs text-teal-700">
+                        This work order was created from your request{' '}
+                        <span className="font-mono font-bold">{selectedWO.requestId}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-stone-200 bg-stone-50 sticky bottom-0 z-20">
+              <button
+                onClick={() => setSelectedWO(null)}
+                className="w-full px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-stone-700 text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200"
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <button
+            onClick={() => setFullscreenImage(null)}
+            className="absolute top-4 right-4 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
+            title="Close"
+            aria-label="Close image"
+          >
+            <X size={28} />
+          </button>
+          <img
+            src={fullscreenImage}
+            alt="Full size"
+            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm bg-black/50 px-4 py-2 rounded-full">
+            Click outside to close
+          </div>
+        </div>
+      )}
     </div>
   );
 };
