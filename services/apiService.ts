@@ -184,6 +184,7 @@ export interface WorkOrderItem {
   technicianNotes?: string;
   technicianImages?: string[];
   partsUsed?: { id: string; name: string; quantity: number }[];
+  adminReview?: string;
 }
 
 export interface CreateWorkOrderData {
@@ -260,10 +261,21 @@ export interface TechnicianUpdateData {
   technicianImages?: string[];
 }
 
-export const technicianUpdateWorkOrder = async (woId: string, data: TechnicianUpdateData): Promise<WorkOrderItem> => {
+export const technicianUpdateWorkOrder = async (
+  woId: string,
+  data: TechnicianUpdateData,
+  userRole?: string,
+  userName?: string
+): Promise<WorkOrderItem> => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (userRole) headers['X-User-Role'] = userRole;
+  if (userName) headers['X-User-Name'] = userName;
+
   const response = await fetch(`${API_BASE_URL}/workorders/${woId}/technician-update`, {
     method: 'PATCH',
-    headers: getAuthHeaders(),
+    headers,
     body: JSON.stringify(data),
   });
 
