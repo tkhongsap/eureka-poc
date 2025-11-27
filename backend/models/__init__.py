@@ -29,6 +29,23 @@ from .user import (
     UserLogin,
     UserPasswordChange,
 )
+from .functional_location import (
+    LocationType,
+    LocationStatus,
+    FunctionalLocationBase,
+    FunctionalLocationCreate,
+    FunctionalLocationUpdate,
+    FunctionalLocation,
+)
+from .asset import (
+    AssetType,
+    AssetCriticality,
+    AssetStatus,
+    AssetBase,
+    AssetCreate,
+    AssetUpdate,
+    Asset,
+)
 
 __all__ = [
     # Request models
@@ -67,4 +84,19 @@ __all__ = [
     "UserResponse",
     "UserLogin",
     "UserPasswordChange",
+    # Functional location models
+    "LocationType",
+    "LocationStatus",
+    "FunctionalLocationBase",
+    "FunctionalLocationCreate",
+    "FunctionalLocationUpdate",
+    "FunctionalLocation",
+    # Asset models
+    "AssetType",
+    "AssetCriticality",
+    "AssetStatus",
+    "AssetBase",
+    "AssetCreate",
+    "AssetUpdate",
+    "Asset",
 ]
