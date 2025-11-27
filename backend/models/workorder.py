@@ -30,6 +30,7 @@ class WorkOrder(BaseModel):
     requestId: Optional[str] = None
     technicianNotes: Optional[str] = None
     technicianImages: List[str] = []
+    adminReview: Optional[str] = None
 
 
 class WorkOrderUpdate(BaseModel):
@@ -42,6 +43,7 @@ class WorkOrderUpdate(BaseModel):
     assignedTo: Optional[str] = None
     dueDate: Optional[str] = None
     imageIds: Optional[List[str]] = None
+    adminReview: Optional[str] = None
 
 
 class TechnicianUpdate(BaseModel):
