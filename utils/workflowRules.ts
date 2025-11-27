@@ -153,3 +153,14 @@ export function validateStatusTransition(
     );
   }
 }
+
+/**
+ * Check if user can perform drag-and-drop status change
+ */
+export function canDragToStatus(
+  currentStatus: Status,
+  targetStatus: Status,
+  userRole: UserRole
+): boolean {
+  return isTransitionAllowed(currentStatus, targetStatus, userRole);
+}

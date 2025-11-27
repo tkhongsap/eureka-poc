@@ -5,7 +5,8 @@ import {
 } from 'lucide-react';
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData } from '../services/apiService';
+import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder } from '../services/apiService';
+import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules';
 
 interface WorkOrdersProps {
   workOrders: WorkOrder[];
@@ -204,14 +205,31 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = (e: React.DragEvent, newStatus: Status) => {
+  const handleDrop = async (e: React.DragEvent, newStatus: Status) => {
     e.preventDefault();
     const id = e.dataTransfer.getData('text/plain');
     
-    if (id) {
-        setWorkOrders(prev => prev.map(wo => 
-            wo.id === id ? { ...wo, status: newStatus } : wo
-        ));
+    if (id && currentUser) {
+        const wo = workOrders.find(w => w.id === id);
+        if (!wo) return;
+        
+        // Check if transition is allowed
+        if (!canDragToStatus(wo.status, newStatus, currentUser.userRole)) {
+          alert(`You cannot move this work order from "${wo.status}" to "${newStatus}"`);
+          setDraggedWoId(null);
+          return;
+        }
+        
+        // Update via API
+        try {
+          const updatedWO = await updateWorkOrder(id, { status: newStatus });
+          setWorkOrders(prev => prev.map(w => 
+            w.id === id ? { ...w, status: newStatus } : w
+          ));
+        } catch (error: any) {
+          console.error('Failed to update work order:', error);
+          alert(error.message || 'Failed to update work order status');
+        }
     }
     setDraggedWoId(null);
   };
