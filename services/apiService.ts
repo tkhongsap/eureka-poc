@@ -306,6 +306,19 @@ export const adminRejectWorkOrder = async (woId: string, data: AdminRejectData):
   return response.json();
 };
 
+export const adminCloseWorkOrder = async (woId: string): Promise<WorkOrderItem> => {
+  const response = await fetch(`${API_BASE_URL}/workorders/${woId}/close`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to close work order');
+  }
+
+  return response.json();
+};
+
 // --- Health Check ---
 export const checkHealth = async (): Promise<boolean> => {
   try {

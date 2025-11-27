@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, AdminRejectData } from '../services/apiService';
+import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, AdminRejectData, adminCloseWorkOrder } from '../services/apiService';
 import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules';
 
 interface WorkOrdersProps {
@@ -66,6 +66,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
+
+  // Admin close state
+  const [isClosing, setIsClosing] = useState(false);
 
   // Get permissions for selected work order
   const selectedWOPermissions = selectedWO && currentUser
@@ -304,6 +307,33 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       alert(error.message || 'Failed to reject work order');
     } finally {
       setIsRejecting(false);
+    }
+  };
+
+  // Admin Close Handler
+  const handleClose = async () => {
+    if (!selectedWO || !currentUser) return;
+    if (currentUser.userRole !== 'Admin') return;
+    if (selectedWO.status !== Status.COMPLETED) return;
+
+    setIsClosing(true);
+    try {
+      // Close work order, changes status to Closed
+      // Backend will handle notification to Requestor
+      const updatedWO = await adminCloseWorkOrder(selectedWO.id);
+
+      // Update local state
+      setWorkOrders(prev => prev.map(wo => 
+        wo.id === selectedWO.id 
+          ? { ...wo, status: Status.CLOSED }
+          : wo
+      ));
+      setSelectedWO({ ...selectedWO, status: Status.CLOSED });
+    } catch (error: any) {
+      console.error('Failed to close work order:', error);
+      alert(error.message || 'Failed to close work order');
+    } finally {
+      setIsClosing(false);
     }
   };
 
@@ -809,6 +839,55 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         </p>
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Admin Close Section (visible to Admin when status is Completed) */}
+              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED && (
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <CheckSquare size={16} className="text-purple-600" /> Close Work Order
+                  </h3>
+
+                  <div className="bg-white p-4 rounded-xl border border-purple-200 mb-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <CheckSquare size={24} className="text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-emerald-700">Work Completed & Approved</p>
+                        <p className="text-xs text-stone-600">Ready to be closed</p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-stone-50 p-3 rounded-lg border border-stone-200">
+                      <p className="text-xs text-stone-700 leading-relaxed">
+                        This work order has been successfully completed and approved. 
+                        Closing will finalize the work order and notify the requestor.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Close Button */}
+                  <button
+                    onClick={handleClose}
+                    disabled={isClosing}
+                    className="w-full px-5 py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:shadow-xl hover:shadow-purple-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  >
+                    <CheckSquare size={18} />
+                    {isClosing ? 'Closing...' : 'Close Work Order'}
+                  </button>
+
+                  {/* Info Message */}
+                  <div className="mt-4 bg-purple-100/50 border border-purple-200 p-3 rounded-xl">
+                    <p className="text-xs text-purple-700 flex items-start gap-2">
+                      <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                      <span>
+                        Closing will change status to <strong>"Closed"</strong> and notify the Requestor. 
+                        Closed work orders cannot be edited.
+                      </span>
+                    </p>
                   </div>
                 </div>
               )}
