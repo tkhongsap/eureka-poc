@@ -8,7 +8,8 @@ import {
   RequestItem as ApiRequestItem,
   ImageInfo
 } from '../services/apiService';
-import { User, UserRole } from '../types';
+import { User, UserRole, WorkOrder } from '../types';
+import RequestorWorkOrders from './RequestorWorkOrders';
 
 interface RequestItem {
   id: string;
@@ -39,6 +40,7 @@ interface WorkRequestPortalProps {
   }) => void;
   currentUser?: User;
   technicians?: { id: string; name: string }[];
+  workOrders?: WorkOrder[];
 }
 
 const INITIAL_HISTORY: RequestItem[] = [
@@ -46,7 +48,12 @@ const INITIAL_HISTORY: RequestItem[] = [
     { id: 'REQ-999', location: 'Break Room', priority: 'Low', desc: 'Light flickering in break room', status: 'Completed', date: 'Oct 21, 2024', imageIds: [] },
 ];
 
-const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, currentUser, technicians = [] }) => {
+const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ 
+  onSubmitRequest, 
+  currentUser, 
+  technicians = [], 
+  workOrders = [] 
+}) => {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [location, setLocation] = useState('');
   const [priority, setPriority] = useState('Low - Cosmetic issue');
@@ -212,7 +219,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-8 pb-16 grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="max-w-6xl mx-auto p-8 pb-16 grid grid-cols-1 lg:grid-cols-3 gap-8">
 
        {/* Success Toast Notification */}
        {showSuccessToast && (
@@ -381,6 +388,17 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                     <p className="text-sm text-teal-700 mt-1">For safety emergencies, please call the EOC hotline at <span className="font-mono font-bold">555-0199</span> immediately.</p>
                 </div>
             </div>
+
+            {/* Work Orders Section - Show work orders created from requests */}
+            {currentUser && workOrders.length > 0 && (
+              <div>
+                <h3 className="font-serif text-2xl text-stone-900 mb-4">My Work Orders</h3>
+                <RequestorWorkOrders 
+                  workOrders={workOrders} 
+                  requestorName={currentUser.name}
+                />
+              </div>
+            )}
        </div>
 
        {/* Right Column: History */}
