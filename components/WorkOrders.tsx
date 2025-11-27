@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder } from '../services/apiService';
+import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, AdminRejectData } from '../services/apiService';
 import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules';
 
 interface WorkOrdersProps {
@@ -62,6 +62,11 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [selectedTechnician, setSelectedTechnician] = useState<string>('');
   const [isAssigning, setIsAssigning] = useState(false);
 
+  // Admin review states
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+
   // Get permissions for selected work order
   const selectedWOPermissions = selectedWO && currentUser
     ? getWorkOrderPermissions(
@@ -97,6 +102,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       setTechnicianNotes('');
       setTechnicianImages([]);
     }
+    // Clear admin review fields
+    setRejectionReason('');
   }, [selectedWO]);
 
   const filteredWorkOrders = showOnlyMyJobs && currentUser
@@ -234,6 +241,69 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       alert(error.message || 'Failed to assign technician');
     } finally {
       setIsAssigning(false);
+    }
+  };
+
+  // Admin Approve Handler
+  const handleApprove = async () => {
+    if (!selectedWO || !currentUser) return;
+    if (currentUser.userRole !== 'Admin') return;
+    if (selectedWO.status !== Status.PENDING) return;
+
+    setIsApproving(true);
+    try {
+      // Approve work order, changes status to Completed
+      // Backend will handle notification to Requestor and Technician
+      const updatedWO = await adminApproveWorkOrder(selectedWO.id);
+
+      // Update local state
+      setWorkOrders(prev => prev.map(wo => 
+        wo.id === selectedWO.id 
+          ? { ...wo, status: Status.COMPLETED }
+          : wo
+      ));
+      setSelectedWO({ ...selectedWO, status: Status.COMPLETED });
+    } catch (error: any) {
+      console.error('Failed to approve work order:', error);
+      alert(error.message || 'Failed to approve work order');
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
+  // Admin Reject Handler
+  const handleReject = async () => {
+    if (!selectedWO || !currentUser) return;
+    if (currentUser.userRole !== 'Admin') return;
+    if (selectedWO.status !== Status.PENDING) return;
+    
+    // Validate rejection reason
+    if (!rejectionReason.trim()) {
+      alert('Please provide a reason for rejection');
+      return;
+    }
+
+    setIsRejecting(true);
+    try {
+      // Reject work order with reason, changes status back to In Progress
+      // Backend will handle notification to Technician
+      const updatedWO = await adminRejectWorkOrder(selectedWO.id, {
+        rejectionReason: rejectionReason.trim()
+      });
+
+      // Update local state
+      setWorkOrders(prev => prev.map(wo => 
+        wo.id === selectedWO.id 
+          ? { ...wo, status: Status.IN_PROGRESS, rejectionReason: rejectionReason.trim() }
+          : wo
+      ));
+      setSelectedWO({ ...selectedWO, status: Status.IN_PROGRESS, rejectionReason: rejectionReason.trim() });
+      setRejectionReason('');
+    } catch (error: any) {
+      console.error('Failed to reject work order:', error);
+      alert(error.message || 'Failed to reject work order');
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -636,6 +706,110 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       </p>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Admin Review Section (visible to Admin when status is Pending) */}
+              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.PENDING && (
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <CheckSquare size={16} className="text-purple-600" /> Review Work Completion
+                  </h3>
+
+                  {/* Display Technician's Work */}
+                  <div className="bg-white p-4 rounded-xl border border-purple-200 mb-4">
+                    <h4 className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-2">
+                      Technician's Work Summary
+                    </h4>
+                    
+                    {selectedWO.technicianNotes && (
+                      <div className="mb-3">
+                        <p className="text-xs font-medium text-purple-700 mb-1">Work Notes:</p>
+                        <p className="text-sm text-stone-700 bg-stone-50 p-3 rounded-lg border border-stone-200">
+                          {selectedWO.technicianNotes}
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedWO.technicianImages && selectedWO.technicianImages.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-purple-700 mb-2">
+                          Work Photos ({selectedWO.technicianImages.length}):
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {selectedWO.technicianImages.map((imgUrl, idx) => (
+                            <img
+                              key={idx}
+                              src={imgUrl}
+                              alt={`Work photo ${idx + 1}`}
+                              className="w-full h-20 object-cover rounded-lg border border-stone-200 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => setFullscreenImage(imgUrl)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {!selectedWO.technicianNotes && (!selectedWO.technicianImages || selectedWO.technicianImages.length === 0) && (
+                      <p className="text-sm text-stone-500 italic">No work summary provided by technician</p>
+                    )}
+                  </div>
+
+                  {/* Review Actions */}
+                  <div className="space-y-4">
+                    {/* Approve Button */}
+                    <button
+                      onClick={handleApprove}
+                      disabled={isApproving || isRejecting}
+                      className="w-full px-5 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                    >
+                      <CheckSquare size={18} />
+                      {isApproving ? 'Approving...' : 'Approve Work Order'}
+                    </button>
+
+                    {/* Rejection Section */}
+                    <div className="border-t border-purple-200 pt-4">
+                      <label className="block text-sm font-medium text-purple-700 mb-2">
+                        Or Reject with Reason
+                      </label>
+                      <textarea
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        placeholder="Explain why this work needs to be redone..."
+                        className="w-full px-4 py-3 bg-white border-2 border-purple-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none"
+                        rows={3}
+                        disabled={isApproving || isRejecting}
+                      />
+                      <button
+                        onClick={handleReject}
+                        disabled={isApproving || isRejecting || !rejectionReason.trim()}
+                        className="w-full mt-2 px-5 py-3 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 shadow-lg shadow-red-600/20 hover:shadow-xl hover:shadow-red-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                      >
+                        <X size={18} />
+                        {isRejecting ? 'Rejecting...' : 'Reject & Send Back'}
+                      </button>
+                    </div>
+
+                    {/* Info Messages */}
+                    <div className="space-y-2">
+                      <div className="bg-emerald-100/50 border border-emerald-200 p-3 rounded-xl">
+                        <p className="text-xs text-emerald-700 flex items-start gap-2">
+                          <CheckSquare size={14} className="mt-0.5 flex-shrink-0" />
+                          <span>
+                            <strong>Approve:</strong> Changes status to <strong>"Completed"</strong> and notifies the Requestor and Technician.
+                          </span>
+                        </p>
+                      </div>
+                      <div className="bg-red-100/50 border border-red-200 p-3 rounded-xl">
+                        <p className="text-xs text-red-700 flex items-start gap-2">
+                          <X size={14} className="mt-0.5 flex-shrink-0" />
+                          <span>
+                            <strong>Reject:</strong> Changes status back to <strong>"In Progress"</strong> and notifies the Technician to redo the work.
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
