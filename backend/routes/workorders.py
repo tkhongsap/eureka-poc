@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Query, Header
 from typing import List, Optional
 
 from models import WorkOrderCreate, WorkOrder, WorkOrderUpdate, TechnicianUpdate
@@ -43,9 +43,44 @@ async def create_workorder(wo: WorkOrderCreate):
 
 
 @router.get("", response_model=List[WorkOrder])
-async def list_workorders():
-    """List all work orders"""
-    return load_json(WORKORDERS_FILE)
+async def list_workorders(
+    search: Optional[str] = Query(default=None, description="Search by title or description"),
+    startDate: Optional[str] = Query(default=None, description="Filter by createdAt >= startDate (YYYY-MM-DD)"),
+    endDate: Optional[str] = Query(default=None, description="Filter by createdAt <= endDate (YYYY-MM-DD)"),
+    assignedTo: Optional[str] = Query(default=None, description="Filter by assigned technician name"),
+):
+    """List work orders with optional filtering and search"""
+    workorders = load_json(WORKORDERS_FILE)
+
+    # Text search on title + description
+    if search:
+        s = search.lower()
+        workorders = [
+            w
+            for w in workorders
+            if s in str(w.get("title", "")).lower()
+            or s in str(w.get("description", "")).lower()
+        ]
+
+    # Filter by assigned technician
+    if assignedTo:
+        workorders = [w for w in workorders if w.get("assignedTo") == assignedTo]
+
+    # Date range filter on createdAt (expects ISO-like date string prefix match)
+    if startDate:
+        workorders = [
+            w
+            for w in workorders
+            if str(w.get("createdAt", "")) >= startDate
+        ]
+    if endDate:
+        workorders = [
+            w
+            for w in workorders
+            if str(w.get("createdAt", "")) <= endDate
+        ]
+
+    return workorders
 
 
 @router.get("/{wo_id}", response_model=WorkOrder)

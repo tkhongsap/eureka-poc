@@ -54,6 +54,20 @@ const ALL_USERS: User[] = [
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=TomW'
   },
   {
+    id: 'u7',
+    name: 'David K.',
+    role: 'Technician',
+    userRole: 'Technician',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=DavidK'
+  },
+  {
+    id: 'u8',
+    name: 'James L.',
+    role: 'Technician',
+    userRole: 'Technician',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JamesL'
+  },
+  {
     id: 'u3',
     name: 'Sarah Line',
     role: 'Requester',
@@ -155,11 +169,13 @@ const App: React.FC = () => {
     window.location.href = '/';
   };
 
-  // Load work orders from backend on mount
+  // Load work orders from backend on mount and when user changes
   useEffect(() => {
     const loadWorkOrders = async () => {
       try {
-        const apiWorkOrders = await listWorkOrders();
+        const apiWorkOrders = await listWorkOrders({
+          assignedTo: currentUser?.userRole === 'Technician' ? currentUser.name : undefined,
+        });
         const mappedWorkOrders: WorkOrder[] = apiWorkOrders.map((wo: WorkOrderItem) => ({
           id: wo.id,
           title: wo.title,
@@ -348,7 +364,15 @@ const App: React.FC = () => {
              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
              <span className="font-bold text-slate-800">Eureka Request Portal</span>
            </div>
-           <PersonaSwitcher currentUser={currentUser} onSwitch={setCurrentUser} dropdownPosition="bottom" />
+           <div className="flex items-center gap-3">
+             <button
+               onClick={handleLogout}
+               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-stone-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+             >
+               Sign Out
+             </button>
+             <PersonaSwitcher currentUser={currentUser} onSwitch={setCurrentUser} dropdownPosition="bottom" />
+           </div>
         </header>
         <main className="flex-1 overflow-y-auto">
            <WorkRequestPortal 
@@ -371,6 +395,7 @@ const App: React.FC = () => {
         currentUser={currentUser}
         onSwitchUser={setCurrentUser}
         allUsers={Object.values(USERS)}
+        onLogout={handleLogout}
       />
       
       <div className="flex-1 ml-64 flex flex-col h-screen">
