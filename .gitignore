@@ -76,3 +76,5 @@ pnpm-debug.log*
 .upm/
 .cache/
 .breakpoints
+
+package-lock.json
