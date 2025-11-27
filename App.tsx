@@ -268,7 +268,7 @@ const App: React.FC = () => {
       case 'dashboard':
         return <Dashboard />;
       case 'work-orders':
-        return <WorkOrders workOrders={workOrders} currentUser={currentUser} />;
+        return <WorkOrders workOrders={workOrders} currentUser={currentUser} technicians={TECHNICIANS} />;
       case 'requests':
         return <WorkRequestPortal 
           onSubmitRequest={handleNewRequest} 

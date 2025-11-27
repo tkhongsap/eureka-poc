@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Filter, Download, MoreHorizontal, BrainCircuit, X, AlertTriangle, CheckSquare, Clock, ArrowRight, Zap,
-  LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle
+  LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, UserPlus
 } from 'lucide-react';
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
@@ -11,6 +11,7 @@ import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules
 interface WorkOrdersProps {
   workOrders: WorkOrder[];
   currentUser?: User;
+  technicians?: { id: string; name: string }[];
 }
 
 const statusColors = {
@@ -36,7 +37,7 @@ const AVAILABLE_PARTS = [
     { id: 'p4', name: 'Industrial Grease (1kg)', cost: 15.00 },
 ];
 
-const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, currentUser }) => {
+const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, currentUser, technicians = [] }) => {
   const [viewMode, setViewMode] = useState<'list' | 'board'>('board');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(initialWorkOrders);
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
@@ -56,6 +57,10 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [technicianImages, setTechnicianImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Admin assignment states
+  const [selectedTechnician, setSelectedTechnician] = useState<string>('');
+  const [isAssigning, setIsAssigning] = useState(false);
 
   // Get permissions for selected work order
   const selectedWOPermissions = selectedWO && currentUser
@@ -200,6 +205,35 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       console.error('Error submitting technician update:', error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Admin Assignment Handler
+  const handleAssign = async () => {
+    if (!selectedWO || !selectedTechnician || !currentUser) return;
+    if (currentUser.userRole !== 'Admin') return;
+
+    setIsAssigning(true);
+    try {
+      // Assign technician and change status to In Progress
+      const updatedWO = await updateWorkOrder(selectedWO.id, {
+        assignedTo: selectedTechnician,
+        status: Status.IN_PROGRESS,
+      });
+
+      // Update local state
+      setWorkOrders(prev => prev.map(wo => 
+        wo.id === selectedWO.id 
+          ? { ...wo, assignedTo: selectedTechnician, status: Status.IN_PROGRESS }
+          : wo
+      ));
+      setSelectedWO({ ...selectedWO, assignedTo: selectedTechnician, status: Status.IN_PROGRESS });
+      setSelectedTechnician('');
+    } catch (error: any) {
+      console.error('Failed to assign technician:', error);
+      alert(error.message || 'Failed to assign technician');
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -536,6 +570,74 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                   {selectedWO.description}
                 </p>
               </div>
+
+              {/* Admin Assignment Section (visible to Admin when status is Open and not yet assigned) */}
+              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.OPEN && (
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <UserPlus size={16} className="text-purple-600" /> Assign Technician
+                  </h3>
+
+                  {!selectedWO.assignedTo ? (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-purple-700 mb-2">
+                          Select Technician
+                        </label>
+                        <select
+                          value={selectedTechnician}
+                          onChange={(e) => setSelectedTechnician(e.target.value)}
+                          className="w-full px-4 py-3 bg-white border-2 border-purple-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                          disabled={isAssigning}
+                        >
+                          <option value="">-- Select a technician --</option>
+                          {technicians.map(tech => (
+                            <option key={tech.id} value={tech.name}>
+                              {tech.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <button
+                        onClick={handleAssign}
+                        disabled={!selectedTechnician || isAssigning}
+                        className="w-full px-5 py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:shadow-xl hover:shadow-purple-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                      >
+                        <UserPlus size={18} />
+                        {isAssigning ? 'Assigning...' : 'Assign & Start Work Order'}
+                      </button>
+
+                      <div className="bg-purple-100/50 border border-purple-200 p-3 rounded-xl">
+                        <p className="text-xs text-purple-700 flex items-start gap-2">
+                          <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                          <span>
+                            Assigning a technician will change the work order status to <strong>"In Progress"</strong> and notify the technician.
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white p-4 rounded-xl border border-purple-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold">
+                          {selectedWO.assignedTo.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-purple-900">
+                            {selectedWO.assignedTo}
+                          </p>
+                          <p className="text-xs text-purple-600">Assigned Technician</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-purple-700 mt-3 flex items-center gap-1">
+                        <CheckSquare size={12} />
+                        Work order is now in progress
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Technician Inline Update (visible to assigned Technician with edit permission) */}
               {selectedWOPermissions?.canEdit && currentUser?.userRole === 'Technician' && selectedWO?.status === Status.IN_PROGRESS && (
