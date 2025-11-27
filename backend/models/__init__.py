@@ -54,6 +54,14 @@ from .inventory_part import (
     InventoryPartUpdate,
     InventoryPart,
 )
+from .inventory_transaction import (
+    TransactionType,
+    TransactionStatus,
+    InventoryTransactionBase,
+    InventoryTransactionCreate,
+    InventoryTransactionUpdate,
+    InventoryTransaction,
+)
 
 __all__ = [
     # Request models
@@ -114,4 +122,11 @@ __all__ = [
     "InventoryPartCreate",
     "InventoryPartUpdate",
     "InventoryPart",
+    # Inventory transaction models
+    "TransactionType",
+    "TransactionStatus",
+    "InventoryTransactionBase",
+    "InventoryTransactionCreate",
+    "InventoryTransactionUpdate",
+    "InventoryTransaction",
 ]
