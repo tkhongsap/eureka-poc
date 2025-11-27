@@ -5,8 +5,15 @@ import {
 } from 'lucide-react';
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, AdminRejectData, adminCloseWorkOrder } from '../services/apiService';
+import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, AdminRejectData, adminCloseWorkOrder, createNotification } from '../services/apiService';
 import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules';
+import { 
+  createWOAssignedNotification, 
+  createWOCompletedNotification, 
+  createWOApprovedNotifications, 
+  createWORejectedNotification, 
+  createWOClosedNotification 
+} from '../services/notificationService';
 
 interface WorkOrdersProps {
   workOrders: WorkOrder[];
@@ -276,7 +283,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   };
 
   const submitTechnicianUpdate = async () => {
-    if (!selectedWO) return;
+    if (!selectedWO || !currentUser) return;
     // allow empty notes but at least something to submit (images or notes)
     if (!technicianNotes.trim() && technicianImages.length === 0) return;
 
@@ -287,12 +294,16 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         technicianImages
       };
 
-      const updatedWO = await technicianUpdateWorkOrder(
+      const updatedWO = await technicianUpdateWorkOrder(selectedWO.id, updateData);
+      
+      // Create notification for Admin (work completed, pending review)
+      const notification = createWOCompletedNotification(
         selectedWO.id,
-        updateData,
-        currentUser?.userRole,
-        currentUser?.name
+        selectedWO.title,
+        currentUser.name
       );
+      await createNotification(notification);
+      
       setWorkOrders(prev => prev.map(wo => wo.id === updatedWO.id ? updatedWO : wo));
       // Keep the details panel open but reflect new status (typically Pending),
       // which will hide the inline technician section automatically
@@ -320,6 +331,15 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         status: Status.IN_PROGRESS,
       });
 
+      // Create notification for assigned technician
+      const notification = createWOAssignedNotification(
+        selectedWO.id,
+        selectedWO.title,
+        selectedTechnician,
+        currentUser.name
+      );
+      await createNotification(notification);
+
       // Update local state
       setWorkOrders(prev => prev.map(wo => 
         wo.id === selectedWO.id 
@@ -345,8 +365,21 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     setIsApproving(true);
     try {
       // Approve work order, changes status to Completed
-      // Backend will handle notification to Requestor and Technician
       const updatedWO = await adminApproveWorkOrder(selectedWO.id);
+
+      // Create notifications for Requestor and Technician
+      const notifications = createWOApprovedNotifications(
+        selectedWO.id,
+        selectedWO.title,
+        currentUser.name,
+        undefined, // requestorName - would need to track this
+        selectedWO.assignedTo
+      );
+      
+      // Send both notifications
+      for (const notification of notifications) {
+        await createNotification(notification);
+      }
 
       // Update local state
       setWorkOrders(prev => prev.map(wo => 
@@ -378,10 +411,19 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     setIsRejecting(true);
     try {
       // Reject work order with reason, changes status back to In Progress
-      // Backend will handle notification to Technician
       const updatedWO = await adminRejectWorkOrder(selectedWO.id, {
         rejectionReason: rejectionReason.trim()
       });
+
+      // Create notification for Technician with rejection reason
+      const notification = createWORejectedNotification(
+        selectedWO.id,
+        selectedWO.title,
+        currentUser.name,
+        selectedWO.assignedTo,
+        rejectionReason.trim()
+      );
+      await createNotification(notification);
 
       // Update local state
       setWorkOrders(prev => prev.map(wo => 
@@ -408,8 +450,16 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     setIsClosing(true);
     try {
       // Close work order, changes status to Closed
-      // Backend will handle notification to Requestor
       const updatedWO = await adminCloseWorkOrder(selectedWO.id);
+
+      // Create notification for Requestor
+      const notification = createWOClosedNotification(
+        selectedWO.id,
+        selectedWO.title,
+        currentUser.name,
+        undefined // requestorName - would need to track this
+      );
+      await createNotification(notification);
 
       // Update local state
       setWorkOrders(prev => prev.map(wo => 

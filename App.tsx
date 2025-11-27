@@ -8,10 +8,11 @@ import WorkRequestPortal from './components/WorkRequestPortal';
 import AssetHierarchy from './components/AssetHierarchy';
 import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
-import { WorkOrder, Status, Priority, User, UserRole } from './types';
+import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
 import { UserCircle2, ShieldCheck, HardHat, ClipboardList } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
-import { listWorkOrders, createWorkOrder, WorkOrderItem, setUserContext } from './services/apiService';
+import { listWorkOrders, createWorkOrder, WorkOrderItem, setUserContext, getNotifications } from './services/apiService';
+import { filterNotificationsForUser } from './services/notificationService';
 
 // --- MOCK DATA ---
 
@@ -122,6 +123,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(MOCK_WOS);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // Check for logged in user from LoginPage on mount
   useEffect(() => {
@@ -183,6 +185,48 @@ const App: React.FC = () => {
       }
     };
     loadWorkOrders();
+  }, [currentUser]);
+
+  // Load notifications from backend
+  const loadNotifications = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const allNotifications = await getNotifications();
+      // Map NotificationItem to Notification and filter for current user
+      const mappedNotifications: Notification[] = allNotifications.map(item => ({
+        id: item.id,
+        type: item.type as any,
+        workOrderId: item.workOrderId,
+        workOrderTitle: item.workOrderTitle,
+        message: item.message,
+        recipientRole: item.recipientRole as UserRole,
+        recipientName: item.recipientName,
+        isRead: item.isRead,
+        createdAt: item.createdAt,
+        triggeredBy: item.triggeredBy,
+      }));
+      
+      const userNotifications = filterNotificationsForUser(
+        mappedNotifications,
+        currentUser.userRole,
+        currentUser.name
+      );
+      setNotifications(userNotifications);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+      setNotifications([]);
+    }
+  };
+
+  // Load notifications when user logs in or changes
+  useEffect(() => {
+    if (currentUser) {
+      loadNotifications();
+      // Poll for new notifications every 30 seconds
+      const interval = setInterval(loadNotifications, 30000);
+      return () => clearInterval(interval);
+    }
   }, [currentUser]);
 
   // Handler to add new work order from request
@@ -330,7 +374,11 @@ const App: React.FC = () => {
       />
       
       <div className="flex-1 ml-64 flex flex-col h-screen">
-        <Header user={currentUser} />
+        <Header 
+          user={currentUser} 
+          notifications={notifications}
+          onNotificationsUpdate={loadNotifications}
+        />
         
         <main className="flex-1 pt-16 overflow-y-auto scroll-smooth relative">
            {renderContent()}

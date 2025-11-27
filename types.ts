@@ -109,10 +109,24 @@ export interface WorkOrderPermissions {
   canView: boolean;
 }
 
-export interface WorkOrderNotification {
-  type: 'created' | 'assigned' | 'updated' | 'completed' | 'rejected' | 'closed';
+export enum NotificationType {
+  WO_CREATED = 'wo_created',
+  WO_ASSIGNED = 'wo_assigned',
+  WO_COMPLETED = 'wo_completed',
+  WO_APPROVED = 'wo_approved',
+  WO_REJECTED = 'wo_rejected',
+  WO_CLOSED = 'wo_closed'
+}
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
   workOrderId: string;
-  recipients: UserRole[];
+  workOrderTitle: string;
   message: string;
-  timestamp: string;
+  recipientRole: UserRole;
+  recipientName?: string; // Specific user if applicable
+  isRead: boolean;
+  createdAt: string;
+  triggeredBy: string; // User who triggered the notification
 }
