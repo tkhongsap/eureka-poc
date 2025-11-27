@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Filter, Download, MoreHorizontal, BrainCircuit, X, AlertTriangle, CheckSquare, Clock, ArrowRight, Zap,
-  LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle
+  LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, HardHat
 } from 'lucide-react';
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData } from '../services/apiService';
+import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder } from '../services/apiService';
 
 interface WorkOrdersProps {
   workOrders: WorkOrder[];
@@ -55,6 +55,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [technicianImages, setTechnicianImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Admin assignment state
+  const TECHNICIANS: string[] = [
+    'John Doe',
+    'Sarah M.',
+    'Mike R.',
+    'Tom W.',
+  ];
+  const [adminAssignedTo, setAdminAssignedTo] = useState<string>('');
 
   // Sync props to state
   useEffect(() => {
@@ -77,9 +85,11 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     if (selectedWO) {
       setTechnicianNotes(selectedWO.technicianNotes || '');
       setTechnicianImages(selectedWO.technicianImages || []);
+      setAdminAssignedTo(selectedWO.assignedTo || '');
     } else {
       setTechnicianNotes('');
       setTechnicianImages([]);
+      setAdminAssignedTo('');
     }
   }, [selectedWO]);
 
@@ -102,6 +112,31 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       console.error(error);
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // Admin assign & status advance
+  const handleAdminAssign = async () => {
+    if (!selectedWO || currentUser?.userRole !== 'Admin') return;
+    // Require technician selection
+    if (!adminAssignedTo) return;
+    try {
+      const nextStatus = selectedWO.status === Status.OPEN ? Status.IN_PROGRESS : selectedWO.status;
+      const updated = await updateWorkOrder(selectedWO.id, {
+        assignedTo: adminAssignedTo,
+        status: nextStatus,
+      });
+      // Reflect locally (map API fields to WorkOrder shape if needed)
+      const updatedWO: WorkOrder = {
+        ...selectedWO,
+        assignedTo: updated.assignedTo,
+        status: nextStatus,
+      };
+      setWorkOrders(prev => prev.map(wo => wo.id === updatedWO.id ? updatedWO : wo));
+      setSelectedWO(updatedWO); // keep panel open showing new state
+    } catch (e) {
+      console.error('Failed to assign technician:', e);
+      // No alert to keep UI clean; could add toast later
     }
   };
 
@@ -496,6 +531,32 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 </div>
               )}
 
+              {/* Admin Assignment Block (appears before AI Assistant) */}
+              {currentUser?.userRole === 'Admin' && (
+                <div className="bg-white border border-stone-200/60 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <HardHat size={16} className="text-violet-600" /> Assign To
+                  </h3>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <select
+                      value={adminAssignedTo}
+                      onChange={(e) => setAdminAssignedTo(e.target.value)}
+                      className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-stone-50"
+                      title="Select technician"
+                      aria-label="Select technician"
+                    >
+                      <option value="">Select technician...</option>
+                      {TECHNICIANS.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {selectedWO.status === Status.OPEN && (
+                    <p className="mt-2 text-xs text-stone-500">Saving will move status from Open to In Progress.</p>
+                  )}
+                </div>
+              )}
+
               {/* Attached Images */}
               {selectedWOImages.length > 0 && (
                 <div>
@@ -707,12 +768,24 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                  }
 
                  // Non-technician users still see the Save & Update button
-                 return (
-                   <button className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
-                     <span>Save & Update</span>
-                     <ArrowRight size={16} />
-                   </button>
-                 );
+                // Restore default Save & Update behavior
+                if (currentUser?.userRole === 'Admin') {
+                  return (
+                    <button
+                      onClick={handleAdminAssign}
+                      className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
+                    >
+                      <span>Save & Update</span>
+                      <ArrowRight size={16} />
+                    </button>
+                  );
+                }
+                return (
+                  <button className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
+                    <span>Save & Update</span>
+                    <ArrowRight size={16} />
+                  </button>
+                );
                })()}
             </div>
 
