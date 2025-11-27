@@ -62,7 +62,7 @@
 
 - [ ] 8.0 Database Schema Design (PostgreSQL)
   - [x] 8.1 Design tenants table schema
-  - [ ] 8.2 Design sites table schema
+  - [x] 8.2 Design sites table schema
   - [ ] 8.3 Design users table schema with role columns
   - [ ] 8.4 Design work_orders table schema
   - [ ] 8.5 Design assets table schema with hierarchy support
