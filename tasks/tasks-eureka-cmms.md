@@ -491,13 +491,13 @@ Update the file after completing each sub-task, not just after completing an ent
     - [ ] 25.1.3 Handle connection acquisition failures
     - [ ] 25.1.4 Monitor pool utilization
   - [ ] 25.2 Add database indexes for performance
-    - [ ] 25.2.1 Index foreign keys (tenant_id, site_id, asset_id)
-    - [ ] 25.2.2 Index frequently queried fields (status, priority, due_date)
-    - [ ] 25.2.3 Create composite indexes for common queries
+    - [x] 25.2.1 Index foreign keys (tenant_id, site_id, asset_id)
+    - [x] 25.2.2 Index frequently queried fields (status, priority, due_date)
+    - [x] 25.2.3 Create composite indexes for common queries
     - [ ] 25.2.4 Add full-text search indexes
   - [ ] 25.3 Implement database migrations
     - [ ] 25.3.1 Set up migration tool (node-pg-migrate or similar)
-    - [ ] 25.3.2 Create initial schema migration
+    - [x] 25.3.2 Create initial schema migration
     - [ ] 25.3.3 Create seed data migration
     - [ ] 25.3.4 Test migration rollback
   - [ ] 25.4 Implement query optimization
