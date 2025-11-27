@@ -174,6 +174,8 @@ const App: React.FC = () => {
           partsUsed: [],
           imageIds: wo.imageIds || [],
           requestId: wo.requestId,
+          // @ts-ignore
+          adminReview: (wo as any).adminReview,
         }));
         // Merge with mock data if API returns empty
         setWorkOrders(mappedWorkOrders.length > 0 ? mappedWorkOrders : MOCK_WOS);

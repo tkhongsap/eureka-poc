@@ -21,6 +21,7 @@ class Status(str, Enum):
     PENDING = "Pending"
     COMPLETED = "Completed"
     CLOSED = "Closed"
+    CANCELED = "Canceled"
 
 
 class UserRole(str, Enum):
@@ -37,8 +38,8 @@ STATUS_TRANSITIONS: Dict[Tuple[str, str], Set[str]] = {
     # Admin assigns technician (Open → In Progress)
     (Status.OPEN, Status.IN_PROGRESS): {UserRole.ADMIN},
     
-    # Technician completes work (In Progress → Pending)
-    (Status.IN_PROGRESS, Status.PENDING): {UserRole.TECHNICIAN},
+    # Technician completes work (In Progress → Pending) — allow Admin to move as well
+    (Status.IN_PROGRESS, Status.PENDING): {UserRole.TECHNICIAN, UserRole.ADMIN},
     
     # Admin rejects and sends back (Pending → In Progress)
     (Status.PENDING, Status.IN_PROGRESS): {UserRole.ADMIN},
@@ -51,6 +52,9 @@ STATUS_TRANSITIONS: Dict[Tuple[str, str], Set[str]] = {
     
     # Admin can move back from Completed to In Progress for corrections
     (Status.COMPLETED, Status.IN_PROGRESS): {UserRole.ADMIN},
+
+    # Admin cancels (Open → Canceled)
+    (Status.OPEN, Status.CANCELED): {UserRole.ADMIN},
 }
 
 
@@ -135,7 +139,7 @@ def get_work_order_permissions(
     
     # Admin has full control except editing closed work orders
     if user_role == UserRole.ADMIN:
-        permissions.can_edit = status != Status.CLOSED
+        permissions.can_edit = status not in (Status.CLOSED, Status.CANCELED)
         permissions.can_change_status = True
         permissions.can_assign = True
         permissions.can_delete = status == Status.OPEN

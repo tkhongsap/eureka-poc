@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Filter, Download, MoreHorizontal, BrainCircuit, X, AlertTriangle, CheckSquare, Clock, ArrowRight, Zap,
-  LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, UserPlus,
+  LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, HardHat, UserPlus,
   Loader2, CheckCircle2, XCircle
 } from 'lucide-react';
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
@@ -28,6 +28,7 @@ const statusColors = {
   [Status.PENDING]: 'bg-amber-50 text-amber-700 border-amber-200',
   [Status.COMPLETED]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   [Status.CLOSED]: 'bg-stone-100 text-stone-700 border-stone-200',
+  [Status.CANCELED]: 'bg-rose-50 text-rose-700 border-rose-200',
 };
 
 const priorityColors = {
@@ -65,6 +66,16 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [technicianImages, setTechnicianImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Admin assignment state
+  const TECHNICIANS: string[] = [
+    'John Doe',
+    'Sarah M.',
+    'Mike R.',
+    'Tom W.',
+  ];
+  const [adminAssignedTo, setAdminAssignedTo] = useState<string>('');
+  // Admin review state (for Pending approval)
+  const [adminReview, setAdminReview] = useState<string>('');
 
   // Admin assignment states
   const [selectedTechnician, setSelectedTechnician] = useState<string>('');
@@ -112,9 +123,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     if (selectedWO) {
       setTechnicianNotes(selectedWO.technicianNotes || '');
       setTechnicianImages(selectedWO.technicianImages || []);
+      setAdminAssignedTo(selectedWO.assignedTo || '');
+      setAdminReview((selectedWO as any).adminReview || '');
     } else {
       setTechnicianNotes('');
       setTechnicianImages([]);
+      setAdminAssignedTo('');
+      setAdminReview('');
     }
     // Clear admin review fields
     setRejectionReason('');
@@ -139,6 +154,74 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       console.error(error);
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // Admin assign & status advance
+  const handleAdminAssign = async () => {
+    if (!selectedWO || currentUser?.userRole !== 'Admin') return;
+    // Require technician selection
+    if (!adminAssignedTo) return;
+    try {
+      const isFromOpen = selectedWO.status === Status.OPEN;
+      const nextStatus = isFromOpen ? Status.IN_PROGRESS : selectedWO.status;
+      const payload: any = {
+        assignedTo: adminAssignedTo,
+      };
+      // Only include status when moving from Open -> In Progress; avoid no-op transitions
+      if (isFromOpen) {
+        payload.status = nextStatus;
+      }
+
+      const updated = await updateWorkOrder(selectedWO.id, payload);
+      // Reflect locally (map API fields to WorkOrder shape if needed)
+      const updatedWO: WorkOrder = {
+        ...selectedWO,
+        assignedTo: updated.assignedTo,
+        status: nextStatus,
+      };
+      setWorkOrders(prev => prev.map(wo => wo.id === updatedWO.id ? updatedWO : wo));
+      setSelectedWO(updatedWO); // keep panel open showing new state
+    } catch (e) {
+      console.error('Failed to assign technician:', e);
+      // No alert to keep UI clean; could add toast later
+    }
+  };
+
+  // Admin approve Pending -> Completed with review
+  const handleAdminApprove = async () => {
+    if (!selectedWO || currentUser?.userRole !== 'Admin') return;
+    if (selectedWO.status !== Status.PENDING) return;
+    try {
+      const updated = await updateWorkOrder(selectedWO.id, {
+        status: Status.COMPLETED as any,
+        adminReview: adminReview?.trim() || undefined,
+      } as any);
+      const updatedWO: WorkOrder = {
+        ...selectedWO,
+        status: Status.COMPLETED,
+        // @ts-ignore
+        adminReview: (updated as any).adminReview || adminReview?.trim() || '',
+      };
+      setWorkOrders(prev => prev.map(wo => wo.id === updatedWO.id ? updatedWO : wo));
+      setSelectedWO(updatedWO);
+    } catch (e: any) {
+      console.error('Failed to approve work order:', e);
+      alert(e?.message || 'Failed to approve work order');
+    }
+  };
+
+  // Admin cancel (Open -> Canceled)
+  const handleAdminCancel = async () => {
+    if (!selectedWO || currentUser?.userRole !== 'Admin') return;
+    if (selectedWO.status !== Status.OPEN) return;
+    try {
+      await updateWorkOrder(selectedWO.id, { status: Status.CANCELED });
+      setWorkOrders(prev => prev.map(wo => wo.id === selectedWO.id ? { ...wo, status: Status.CANCELED } : wo));
+      setSelectedWO(null); // close panel after cancel
+    } catch (e: any) {
+      console.error('Failed to cancel work order:', e);
+      alert(e?.message || 'Failed to cancel work order');
     }
   };
 
@@ -226,11 +309,12 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       await createNotification(notification);
       
       setWorkOrders(prev => prev.map(wo => wo.id === updatedWO.id ? updatedWO : wo));
-      // Close the slide-over (exit the details view) and show the updated card in Pending
+      // Keep the details panel open but reflect new status (typically Pending),
+      // which will hide the inline technician section automatically
       setShowTechnicianModal(false);
       setTechnicianNotes('');
       setTechnicianImages([]);
-      setSelectedWO(null);
+      setSelectedWO(updatedWO);
     } catch (error) {
       console.error('Error submitting technician update:', error);
     } finally {
@@ -477,7 +561,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     setDraggedWoId(null);
   };
 
-  const columns = [Status.OPEN, Status.IN_PROGRESS, Status.PENDING, Status.COMPLETED];
+  const columns = [Status.OPEN, Status.IN_PROGRESS, Status.PENDING, Status.COMPLETED, Status.CANCELED];
 
   return (
     <div className="p-8 h-full flex flex-col bg-stone-50/50">
@@ -744,6 +828,19 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 <p className="text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100">
                   {selectedWO.description}
                 </p>
+                {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.PENDING && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Review</label>
+                    <textarea
+                      value={adminReview}
+                      onChange={(e) => setAdminReview(e.target.value)}
+                      rows={4}
+                      className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-white"
+                      placeholder="Write your review or approval notes..."
+                    />
+                    <p className="text-xs text-stone-500 mt-1">Saving will mark this work order as Completed.</p>
+                  </div>
+                )}
               </div>
 
               {/* Admin Assignment Section (visible to Admin when status is Open and not yet assigned) */}
@@ -1055,6 +1152,35 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 </div>
               )}
 
+              {/* Admin Assignment Block (appears before AI Assistant) */}
+              {currentUser?.userRole === 'Admin' && (
+                <div className="bg-white border border-stone-200/60 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <HardHat size={16} className="text-violet-600" /> Assign To
+                  </h3>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <select
+                      value={adminAssignedTo}
+                      onChange={(e) => setAdminAssignedTo(e.target.value)}
+                      className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-stone-50"
+                      title="Select technician"
+                      aria-label="Select technician"
+                    >
+                      <option value="">Select technician...</option>
+                      {TECHNICIANS.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {selectedWO.status === Status.OPEN && (
+                    <p className="mt-2 text-xs text-stone-500">Saving will move status from Open to In Progress.</p>
+                  )}
+                  {selectedWO.status === Status.IN_PROGRESS && (
+                    <p className="mt-2 text-xs text-stone-500">Saving will keep status as In Progress and reassign technician.</p>
+                  )}
+                </div>
+              )}
+
               {/* Attached Images */}
               {selectedWOImages.length > 0 && (
                 <div>
@@ -1244,12 +1370,23 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
             {/* Footer */}
             <div className="p-4 border-t border-stone-200 bg-stone-50 flex justify-end gap-3 sticky bottom-0 z-20">
-               <button
-                 onClick={() => setSelectedWO(null)}
-                 className="px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-stone-700 text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200"
-               >
-                 Close
-               </button>
+               {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.OPEN ? (
+                 <button
+                   onClick={handleAdminCancel}
+                   className="px-5 py-2.5 bg-rose-600 text-white rounded-xl text-sm font-semibold hover:bg-rose-700 shadow-lg shadow-rose-600/20 hover:shadow-xl hover:shadow-rose-600/25 hover:-translate-y-0.5 transition-all duration-200"
+                   title="Cancel this work order"
+                   aria-label="Cancel work order"
+                 >
+                   Cancel
+                 </button>
+               ) : (
+                 <button
+                   onClick={() => setSelectedWO(null)}
+                   className="px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-stone-700 text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200"
+                 >
+                   Close
+                 </button>
+               )}
                {(() => {
                  // Technician inline submit button is now in the update section
                  // Only show footer buttons for Admin/Requester with edit permissions
@@ -1263,19 +1400,42 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                    return null;
                  }
 
-                 // Admin/Requester: show Save & Update button if they can edit
-                 if (selectedWOPermissions.canEdit) {
-                   return (
-                     <button 
-                       className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
-                       disabled={!selectedWOPermissions.canEdit}
-                     >
-                       <span>Save & Update</span>
-                       <ArrowRight size={16} />
-                     </button>
-                   );
+                 // Admin actions
+                 if (currentUser?.userRole === 'Admin') {
+                   if (selectedWO?.status === Status.OPEN) {
+                     return (
+                       <button
+                         onClick={handleAdminAssign}
+                         className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
+                       >
+                         <span>Save & Update</span>
+                         <ArrowRight size={16} />
+                       </button>
+                     );
+                   }
+                   if (selectedWO?.status === Status.IN_PROGRESS) {
+                     return (
+                       <button
+                         onClick={handleAdminAssign}
+                         className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
+                       >
+                         <span>Save & Update</span>
+                         <ArrowRight size={16} />
+                       </button>
+                     );
+                   }
+                   if (selectedWO?.status === Status.PENDING) {
+                     return (
+                       <button
+                         onClick={handleAdminApprove}
+                         className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
+                       >
+                         <span>Save & Update</span>
+                         <ArrowRight size={16} />
+                       </button>
+                     );
+                   }
                  }
-                 
                  return null;
                })()}
             </div>
