@@ -71,6 +71,14 @@ from .pm_schedule import (
     PMScheduleUpdate,
     PMSchedule,
 )
+from .work_notification import (
+    NotificationStatus,
+    NotificationPriority,
+    WorkNotificationBase,
+    WorkNotificationCreate,
+    WorkNotificationUpdate,
+    WorkNotification,
+)
 
 __all__ = [
     # Request models
@@ -146,4 +154,11 @@ __all__ = [
     "PMScheduleCreate",
     "PMScheduleUpdate",
     "PMSchedule",
+    # Work notification models
+    "NotificationStatus",
+    "NotificationPriority",
+    "WorkNotificationBase",
+    "WorkNotificationCreate",
+    "WorkNotificationUpdate",
+    "WorkNotification",
 ]

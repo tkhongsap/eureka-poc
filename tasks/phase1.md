@@ -70,7 +70,7 @@
   - [x] 8.7 Design inventory_parts table schema
   - [x] 8.8 Design inventory_transactions table schema
   - [x] 8.9 Design pm_schedules table schema
-  - [ ] 8.10 Design work_notifications table schema
+  - [x] 8.10 Design work_notifications table schema
   - [ ] 8.11 Create database migration files for all tables
   - [ ] 8.12 Define indexes for performance optimization
 
