@@ -61,7 +61,7 @@
   - [ ] 7.7 Set up ESLint and Prettier for frontend
 
 - [ ] 8.0 Database Schema Design (PostgreSQL)
-  - [ ] 8.1 Design tenants table schema
+  - [x] 8.1 Design tenants table schema
   - [ ] 8.2 Design sites table schema
   - [ ] 8.3 Design users table schema with role columns
   - [ ] 8.4 Design work_orders table schema
