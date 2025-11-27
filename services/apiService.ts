@@ -20,6 +20,35 @@ const getBackendUrl = () => {
 
 const API_BASE_URL = getBackendUrl();
 
+// User context for API calls
+let currentUserRole: string | null = null;
+let currentUserName: string | null = null;
+
+export const setUserContext = (role: string, name: string) => {
+  currentUserRole = role;
+  currentUserName = name;
+};
+
+export const getUserContext = () => ({
+  role: currentUserRole,
+  name: currentUserName
+});
+
+const getAuthHeaders = (): Record<string, string> => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (currentUserRole) {
+    headers['X-User-Role'] = currentUserRole;
+  }
+  if (currentUserName) {
+    headers['X-User-Name'] = currentUserName;
+  }
+  
+  return headers;
+};
+
 // --- Image API ---
 export interface ImageInfo {
   id: string;
@@ -205,9 +234,7 @@ export const getWorkOrder = async (woId: string): Promise<WorkOrderItem> => {
 export const updateWorkOrder = async (woId: string, updates: Partial<WorkOrderItem>): Promise<WorkOrderItem> => {
   const response = await fetch(`${API_BASE_URL}/workorders/${woId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(updates),
   });
 
@@ -236,9 +263,7 @@ export interface TechnicianUpdateData {
 export const technicianUpdateWorkOrder = async (woId: string, data: TechnicianUpdateData): Promise<WorkOrderItem> => {
   const response = await fetch(`${API_BASE_URL}/workorders/${woId}/technician-update`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
