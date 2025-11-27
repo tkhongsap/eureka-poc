@@ -22,7 +22,8 @@ export const STATUS_TRANSITIONS: WorkOrderStatusTransition[] = [
   { from: Status.OPEN, to: Status.IN_PROGRESS, allowedRoles: ['Admin'] },
   
   // Technician completes work (In Progress → Pending)
-  { from: Status.IN_PROGRESS, to: Status.PENDING, allowedRoles: ['Technician'] },
+  // Allow Admin to move as well
+  { from: Status.IN_PROGRESS, to: Status.PENDING, allowedRoles: ['Technician', 'Admin'] },
   
   // Admin rejects and sends back (Pending → In Progress)
   { from: Status.PENDING, to: Status.IN_PROGRESS, allowedRoles: ['Admin'] },
@@ -35,6 +36,9 @@ export const STATUS_TRANSITIONS: WorkOrderStatusTransition[] = [
   
   // Admin can move back from Complete to In Progress for corrections
   { from: Status.COMPLETED, to: Status.IN_PROGRESS, allowedRoles: ['Admin'] },
+
+  // Admin cancels (Open → Canceled)
+  { from: Status.OPEN, to: Status.CANCELED, allowedRoles: ['Admin'] },
 ];
 
 /**

@@ -10,7 +10,8 @@ export enum Status {
   IN_PROGRESS = 'In Progress',
   PENDING = 'Pending',
   COMPLETED = 'Completed',
-  CLOSED = 'Closed'
+  CLOSED = 'Closed',
+  CANCELED = 'Canceled'
 }
 
 export type UserRole = 'Admin' | 'Technician' | 'Requester';
@@ -46,6 +47,7 @@ export interface WorkOrder {
   requestId?: string;   // Original request ID if created from request
   technicianNotes?: string;  // Notes added by technician
   technicianImages?: string[];  // Images added by technician
+  adminReview?: string; // Review/approval notes by admin
 }
 
 export interface Asset {

@@ -31,7 +31,8 @@ async def create_workorder(wo: WorkOrderCreate):
         "imageIds": wo.imageIds,
         "requestId": wo.requestId,
         "technicianNotes": None,
-        "technicianImages": []
+        "technicianImages": [],
+        "adminReview": None
     }
     
     workorders = load_json(WORKORDERS_FILE)
