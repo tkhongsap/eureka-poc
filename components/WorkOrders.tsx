@@ -10,6 +10,7 @@ import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateDa
 interface WorkOrdersProps {
   workOrders: WorkOrder[];
   currentUser?: User;
+  technicians?: { id: string; name: string }[];
 }
 
 const statusColors = {
@@ -35,7 +36,7 @@ const AVAILABLE_PARTS = [
     { id: 'p4', name: 'Industrial Grease (1kg)', cost: 15.00 },
 ];
 
-const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, currentUser }) => {
+const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, currentUser, technicians = [] }) => {
   const [viewMode, setViewMode] = useState<'list' | 'board'>('board');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(initialWorkOrders);
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
@@ -48,6 +49,12 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   
   // Filter for technicians
   const [showOnlyMyJobs, setShowOnlyMyJobs] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [selectedPriority, setSelectedPriority] = useState<Priority | 'ALL'>('ALL');
+  const [selectedMonth, setSelectedMonth] = useState(''); // YYYY-MM
+  const [selectedAssignedTo, setSelectedAssignedTo] = useState(''); // Filter by technician (Admin only)
   
   // Technician update modal states
   const [showTechnicianModal, setShowTechnicianModal] = useState(false);
@@ -83,9 +90,31 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     }
   }, [selectedWO]);
 
-  const filteredWorkOrders = showOnlyMyJobs && currentUser
+  // Base technician scoping: technicians only ever see their own jobs
+  const scopedWorkOrders = currentUser?.userRole === 'Technician'
     ? workOrders.filter(wo => wo.assignedTo === currentUser.name)
     : workOrders;
+
+  const filteredWorkOrders = scopedWorkOrders.filter(wo => {
+    const matchesSearch = searchText
+      ? (wo.title.toLowerCase().includes(searchText.toLowerCase()) ||
+         wo.description.toLowerCase().includes(searchText.toLowerCase()))
+      : true;
+
+    const created = wo.createdAt || '';
+    const matchesStart = startDate ? created >= startDate : true;
+    const matchesEnd = endDate ? created <= endDate : true;
+
+    // Month filter: compare YYYY-MM prefix of createdAt
+    const matchesMonth = selectedMonth ? created.startsWith(selectedMonth) : true;
+
+    const matchesPriority = selectedPriority === 'ALL' ? true : wo.priority === selectedPriority;
+
+    // AssignedTo filter (Admin only, Technician already scoped above)
+    const matchesAssignedTo = selectedAssignedTo ? wo.assignedTo === selectedAssignedTo : true;
+
+    return matchesSearch && matchesStart && matchesEnd && matchesMonth && matchesPriority && matchesAssignedTo;
+  });
 
   const handleAnalyze = async () => {
     if (!selectedWO) return;
@@ -238,49 +267,136 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       </div>
 
       {/* Toolbar */}
-      <div className="mb-6 flex justify-between items-center bg-white p-3 rounded-2xl border border-stone-200/60 shadow-sm">
-         <div className="flex items-center space-x-4">
-             {/* View Toggles */}
-             <div className="bg-stone-100 p-1 rounded-xl flex border border-stone-200">
-                <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
-                >
-                    <List size={18} />
-                </button>
-                <button
-                    onClick={() => setViewMode('board')}
-                    className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'board' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
-                >
-                    <LayoutGrid size={18} />
-                </button>
-             </div>
+      <div className="mb-6 bg-white p-5 rounded-2xl border border-stone-200/60 shadow-sm">
+        {/* Row 1: View toggle + Search + Order count */}
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-4">
+            {/* View Toggles */}
+            <div className="bg-stone-100 p-1 rounded-xl flex border border-stone-200">
+              <button
+                onClick={() => setViewMode('list')}
+                title="List view"
+                className={`p-2.5 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-white text-teal-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+              >
+                <List size={18} />
+              </button>
+              <button
+                onClick={() => setViewMode('board')}
+                title="Board view"
+                className={`p-2.5 rounded-lg transition-all duration-200 ${viewMode === 'board' ? 'bg-white text-teal-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+              >
+                <LayoutGrid size={18} />
+              </button>
+            </div>
 
-             {/* Role Filter */}
-             {currentUser?.userRole === 'Technician' && (
-                 <div className="flex items-center space-x-2 border-l border-stone-200 pl-4">
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <input
-                            type="checkbox"
-                            checked={showOnlyMyJobs}
-                            onChange={(e) => setShowOnlyMyJobs(e.target.checked)}
-                            className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-stone-300"
-                        />
-                        <span className="text-sm text-stone-700 font-medium">Assigned to Me</span>
-                    </label>
-                 </div>
-             )}
+            {/* Text search */}
+            <div className="relative">
+              <input
+                type="text"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="Search title or description..."
+                className="text-sm pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-72 transition-all"
+              />
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
 
-             {currentUser?.userRole === 'Admin' && (
-                 <button className="flex items-center space-x-2 px-3 py-1.5 hover:bg-stone-50 rounded-lg text-sm text-stone-600 transition-colors duration-200">
-                    <Filter size={16} />
-                    <span>Filter All</span>
-                </button>
-             )}
+          {/* Order count badge */}
+          <div className="flex items-center gap-2 text-sm font-semibold text-teal-700 px-4 py-2 bg-teal-50 rounded-xl border border-teal-100">
+            <span className="text-lg">{filteredWorkOrders.length}</span>
+            <span className="text-teal-600 font-medium">Orders</span>
           </div>
-          <div className="text-sm text-stone-500 font-medium px-3 py-1 bg-stone-50 rounded-lg">
-            {filteredWorkOrders.length} Orders
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-stone-100 mb-4" />
+
+        {/* Row 2: Filters - Grid layout for better spacing */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* Date range filter */}
+            <div className="flex items-center gap-2 bg-stone-50 px-3 py-2 rounded-xl border border-stone-100">
+              <Calendar size={14} className="text-stone-400" />
+              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Created</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                title="Start date"
+                className="text-xs px-2 py-1 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 w-32"
+              />
+              <span className="text-stone-300">→</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                title="End date"
+                className="text-xs px-2 py-1 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 w-32"
+              />
+            </div>
+
+            {/* Month filter */}
+            <div className="flex items-center gap-2 bg-stone-50 px-3 py-2 rounded-xl border border-stone-100">
+              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Month</span>
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                title="Filter by month"
+                className="text-xs px-2 py-1 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+              />
+            </div>
+
+            {/* Priority filter */}
+            <div className="flex items-center gap-2 bg-stone-50 px-3 py-2 rounded-xl border border-stone-100">
+              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Priority</span>
+              <select
+                value={selectedPriority}
+                onChange={(e) => setSelectedPriority(e.target.value as Priority | 'ALL')}
+                title="Filter by priority"
+                className="text-xs px-2 py-1 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 pr-6 cursor-pointer"
+              >
+                <option value="ALL">All</option>
+                <option value={Priority.CRITICAL}>🔴 Critical</option>
+                <option value={Priority.HIGH}>🟠 High</option>
+                <option value={Priority.MEDIUM}>🟢 Medium</option>
+                <option value={Priority.LOW}>⚪ Low</option>
+              </select>
+            </div>
+
+            {/* AssignedTo filter - Admin only */}
+            {currentUser?.userRole === 'Admin' && (
+              <div className="flex items-center gap-2 bg-stone-50 px-3 py-2 rounded-xl border border-stone-100">
+                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Technician</span>
+                <select
+                  value={selectedAssignedTo}
+                  onChange={(e) => setSelectedAssignedTo(e.target.value)}
+                  title="Filter by technician"
+                  className="text-xs px-2 py-1 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 pr-6 min-w-[130px] cursor-pointer"
+                >
+                  <option value="">All</option>
+                  {technicians.map(tech => (
+                    <option key={tech.id} value={tech.name}>{tech.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
+
+          {/* Clear filters button */}
+          <button
+            type="button"
+            onClick={() => { setStartDate(''); setEndDate(''); setSelectedMonth(''); setSelectedPriority('ALL'); setSearchText(''); setSelectedAssignedTo(''); }}
+            title="Clear all filters"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-stone-500 hover:text-red-600 hover:bg-red-50 border border-stone-200 hover:border-red-200 transition-all"
+          >
+            <X size={14} />
+            Clear Filters
+          </button>
+        </div>
       </div>
 
       {/* CONTENT AREA */}
