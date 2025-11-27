@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Filter, Download, MoreHorizontal, BrainCircuit, X, AlertTriangle, CheckSquare, Clock, ArrowRight, Zap,
-  LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle
+  LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, UserPlus
 } from 'lucide-react';
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder } from '../services/apiService';
+import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, AdminRejectData, adminCloseWorkOrder } from '../services/apiService';
 import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules';
 
 interface WorkOrdersProps {
   workOrders: WorkOrder[];
   currentUser?: User;
+  technicians?: { id: string; name: string }[];
 }
 
 const statusColors = {
@@ -36,7 +37,7 @@ const AVAILABLE_PARTS = [
     { id: 'p4', name: 'Industrial Grease (1kg)', cost: 15.00 },
 ];
 
-const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, currentUser }) => {
+const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, currentUser, technicians = [] }) => {
   const [viewMode, setViewMode] = useState<'list' | 'board'>('board');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(initialWorkOrders);
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
@@ -56,6 +57,18 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [technicianImages, setTechnicianImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Admin assignment states
+  const [selectedTechnician, setSelectedTechnician] = useState<string>('');
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  // Admin review states
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+
+  // Admin close state
+  const [isClosing, setIsClosing] = useState(false);
 
   // Get permissions for selected work order
   const selectedWOPermissions = selectedWO && currentUser
@@ -92,6 +105,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       setTechnicianNotes('');
       setTechnicianImages([]);
     }
+    // Clear admin review fields
+    setRejectionReason('');
   }, [selectedWO]);
 
   const filteredWorkOrders = showOnlyMyJobs && currentUser
@@ -200,6 +215,125 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       console.error('Error submitting technician update:', error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Admin Assignment Handler
+  const handleAssign = async () => {
+    if (!selectedWO || !selectedTechnician || !currentUser) return;
+    if (currentUser.userRole !== 'Admin') return;
+
+    setIsAssigning(true);
+    try {
+      // Assign technician and change status to In Progress
+      const updatedWO = await updateWorkOrder(selectedWO.id, {
+        assignedTo: selectedTechnician,
+        status: Status.IN_PROGRESS,
+      });
+
+      // Update local state
+      setWorkOrders(prev => prev.map(wo => 
+        wo.id === selectedWO.id 
+          ? { ...wo, assignedTo: selectedTechnician, status: Status.IN_PROGRESS }
+          : wo
+      ));
+      setSelectedWO({ ...selectedWO, assignedTo: selectedTechnician, status: Status.IN_PROGRESS });
+      setSelectedTechnician('');
+    } catch (error: any) {
+      console.error('Failed to assign technician:', error);
+      alert(error.message || 'Failed to assign technician');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  // Admin Approve Handler
+  const handleApprove = async () => {
+    if (!selectedWO || !currentUser) return;
+    if (currentUser.userRole !== 'Admin') return;
+    if (selectedWO.status !== Status.PENDING) return;
+
+    setIsApproving(true);
+    try {
+      // Approve work order, changes status to Completed
+      // Backend will handle notification to Requestor and Technician
+      const updatedWO = await adminApproveWorkOrder(selectedWO.id);
+
+      // Update local state
+      setWorkOrders(prev => prev.map(wo => 
+        wo.id === selectedWO.id 
+          ? { ...wo, status: Status.COMPLETED }
+          : wo
+      ));
+      setSelectedWO({ ...selectedWO, status: Status.COMPLETED });
+    } catch (error: any) {
+      console.error('Failed to approve work order:', error);
+      alert(error.message || 'Failed to approve work order');
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
+  // Admin Reject Handler
+  const handleReject = async () => {
+    if (!selectedWO || !currentUser) return;
+    if (currentUser.userRole !== 'Admin') return;
+    if (selectedWO.status !== Status.PENDING) return;
+    
+    // Validate rejection reason
+    if (!rejectionReason.trim()) {
+      alert('Please provide a reason for rejection');
+      return;
+    }
+
+    setIsRejecting(true);
+    try {
+      // Reject work order with reason, changes status back to In Progress
+      // Backend will handle notification to Technician
+      const updatedWO = await adminRejectWorkOrder(selectedWO.id, {
+        rejectionReason: rejectionReason.trim()
+      });
+
+      // Update local state
+      setWorkOrders(prev => prev.map(wo => 
+        wo.id === selectedWO.id 
+          ? { ...wo, status: Status.IN_PROGRESS, rejectionReason: rejectionReason.trim() }
+          : wo
+      ));
+      setSelectedWO({ ...selectedWO, status: Status.IN_PROGRESS, rejectionReason: rejectionReason.trim() });
+      setRejectionReason('');
+    } catch (error: any) {
+      console.error('Failed to reject work order:', error);
+      alert(error.message || 'Failed to reject work order');
+    } finally {
+      setIsRejecting(false);
+    }
+  };
+
+  // Admin Close Handler
+  const handleClose = async () => {
+    if (!selectedWO || !currentUser) return;
+    if (currentUser.userRole !== 'Admin') return;
+    if (selectedWO.status !== Status.COMPLETED) return;
+
+    setIsClosing(true);
+    try {
+      // Close work order, changes status to Closed
+      // Backend will handle notification to Requestor
+      const updatedWO = await adminCloseWorkOrder(selectedWO.id);
+
+      // Update local state
+      setWorkOrders(prev => prev.map(wo => 
+        wo.id === selectedWO.id 
+          ? { ...wo, status: Status.CLOSED }
+          : wo
+      ));
+      setSelectedWO({ ...selectedWO, status: Status.CLOSED });
+    } catch (error: any) {
+      console.error('Failed to close work order:', error);
+      alert(error.message || 'Failed to close work order');
+    } finally {
+      setIsClosing(false);
     }
   };
 
@@ -537,30 +671,252 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 </p>
               </div>
 
+              {/* Admin Assignment Section (visible to Admin when status is Open and not yet assigned) */}
+              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.OPEN && (
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <UserPlus size={16} className="text-purple-600" /> Assign Technician
+                  </h3>
+
+                  {!selectedWO.assignedTo ? (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-purple-700 mb-2">
+                          Select Technician
+                        </label>
+                        <select
+                          value={selectedTechnician}
+                          onChange={(e) => setSelectedTechnician(e.target.value)}
+                          className="w-full px-4 py-3 bg-white border-2 border-purple-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                          disabled={isAssigning}
+                        >
+                          <option value="">-- Select a technician --</option>
+                          {technicians.map(tech => (
+                            <option key={tech.id} value={tech.name}>
+                              {tech.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <button
+                        onClick={handleAssign}
+                        disabled={!selectedTechnician || isAssigning}
+                        className="w-full px-5 py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:shadow-xl hover:shadow-purple-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                      >
+                        <UserPlus size={18} />
+                        {isAssigning ? 'Assigning...' : 'Assign & Start Work Order'}
+                      </button>
+
+                      <div className="bg-purple-100/50 border border-purple-200 p-3 rounded-xl">
+                        <p className="text-xs text-purple-700 flex items-start gap-2">
+                          <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                          <span>
+                            Assigning a technician will change the work order status to <strong>"In Progress"</strong> and notify the technician.
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white p-4 rounded-xl border border-purple-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold">
+                          {selectedWO.assignedTo.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-purple-900">
+                            {selectedWO.assignedTo}
+                          </p>
+                          <p className="text-xs text-purple-600">Assigned Technician</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-purple-700 mt-3 flex items-center gap-1">
+                        <CheckSquare size={12} />
+                        Work order is now in progress
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Admin Review Section (visible to Admin when status is Pending) */}
+              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.PENDING && (
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <CheckSquare size={16} className="text-purple-600" /> Review Work Completion
+                  </h3>
+
+                  {/* Display Technician's Work */}
+                  <div className="bg-white p-4 rounded-xl border border-purple-200 mb-4">
+                    <h4 className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-2">
+                      Technician's Work Summary
+                    </h4>
+                    
+                    {selectedWO.technicianNotes && (
+                      <div className="mb-3">
+                        <p className="text-xs font-medium text-purple-700 mb-1">Work Notes:</p>
+                        <p className="text-sm text-stone-700 bg-stone-50 p-3 rounded-lg border border-stone-200">
+                          {selectedWO.technicianNotes}
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedWO.technicianImages && selectedWO.technicianImages.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-purple-700 mb-2">
+                          Work Photos ({selectedWO.technicianImages.length}):
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {selectedWO.technicianImages.map((imgUrl, idx) => (
+                            <img
+                              key={idx}
+                              src={imgUrl}
+                              alt={`Work photo ${idx + 1}`}
+                              className="w-full h-20 object-cover rounded-lg border border-stone-200 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => setFullscreenImage(imgUrl)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {!selectedWO.technicianNotes && (!selectedWO.technicianImages || selectedWO.technicianImages.length === 0) && (
+                      <p className="text-sm text-stone-500 italic">No work summary provided by technician</p>
+                    )}
+                  </div>
+
+                  {/* Review Actions */}
+                  <div className="space-y-4">
+                    {/* Approve Button */}
+                    <button
+                      onClick={handleApprove}
+                      disabled={isApproving || isRejecting}
+                      className="w-full px-5 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                    >
+                      <CheckSquare size={18} />
+                      {isApproving ? 'Approving...' : 'Approve Work Order'}
+                    </button>
+
+                    {/* Rejection Section */}
+                    <div className="border-t border-purple-200 pt-4">
+                      <label className="block text-sm font-medium text-purple-700 mb-2">
+                        Or Reject with Reason
+                      </label>
+                      <textarea
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        placeholder="Explain why this work needs to be redone..."
+                        className="w-full px-4 py-3 bg-white border-2 border-purple-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none"
+                        rows={3}
+                        disabled={isApproving || isRejecting}
+                      />
+                      <button
+                        onClick={handleReject}
+                        disabled={isApproving || isRejecting || !rejectionReason.trim()}
+                        className="w-full mt-2 px-5 py-3 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 shadow-lg shadow-red-600/20 hover:shadow-xl hover:shadow-red-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                      >
+                        <X size={18} />
+                        {isRejecting ? 'Rejecting...' : 'Reject & Send Back'}
+                      </button>
+                    </div>
+
+                    {/* Info Messages */}
+                    <div className="space-y-2">
+                      <div className="bg-emerald-100/50 border border-emerald-200 p-3 rounded-xl">
+                        <p className="text-xs text-emerald-700 flex items-start gap-2">
+                          <CheckSquare size={14} className="mt-0.5 flex-shrink-0" />
+                          <span>
+                            <strong>Approve:</strong> Changes status to <strong>"Completed"</strong> and notifies the Requestor and Technician.
+                          </span>
+                        </p>
+                      </div>
+                      <div className="bg-red-100/50 border border-red-200 p-3 rounded-xl">
+                        <p className="text-xs text-red-700 flex items-start gap-2">
+                          <X size={14} className="mt-0.5 flex-shrink-0" />
+                          <span>
+                            <strong>Reject:</strong> Changes status back to <strong>"In Progress"</strong> and notifies the Technician to redo the work.
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Admin Close Section (visible to Admin when status is Completed) */}
+              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED && (
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <CheckSquare size={16} className="text-purple-600" /> Close Work Order
+                  </h3>
+
+                  <div className="bg-white p-4 rounded-xl border border-purple-200 mb-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <CheckSquare size={24} className="text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-emerald-700">Work Completed & Approved</p>
+                        <p className="text-xs text-stone-600">Ready to be closed</p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-stone-50 p-3 rounded-lg border border-stone-200">
+                      <p className="text-xs text-stone-700 leading-relaxed">
+                        This work order has been successfully completed and approved. 
+                        Closing will finalize the work order and notify the requestor.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Close Button */}
+                  <button
+                    onClick={handleClose}
+                    disabled={isClosing}
+                    className="w-full px-5 py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:shadow-xl hover:shadow-purple-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  >
+                    <CheckSquare size={18} />
+                    {isClosing ? 'Closing...' : 'Close Work Order'}
+                  </button>
+
+                  {/* Info Message */}
+                  <div className="mt-4 bg-purple-100/50 border border-purple-200 p-3 rounded-xl">
+                    <p className="text-xs text-purple-700 flex items-start gap-2">
+                      <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                      <span>
+                        Closing will change status to <strong>"Closed"</strong> and notify the Requestor. 
+                        Closed work orders cannot be edited.
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Technician Inline Update (visible to assigned Technician with edit permission) */}
               {selectedWOPermissions?.canEdit && currentUser?.userRole === 'Technician' && selectedWO?.status === Status.IN_PROGRESS && (
-                <div className="bg-white border border-stone-200/60 rounded-2xl p-5">
-                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-teal-600" /> Technician Update
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <ImageIcon size={16} className="text-blue-600" /> Complete Work & Submit
                   </h3>
 
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Notes</label>
+                    <label className="block text-sm font-medium text-blue-700 mb-1.5">Work Notes</label>
                     <textarea 
                       value={technicianNotes} 
                       onChange={(e) => setTechnicianNotes(e.target.value)} 
-                      rows={4} 
-                      className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-stone-50" 
+                      rows={5} 
+                      className="w-full border-2 border-blue-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white" 
+                      placeholder="Describe the work performed, parts replaced, observations, etc."
                       disabled={!selectedWOPermissions?.canEdit}
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-2">Add Images</label>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-blue-700 mb-2">Work Photos (Optional)</label>
                     <div className="flex items-center gap-3 mb-3">
-                      <label className={`inline-flex items-center gap-2 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm transition-colors duration-200 ${selectedWOPermissions?.canEdit ? 'cursor-pointer hover:bg-stone-100' : 'opacity-50 cursor-not-allowed'}`}>
-                        <Upload size={16} />
-                        <span>{isUploading ? 'Uploading...' : 'Select images'}</span>
+                      <label className={`inline-flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-blue-200 rounded-xl text-sm transition-colors duration-200 ${selectedWOPermissions?.canEdit ? 'cursor-pointer hover:bg-blue-50' : 'opacity-50 cursor-not-allowed'}`}>
+                        <Upload size={16} className="text-blue-600" />
+                        <span>{isUploading ? 'Uploading...' : 'Add photos'}</span>
                         <input 
                           type="file" 
                           accept="image/*" 
@@ -570,28 +926,56 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                           disabled={!selectedWOPermissions?.canEdit || isUploading}
                         />
                       </label>
-                      {isUploading && <span className="text-sm text-stone-500">Uploading...</span>}
-                      <button 
-                        onClick={() => { setTechnicianImages([]); }} 
-                        className="text-sm text-stone-500 hover:text-stone-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={!selectedWOPermissions?.canEdit}
-                      >
-                        Clear
-                      </button>
+                      {isUploading && <span className="text-sm text-blue-600">Uploading...</span>}
+                      {technicianImages.length > 0 && (
+                        <button 
+                          onClick={() => { setTechnicianImages([]); }} 
+                          className="text-sm text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={!selectedWOPermissions?.canEdit}
+                        >
+                          Clear all
+                        </button>
+                      )}
                     </div>
 
                     {technicianImages.length > 0 && (
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-3 gap-3 mb-4">
                         {technicianImages.map((id, idx) => (
-                          <div key={idx} className="relative rounded-xl overflow-hidden border border-stone-200">
-                            <img src={getImageUrl(id)} alt={`tech-img-${idx}`} className="w-full h-28 object-cover" />
-                            <button onClick={() => removeTechnicianImage(idx)} className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
+                          <div key={idx} className="relative rounded-xl overflow-hidden border-2 border-blue-200">
+                            <img src={getImageUrl(id)} alt={`work-photo-${idx}`} className="w-full h-28 object-cover" />
+                            <button 
+                              onClick={() => removeTechnicianImage(idx)} 
+                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-md"
+                            >
                               <Trash2 size={14} />
                             </button>
                           </div>
                         ))}
                       </div>
                     )}
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    onClick={submitTechnicianUpdate}
+                    disabled={isSubmitting || (!technicianNotes.trim() && technicianImages.length === 0)}
+                    className="w-full px-5 py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  >
+                    <CheckSquare size={18} />
+                    {isSubmitting ? 'Submitting...' : 'Mark as Done & Submit for Review'}
+                  </button>
+
+                  {/* Info Message */}
+                  <div className="mt-4 bg-blue-100/50 border border-blue-200 p-3 rounded-xl">
+                    <p className="text-xs text-blue-700 flex items-start gap-2">
+                      <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                      <span>
+                        Submitting will change status to <strong>"Pending"</strong> and notify the Admin for review. 
+                        {!technicianNotes.trim() && technicianImages.length === 0 && (
+                          <strong className="block mt-1 text-amber-700">Please add notes or photos before submitting.</strong>
+                        )}
+                      </span>
+                    </p>
                   </div>
                 </div>
               )}
@@ -792,25 +1176,15 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                  Close
                </button>
                {(() => {
-                 // Show save button only if user has edit permission
+                 // Technician inline submit button is now in the update section
+                 // Only show footer buttons for Admin/Requester with edit permissions
+                 
                  if (!selectedWOPermissions?.canEdit) {
                    return null;
                  }
 
-                 // Technicians: show Save & Update when they can edit (In Progress and assigned)
+                 // Technicians: no footer button needed (submit is in inline section)
                  if (currentUser?.userRole === 'Technician') {
-                   if (selectedWO?.status === Status.IN_PROGRESS) {
-                     return (
-                       <button 
-                         onClick={submitTechnicianUpdate} 
-                         disabled={isSubmitting || !selectedWOPermissions.canEdit} 
-                         className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                       >
-                         <span>{isSubmitting ? 'Saving...' : 'Complete & Submit'}</span>
-                         <ArrowRight size={16} />
-                       </button>
-                     );
-                   }
                    return null;
                  }
 
