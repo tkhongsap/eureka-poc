@@ -280,24 +280,17 @@ export interface TechnicianUpdateData {
 
 export const technicianUpdateWorkOrder = async (
   woId: string,
-  data: TechnicianUpdateData,
-  userRole?: string,
-  userName?: string
+  data: TechnicianUpdateData
 ): Promise<WorkOrderItem> => {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  if (userRole) headers['X-User-Role'] = userRole;
-  if (userName) headers['X-User-Name'] = userName;
-
   const response = await fetch(`${API_BASE_URL}/workorders/${woId}/technician-update`, {
     method: 'PATCH',
-    headers,
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
-    throw new Error('Failed to update work order as technician');
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to update work order as technician');
   }
 
   return response.json();

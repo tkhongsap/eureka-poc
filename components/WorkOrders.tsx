@@ -751,7 +751,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
              <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 h-full flex flex-col overflow-hidden">
                 <div className="overflow-auto flex-1">
                 <table className="w-full text-left border-collapse">
-                    <thead className="bg-stone-50 sticky top-0 z-10">
+                    <thead className="bg-stone-50 sticky top-0 z-[1]">
                     <tr>
                         <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">ID</th>
                         <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Title</th>
@@ -814,7 +814,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                 onDrop={(e) => handleDrop(e, status)}
                             >
                                 {/* Column Header */}
-                                <div className="p-4 flex items-center justify-between sticky top-0 bg-stone-100/70 backdrop-blur-sm z-10 rounded-t-2xl">
+                                <div className="p-4 flex items-center justify-between sticky top-0 bg-stone-100/70 backdrop-blur-sm z-[1] rounded-t-2xl">
                                     <div className="flex items-center gap-2">
                                         <div className={`w-2.5 h-2.5 rounded-full ${statusColors[status].split(' ')[0].replace('bg-', 'bg-')}`}></div>
                                         <h3 className="font-semibold text-stone-700 text-sm">{status}</h3>
@@ -895,7 +895,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
       {/* Slide-over Detail Panel */}
       {selectedWO && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-10 flex justify-end">
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" onClick={() => setSelectedWO(null)}></div>
           <div className="relative w-full max-w-2xl bg-white shadow-2xl h-full overflow-y-auto flex flex-col">
 
@@ -1560,7 +1560,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       )}
       {/* Technician Update Modal */}
       {showTechnicianModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-10 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowTechnicianModal(false)}></div>
           <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-auto p-6 z-20">
             <div className="flex justify-between items-start mb-4">
@@ -1614,7 +1614,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       {/* Fullscreen Image Modal */}
       {fullscreenImage && (
         <div
-          className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-20 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setFullscreenImage(null)}
         >
           <button

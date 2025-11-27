@@ -18,6 +18,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
   const unreadCount = getUnreadCount(notifications);
 
+  // Sort notifications: newest first (reverse chronological order)
+  const sortedNotifications = [...notifications].sort((a, b) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
       case NotificationType.WO_CREATED:
@@ -128,14 +133,16 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
       {/* Dropdown Panel */}
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop to close on outside click */}
           <div
-            className="fixed inset-0 z-40 animate-fade-in"
+            className="fixed inset-0 z-[999998]"
             onClick={() => setIsOpen(false)}
           />
-
           {/* Notification Panel */}
-          <div className="absolute right-0 mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-stone-200 z-50 max-h-[32rem] flex flex-col animate-scale-in overflow-hidden">
+          <div 
+            className="fixed top-20 right-12 w-96 bg-white rounded-2xl shadow-2xl border border-stone-200 z-[999999] max-h-[calc(100vh-7rem)] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
             <div className="p-4 border-b border-stone-200 flex items-center justify-between bg-gradient-to-r from-teal-50 to-blue-50">
               <div className="flex items-center gap-2">
@@ -170,7 +177,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 </div>
               ) : (
                 <div className="divide-y divide-stone-100">
-                  {notifications.map((notification, index) => (
+                  {sortedNotifications.map((notification, index) => (
                     <div
                       key={notification.id}
                       className={`p-4 hover:bg-stone-50 transition-all duration-200 cursor-pointer relative group ${

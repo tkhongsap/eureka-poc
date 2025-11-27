@@ -74,7 +74,7 @@ const Inventory: React.FC = () => {
 
                 <div className="overflow-auto flex-1">
                     <table className="w-full text-left border-collapse">
-                        <thead className="bg-stone-50 sticky top-0 z-10 text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                        <thead className="bg-stone-50 sticky top-0 z-[1] text-xs font-semibold text-stone-500 uppercase tracking-wider">
                             <tr>
                                 <th className="px-6 py-3.5 border-b border-stone-200">Part Info</th>
                                 <th className="px-6 py-3.5 border-b border-stone-200">Category</th>
