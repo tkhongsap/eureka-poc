@@ -641,28 +641,29 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
               {/* Technician Inline Update (visible to assigned Technician with edit permission) */}
               {selectedWOPermissions?.canEdit && currentUser?.userRole === 'Technician' && selectedWO?.status === Status.IN_PROGRESS && (
-                <div className="bg-white border border-stone-200/60 rounded-2xl p-5">
-                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-teal-600" /> Technician Update
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <ImageIcon size={16} className="text-blue-600" /> Complete Work & Submit
                   </h3>
 
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Notes</label>
+                    <label className="block text-sm font-medium text-blue-700 mb-1.5">Work Notes</label>
                     <textarea 
                       value={technicianNotes} 
                       onChange={(e) => setTechnicianNotes(e.target.value)} 
-                      rows={4} 
-                      className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-stone-50" 
+                      rows={5} 
+                      className="w-full border-2 border-blue-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white" 
+                      placeholder="Describe the work performed, parts replaced, observations, etc."
                       disabled={!selectedWOPermissions?.canEdit}
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-2">Add Images</label>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-blue-700 mb-2">Work Photos (Optional)</label>
                     <div className="flex items-center gap-3 mb-3">
-                      <label className={`inline-flex items-center gap-2 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm transition-colors duration-200 ${selectedWOPermissions?.canEdit ? 'cursor-pointer hover:bg-stone-100' : 'opacity-50 cursor-not-allowed'}`}>
-                        <Upload size={16} />
-                        <span>{isUploading ? 'Uploading...' : 'Select images'}</span>
+                      <label className={`inline-flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-blue-200 rounded-xl text-sm transition-colors duration-200 ${selectedWOPermissions?.canEdit ? 'cursor-pointer hover:bg-blue-50' : 'opacity-50 cursor-not-allowed'}`}>
+                        <Upload size={16} className="text-blue-600" />
+                        <span>{isUploading ? 'Uploading...' : 'Add photos'}</span>
                         <input 
                           type="file" 
                           accept="image/*" 
@@ -672,28 +673,56 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                           disabled={!selectedWOPermissions?.canEdit || isUploading}
                         />
                       </label>
-                      {isUploading && <span className="text-sm text-stone-500">Uploading...</span>}
-                      <button 
-                        onClick={() => { setTechnicianImages([]); }} 
-                        className="text-sm text-stone-500 hover:text-stone-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={!selectedWOPermissions?.canEdit}
-                      >
-                        Clear
-                      </button>
+                      {isUploading && <span className="text-sm text-blue-600">Uploading...</span>}
+                      {technicianImages.length > 0 && (
+                        <button 
+                          onClick={() => { setTechnicianImages([]); }} 
+                          className="text-sm text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={!selectedWOPermissions?.canEdit}
+                        >
+                          Clear all
+                        </button>
+                      )}
                     </div>
 
                     {technicianImages.length > 0 && (
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-3 gap-3 mb-4">
                         {technicianImages.map((id, idx) => (
-                          <div key={idx} className="relative rounded-xl overflow-hidden border border-stone-200">
-                            <img src={getImageUrl(id)} alt={`tech-img-${idx}`} className="w-full h-28 object-cover" />
-                            <button onClick={() => removeTechnicianImage(idx)} className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
+                          <div key={idx} className="relative rounded-xl overflow-hidden border-2 border-blue-200">
+                            <img src={getImageUrl(id)} alt={`work-photo-${idx}`} className="w-full h-28 object-cover" />
+                            <button 
+                              onClick={() => removeTechnicianImage(idx)} 
+                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-md"
+                            >
                               <Trash2 size={14} />
                             </button>
                           </div>
                         ))}
                       </div>
                     )}
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    onClick={submitTechnicianUpdate}
+                    disabled={isSubmitting || (!technicianNotes.trim() && technicianImages.length === 0)}
+                    className="w-full px-5 py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  >
+                    <CheckSquare size={18} />
+                    {isSubmitting ? 'Submitting...' : 'Mark as Done & Submit for Review'}
+                  </button>
+
+                  {/* Info Message */}
+                  <div className="mt-4 bg-blue-100/50 border border-blue-200 p-3 rounded-xl">
+                    <p className="text-xs text-blue-700 flex items-start gap-2">
+                      <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                      <span>
+                        Submitting will change status to <strong>"Pending"</strong> and notify the Admin for review. 
+                        {!technicianNotes.trim() && technicianImages.length === 0 && (
+                          <strong className="block mt-1 text-amber-700">Please add notes or photos before submitting.</strong>
+                        )}
+                      </span>
+                    </p>
                   </div>
                 </div>
               )}
@@ -894,25 +923,15 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                  Close
                </button>
                {(() => {
-                 // Show save button only if user has edit permission
+                 // Technician inline submit button is now in the update section
+                 // Only show footer buttons for Admin/Requester with edit permissions
+                 
                  if (!selectedWOPermissions?.canEdit) {
                    return null;
                  }
 
-                 // Technicians: show Save & Update when they can edit (In Progress and assigned)
+                 // Technicians: no footer button needed (submit is in inline section)
                  if (currentUser?.userRole === 'Technician') {
-                   if (selectedWO?.status === Status.IN_PROGRESS) {
-                     return (
-                       <button 
-                         onClick={submitTechnicianUpdate} 
-                         disabled={isSubmitting || !selectedWOPermissions.canEdit} 
-                         className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                       >
-                         <span>{isSubmitting ? 'Saving...' : 'Complete & Submit'}</span>
-                         <ArrowRight size={16} />
-                       </button>
-                     );
-                   }
                    return null;
                  }
 
