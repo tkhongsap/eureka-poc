@@ -67,7 +67,7 @@
   - [x] 8.4 Design work_orders table schema
   - [x] 8.5 Design assets table schema with hierarchy support
   - [x] 8.6 Design functional_locations table schema
-  - [ ] 8.7 Design inventory_parts table schema
+  - [x] 8.7 Design inventory_parts table schema
   - [ ] 8.8 Design inventory_transactions table schema
   - [ ] 8.9 Design pm_schedules table schema
   - [ ] 8.10 Design work_notifications table schema

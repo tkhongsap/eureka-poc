@@ -46,6 +46,14 @@ from .asset import (
     AssetUpdate,
     Asset,
 )
+from .inventory_part import (
+    PartType,
+    PartStatus,
+    InventoryPartBase,
+    InventoryPartCreate,
+    InventoryPartUpdate,
+    InventoryPart,
+)
 
 __all__ = [
     # Request models
@@ -99,4 +107,11 @@ __all__ = [
     "AssetCreate",
     "AssetUpdate",
     "Asset",
+    # Inventory part models
+    "PartType",
+    "PartStatus",
+    "InventoryPartBase",
+    "InventoryPartCreate",
+    "InventoryPartUpdate",
+    "InventoryPart",
 ]
