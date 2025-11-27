@@ -895,7 +895,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
       {/* Slide-over Detail Panel */}
       {selectedWO && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-10 flex justify-end">
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" onClick={() => setSelectedWO(null)}></div>
           <div className="relative w-full max-w-2xl bg-white shadow-2xl h-full overflow-y-auto flex flex-col">
 
@@ -1560,7 +1560,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       )}
       {/* Technician Update Modal */}
       {showTechnicianModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-10 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowTechnicianModal(false)}></div>
           <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-auto p-6 z-20">
             <div className="flex justify-between items-start mb-4">
@@ -1614,7 +1614,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       {/* Fullscreen Image Modal */}
       {fullscreenImage && (
         <div
-          className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-20 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setFullscreenImage(null)}
         >
           <button

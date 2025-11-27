@@ -6,10 +6,12 @@ import {
   listRequests, 
   getImageUrl,
   RequestItem as ApiRequestItem,
-  ImageInfo
+  ImageInfo,
+  createNotification
 } from '../services/apiService';
 import { User, UserRole, WorkOrder } from '../types';
 import RequestorWorkOrders from './RequestorWorkOrders';
+import { createWOCreatedNotification } from '../services/notificationService';
 
 interface RequestItem {
   id: string;
@@ -193,6 +195,16 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
           imageIds: createdRequest.imageIds,
           assignedTo: createdRequest.assignedTo,
         });
+      }
+
+      // Create notification for Admin (WO_CREATED)
+      if (currentUser) {
+        const notification = createWOCreatedNotification(
+          createdRequest.id,
+          createdRequest.location, // Using location as title
+          currentUser.name
+        );
+        await createNotification(notification);
       }
 
       // Update UI

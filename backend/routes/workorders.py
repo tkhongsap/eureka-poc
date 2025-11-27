@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query, Header
 from typing import List, Optional
+from pydantic import BaseModel
+import httpx
 
 from models import WorkOrderCreate, WorkOrder, WorkOrderUpdate, TechnicianUpdate
 from utils import WORKORDERS_FILE, load_json, save_json, generate_id, get_current_date
@@ -8,6 +10,10 @@ from utils.workflow_rules import (
     get_work_order_permissions,
     is_transition_allowed
 )
+
+# Models for admin actions
+class AdminRejectData(BaseModel):
+    rejectionReason: str
 
 router = APIRouter(prefix="/api/workorders", tags=["Work Orders"])
 
@@ -201,6 +207,165 @@ async def technician_update_workorder(
             existing_images = wo.get("imageIds", [])
             all_images = existing_images + technician_update.technicianImages
             wo["imageIds"] = all_images
+            
+            save_json(WORKORDERS_FILE, workorders)
+            return wo
+    
+    raise HTTPException(status_code=404, detail="Work order not found")
+
+
+@router.patch("/{wo_id}/approve", response_model=WorkOrder)
+async def admin_approve_workorder(
+    wo_id: str,
+    x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
+    x_user_name: Optional[str] = Header(None, alias="X-User-Name")
+):
+    """Admin approves work order, changes status from Pending to Completed"""
+    workorders = load_json(WORKORDERS_FILE)
+    
+    user_role = x_user_role or "Admin"
+    user_name = x_user_name or "Unknown"
+    
+    # Only Admin can approve
+    if user_role != "Admin":
+        raise HTTPException(status_code=403, detail="Only Admin can approve work orders")
+    
+    for wo in workorders:
+        if wo["id"] == wo_id:
+            current_status = wo["status"]
+            
+            # Must be in Pending status
+            if current_status != "Pending":
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Can only approve work orders in 'Pending' status, current: '{current_status}'"
+                )
+            
+            # Validate transition
+            try:
+                validate_status_transition(current_status, "Completed", user_role)
+            except ValueError as e:
+                raise HTTPException(status_code=403, detail=str(e))
+            
+            # Approve
+            wo["status"] = "Completed"
+            wo["approvedBy"] = user_name
+            wo["approvedAt"] = get_current_date()
+            
+            save_json(WORKORDERS_FILE, workorders)
+            return wo
+    
+    raise HTTPException(status_code=404, detail="Work order not found")
+
+
+@router.patch("/{wo_id}/reject", response_model=WorkOrder)
+async def admin_reject_workorder(
+    wo_id: str,
+    reject_data: AdminRejectData,
+    x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
+    x_user_name: Optional[str] = Header(None, alias="X-User-Name")
+):
+    """Admin rejects work order with reason, changes status from Pending to In Progress"""
+    workorders = load_json(WORKORDERS_FILE)
+    
+    user_role = x_user_role or "Admin"
+    user_name = x_user_name or "Unknown"
+    
+    # Only Admin can reject
+    if user_role != "Admin":
+        raise HTTPException(status_code=403, detail="Only Admin can reject work orders")
+    
+    for wo in workorders:
+        if wo["id"] == wo_id:
+            current_status = wo["status"]
+            
+            # Must be in Pending status
+            if current_status != "Pending":
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Can only reject work orders in 'Pending' status, current: '{current_status}'"
+                )
+            
+            # Validate transition (back to In Progress)
+            try:
+                validate_status_transition(current_status, "In Progress", user_role)
+            except ValueError as e:
+                raise HTTPException(status_code=403, detail=str(e))
+            
+            # Get technician name for notification
+            technician_name = wo.get("assignedTo", "Unknown")
+            
+            # Reject and send back
+            wo["status"] = "In Progress"
+            wo["rejectionReason"] = reject_data.rejectionReason
+            wo["rejectedBy"] = user_name
+            wo["rejectedAt"] = get_current_date()
+            
+            save_json(WORKORDERS_FILE, workorders)
+            
+            # Send notification to Technician with rejection reason
+            try:
+                async with httpx.AsyncClient() as client:
+                    notification_data = {
+                        "type": "wo_rejected",
+                        "workOrderId": wo["id"],
+                        "workOrderTitle": wo.get("title", "Work Order"),
+                        "message": f'Work order "{wo.get("title", "Work Order")}" needs revision. Reason: {reject_data.rejectionReason}',
+                        "recipientRole": "Technician",
+                        "recipientName": technician_name,
+                        "isRead": False,
+                        "triggeredBy": user_name
+                    }
+                    await client.post(
+                        "http://localhost:8000/api/notifications",
+                        json=notification_data
+                    )
+            except Exception as e:
+                # Log error but don't fail the request
+                print(f"Failed to send notification: {e}")
+            
+            return wo
+    
+    raise HTTPException(status_code=404, detail="Work order not found")
+
+
+@router.patch("/{wo_id}/close", response_model=WorkOrder)
+async def admin_close_workorder(
+    wo_id: str,
+    x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
+    x_user_name: Optional[str] = Header(None, alias="X-User-Name")
+):
+    """Admin closes work order, changes status from Completed to Closed"""
+    workorders = load_json(WORKORDERS_FILE)
+    
+    user_role = x_user_role or "Admin"
+    user_name = x_user_name or "Unknown"
+    
+    # Only Admin can close
+    if user_role != "Admin":
+        raise HTTPException(status_code=403, detail="Only Admin can close work orders")
+    
+    for wo in workorders:
+        if wo["id"] == wo_id:
+            current_status = wo["status"]
+            
+            # Must be in Completed status
+            if current_status != "Completed":
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Can only close work orders in 'Completed' status, current: '{current_status}'"
+                )
+            
+            # Validate transition
+            try:
+                validate_status_transition(current_status, "Closed", user_role)
+            except ValueError as e:
+                raise HTTPException(status_code=403, detail=str(e))
+            
+            # Close
+            wo["status"] = "Closed"
+            wo["closedBy"] = user_name
+            wo["closedAt"] = get_current_date()
             
             save_json(WORKORDERS_FILE, workorders)
             return wo
