@@ -11,7 +11,7 @@ import TeamSchedule from './components/TeamSchedule';
 import { WorkOrder, Status, Priority, User, UserRole } from './types';
 import { UserCircle2, ShieldCheck, HardHat, ClipboardList } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
-import { listWorkOrders, createWorkOrder, WorkOrderItem } from './services/apiService';
+import { listWorkOrders, createWorkOrder, WorkOrderItem, setUserContext } from './services/apiService';
 
 // --- MOCK DATA ---
 
@@ -130,8 +130,11 @@ const App: React.FC = () => {
       try {
         const { role } = JSON.parse(storedUser);
         if (role && USERS[role as UserRole]) {
-          setCurrentUser(USERS[role as UserRole]);
+          const user = USERS[role as UserRole];
+          setCurrentUser(user);
           setIsLoggedIn(true);
+          // Set user context for API calls
+          setUserContext(user.userRole, user.name);
           // เมื่อล็อกอินสำเร็จ ให้เข้า dashboard เสมอ
           setCurrentView('dashboard');
         }
@@ -336,6 +339,12 @@ const App: React.FC = () => {
 const PersonaSwitcher: React.FC<{ currentUser: User, onSwitch: (u: User) => void, dropdownPosition?: 'top' | 'bottom' }> = ({ currentUser, onSwitch, dropdownPosition = 'top' }) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const handleUserSwitch = (user: User) => {
+    onSwitch(user);
+    setUserContext(user.userRole, user.name);
+    setIsOpen(false);
+  };
+
   return (
     <div className="relative">
       {isOpen && (
@@ -347,7 +356,7 @@ const PersonaSwitcher: React.FC<{ currentUser: User, onSwitch: (u: User) => void
               {ALL_USERS.map((u) => (
                 <button
                   key={u.id}
-                  onClick={() => { onSwitch(u); setIsOpen(false); }}
+                  onClick={() => handleUserSwitch(u)}
                   className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${currentUser.id === u.id ? 'bg-brand-50 text-brand-700' : 'hover:bg-slate-50 text-slate-700'}`}
                 >
                   <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-100 text-purple-600' : u.userRole === 'Technician' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>

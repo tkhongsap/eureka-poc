@@ -91,3 +91,26 @@ export interface TeamMember {
   skills: string[];
   avatarUrl: string;
 }
+
+// Work Order Workflow Types
+export interface WorkOrderStatusTransition {
+  from: Status;
+  to: Status;
+  allowedRoles: UserRole[];
+}
+
+export interface WorkOrderPermissions {
+  canEdit: boolean;
+  canChangeStatus: boolean;
+  canAssign: boolean;
+  canDelete: boolean;
+  canView: boolean;
+}
+
+export interface WorkOrderNotification {
+  type: 'created' | 'assigned' | 'updated' | 'completed' | 'rejected' | 'closed';
+  workOrderId: string;
+  recipients: UserRole[];
+  message: string;
+  timestamp: string;
+}
