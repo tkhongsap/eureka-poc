@@ -1,12 +1,15 @@
 import React from 'react';
 import { Bell, Search, Globe, ChevronDown, UserCircle } from 'lucide-react';
-import { User } from '../types';
+import { User, Notification } from '../types';
+import NotificationCenter from './NotificationCenter';
 
 interface HeaderProps {
   user: User;
+  notifications?: Notification[];
+  onNotificationsUpdate?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ user }) => {
+const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificationsUpdate = () => {} }) => {
   return (
     <header className="h-16 bg-white/80 backdrop-blur-md border-b border-stone-200/60 flex items-center justify-between px-6 fixed top-0 right-0 left-64 z-10">
       {/* Search */}
@@ -29,10 +32,10 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
         </div>
 
         {/* Notifications */}
-        <button className="relative p-2.5 text-stone-500 hover:bg-stone-100 rounded-xl transition-all duration-200">
-          <Bell size={20} />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-        </button>
+        <NotificationCenter 
+          notifications={notifications}
+          onNotificationsUpdate={onNotificationsUpdate}
+        />
 
         {/* User Profile */}
         <div className="flex items-center space-x-3 pl-4 border-l border-stone-200/60">
