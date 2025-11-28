@@ -9,6 +9,7 @@ from routes import (
     images_router,
     notifications_router,
     requests_router,
+    sites_router,
     tenants_router,
     workorders_router,
 )
@@ -57,6 +58,7 @@ app.include_router(requests_router)
 app.include_router(workorders_router)
 app.include_router(notifications_router)
 app.include_router(tenants_router)
+app.include_router(sites_router)
 
 
 # Health Check

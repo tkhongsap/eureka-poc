@@ -254,12 +254,12 @@ Update the file after completing each sub-task, not just after completing an ent
     - [x] 16.1.3 Implement tenant deletion/deactivation logic
     - [x] 16.1.4 Add tenant license pool management
     - [x] 16.1.5 Create tenant listing with pagination
-  - [ ] 16.2 Implement site CRUD operations
-    - [ ] 16.2.1 Create site creation under tenant
-    - [ ] 16.2.2 Link site to parent tenant with foreign key
-    - [ ] 16.2.3 Implement site update logic
-    - [ ] 16.2.4 Implement site deletion logic
-    - [ ] 16.2.5 Create site listing by tenant
+  - [x] 16.2 Implement site CRUD operations
+    - [x] 16.2.1 Create site creation under tenant
+    - [x] 16.2.2 Link site to parent tenant with foreign key
+    - [x] 16.2.3 Implement site update logic
+    - [x] 16.2.4 Implement site deletion logic
+    - [x] 16.2.5 Create site listing by tenant
   - [ ] 16.3 Implement tenant-site data isolation
     - [ ] 16.3.1 Add tenant_id to all relevant database queries
     - [ ] 16.3.2 Create database query helper with automatic tenant filtering
