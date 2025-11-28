@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Bell, Check, CheckCheck, X, AlertCircle } from 'lucide-react';
 import { Notification, NotificationType } from '../types';
-import { markNotificationAsRead, markAllNotificationsAsRead, deleteNotification } from '../services/apiService';
+import { markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, deleteAllReadNotifications } from '../services/apiService';
 import { getUnreadCount } from '../services/notificationService';
 
 interface NotificationCenterProps {
@@ -101,6 +101,18 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     }
   };
 
+  const handleDeleteAllRead = async () => {
+    setIsProcessing(true);
+    try {
+      await deleteAllReadNotifications();
+      onNotificationsUpdate();
+    } catch (error) {
+      console.error('Failed to delete read notifications:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleDelete = async (notificationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setIsProcessing(true);
@@ -154,15 +166,26 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   </span>
                 )}
               </div>
-              {notifications.length > 0 && unreadCount > 0 && (
-                <button
-                  onClick={handleMarkAllAsRead}
-                  disabled={isProcessing}
-                  className="text-xs text-teal-600 hover:text-teal-700 font-medium transition-colors disabled:opacity-50 px-3 py-1.5 hover:bg-white/50 rounded-lg"
-                >
-                  {isProcessing ? 'Marking...' : 'Mark all read'}
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {notifications.length > 0 && unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAllAsRead}
+                    disabled={isProcessing}
+                    className="text-xs text-teal-600 hover:text-teal-700 font-medium transition-colors disabled:opacity-50 px-2 py-1.5 hover:bg-white/50 rounded-lg"
+                  >
+                    Mark all read
+                  </button>
+                )}
+                {notifications.length > 0 && notifications.some(n => n.isRead) && (
+                  <button
+                    onClick={handleDeleteAllRead}
+                    disabled={isProcessing}
+                    className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors disabled:opacity-50 px-2 py-1.5 hover:bg-red-50 rounded-lg"
+                  >
+                    Delete read
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Notification List */}

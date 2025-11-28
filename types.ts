@@ -22,7 +22,7 @@ export enum Status {
   CANCELED = 'Canceled'
 }
 
-export type UserRole = 'Admin' | 'Technician' | 'Requester';
+export type UserRole = 'Admin' | 'Technician' | 'Requester' | 'Head Technician';
 
 export interface User {
   id: string;

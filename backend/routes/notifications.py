@@ -139,27 +139,78 @@ async def mark_notification_as_read(
     return notification
 
 
+def is_notification_for_user(notification: dict, user_role: str, user_name: str) -> bool:
+    """Check if notification belongs to a specific user"""
+    # Must match role
+    if notification.get("recipientRole") != user_role:
+        return False
+    
+    # If notification has specific recipient name, must match
+    recipient_name = notification.get("recipientName")
+    if recipient_name and recipient_name != user_name:
+        return False
+    
+    return True
+
+
 @router.patch("/notifications/read-all")
 async def mark_all_notifications_as_read(
     x_user_role: Optional[str] = Header(None),
     x_user_name: Optional[str] = Header(None)
 ):
     """
-    Mark all notifications as read for the current user
-    Frontend should filter which notifications to mark based on user
-    For now, we'll mark all as read
+    Mark all notifications as read for the current user only
     """
     notifications = load_notifications()
     
-    # Mark all as read
+    marked_count = 0
+    # Mark as read only for current user's notifications
     for notification in notifications:
-        # Could add filtering by recipientRole/recipientName here if needed
-        notification["isRead"] = True
+        if is_notification_for_user(notification, x_user_role, x_user_name):
+            if not notification.get("isRead", False):
+                notification["isRead"] = True
+                marked_count += 1
     
     # Save
     save_notifications(notifications)
     
-    return {"message": "All notifications marked as read"}
+    return {"message": f"{marked_count} notifications marked as read"}
+
+
+@router.delete("/notifications/read")
+async def delete_all_read_notifications(
+    x_user_role: Optional[str] = Header(None),
+    x_user_name: Optional[str] = Header(None)
+):
+    """
+    Delete read notifications for the current user only
+    Other users' notifications are preserved
+    """
+    notifications = load_notifications()
+    
+    # Keep notifications that are:
+    # 1. Not for current user (preserve others' notifications)
+    # 2. Or for current user but still unread
+    remaining_notifications = []
+    deleted_count = 0
+    
+    for n in notifications:
+        if is_notification_for_user(n, x_user_role, x_user_name):
+            # This is current user's notification
+            if n.get("isRead", False):
+                # Read notification - delete it
+                deleted_count += 1
+            else:
+                # Unread - keep it
+                remaining_notifications.append(n)
+        else:
+            # Not for current user - always keep
+            remaining_notifications.append(n)
+    
+    # Save
+    save_notifications(remaining_notifications)
+    
+    return {"message": f"{deleted_count} read notifications deleted"}
 
 
 @router.delete("/notifications/{notification_id}")

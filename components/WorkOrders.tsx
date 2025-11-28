@@ -202,6 +202,18 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       }
 
       const updated = await updateWorkOrder(selectedWO.id, payload);
+      
+      // Create notification for assigned technician (only when assigning from Open)
+      if (isFromOpen && adminAssignedTo) {
+        const notification = createWOAssignedNotification(
+          selectedWO.id,
+          selectedWO.title,
+          adminAssignedTo,
+          currentUser.name
+        );
+        await createNotification(notification);
+      }
+      
       // Reflect locally (map API fields to WorkOrder shape if needed)
       const updatedWO: WorkOrder = {
         ...selectedWO,
@@ -388,10 +400,10 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     }
   };
 
-  // Admin Approve Handler
+  // Head Technician Approve Handler (Admin should not approve, only close)
   const handleApprove = async () => {
     if (!selectedWO || !currentUser) return;
-    if (currentUser.userRole !== 'Admin') return;
+    if (currentUser.userRole !== 'Head Technician') return;
     if (selectedWO.status !== Status.PENDING) return;
 
     setIsApproving(true);
@@ -433,10 +445,10 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     }
   };
 
-  // Admin Reject Handler
+  // Head Technician Reject Handler (Admin should not reject)
   const handleReject = async () => {
     if (!selectedWO || !currentUser) return;
-    if (currentUser.userRole !== 'Admin') return;
+    if (currentUser.userRole !== 'Head Technician') return;
     if (selectedWO.status !== Status.PENDING) return;
     
     // Validate rejection reason
@@ -592,44 +604,44 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const columns = [Status.OPEN, Status.IN_PROGRESS, Status.PENDING, Status.COMPLETED, Status.CANCELED];
 
   return (
-    <div className="p-8 h-full flex flex-col bg-stone-50/50">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-4 lg:p-6 h-full flex flex-col bg-stone-50/50 overflow-hidden">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
         <div>
-          <h2 className="font-serif text-3xl text-stone-900">Work Orders</h2>
-          <p className="text-stone-500 mt-1">
+          <h2 className="font-serif text-xl lg:text-2xl text-stone-900">Work Orders</h2>
+          <p className="text-stone-500 text-xs lg:text-sm">
              {currentUser?.userRole === 'Technician' ? 'My Assigned Tasks' : 'Manage Maintenance Tasks'}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
              {currentUser?.userRole !== 'Technician' && (
-                <button className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200">
-                    <Plus size={18} />
-                    <span className="font-semibold">Create Order</span>
+                <button className="bg-teal-600 hover:bg-teal-700 text-white px-3 lg:px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all duration-200 text-sm">
+                    <Plus size={16} />
+                    <span className="font-medium">Create Order</span>
                 </button>
              )}
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="mb-6 bg-white p-5 rounded-2xl border border-stone-200/60 shadow-sm">
+      <div className="mb-3 bg-white p-3 rounded-xl border border-stone-200/60 shadow-sm">
         {/* Row 1: View toggle + Search + Order count */}
-        <div className="flex items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* View Toggles */}
-            <div className="bg-stone-100 p-1 rounded-xl flex border border-stone-200">
+            <div className="bg-stone-100 p-0.5 rounded-lg flex border border-stone-200">
               <button
                 onClick={() => setViewMode('list')}
                 title="List view"
-                className={`p-2.5 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-white text-teal-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+                className={`p-1.5 rounded transition-all duration-200 ${viewMode === 'list' ? 'bg-white text-teal-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
               >
-                <List size={18} />
+                <List size={16} />
               </button>
               <button
                 onClick={() => setViewMode('board')}
                 title="Board view"
-                className={`p-2.5 rounded-lg transition-all duration-200 ${viewMode === 'board' ? 'bg-white text-teal-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+                className={`p-1.5 rounded transition-all duration-200 ${viewMode === 'board' ? 'bg-white text-teal-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
               >
-                <LayoutGrid size={18} />
+                <LayoutGrid size={16} />
               </button>
             </div>
 
@@ -639,106 +651,84 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 type="text"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Search title or description..."
-                className="text-sm pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-72 transition-all"
+                placeholder="Search..."
+                className="text-xs pl-8 pr-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-40 lg:w-52 transition-all"
               />
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
           </div>
 
           {/* Order count badge */}
-          <div className="flex items-center gap-2 text-sm font-semibold text-teal-700 px-4 py-2 bg-teal-50 rounded-xl border border-teal-100">
-            <span className="text-lg">{filteredWorkOrders.length}</span>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-teal-700 px-2.5 py-1 bg-teal-50 rounded-lg border border-teal-100">
+            <span className="text-sm">{filteredWorkOrders.length}</span>
             <span className="text-teal-600 font-medium">Orders</span>
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-stone-100 mb-4" />
+        {/* Row 2: Filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Date range filter */}
+          <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100 text-xs">
+            <Calendar size={12} className="text-stone-400" />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none text-[11px] w-24"
+            />
+            <span className="text-stone-300">→</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none text-[11px] w-24"
+            />
+          </div>
 
-        {/* Row 2: Filters - Grid layout for better spacing */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 flex-wrap">
-            {/* Date range filter */}
-            <div className="flex items-center gap-2 bg-stone-50 px-3 py-2 rounded-xl border border-stone-100">
-              <Calendar size={14} className="text-stone-400" />
-              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Created</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                title="Start date"
-                className="text-xs px-2 py-1 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 w-32"
-              />
-              <span className="text-stone-300">→</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                title="End date"
-                className="text-xs px-2 py-1 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 w-32"
-              />
-            </div>
+          {/* Priority filter */}
+          <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100">
+            <span className="text-[10px] font-semibold text-stone-500 uppercase">Priority</span>
+            <select
+              value={selectedPriority}
+              onChange={(e) => setSelectedPriority(e.target.value as Priority | 'ALL')}
+              className="text-[11px] px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none cursor-pointer"
+            >
+              <option value="ALL">All</option>
+              <option value={Priority.CRITICAL}>Critical</option>
+              <option value={Priority.HIGH}>High</option>
+              <option value={Priority.MEDIUM}>Medium</option>
+              <option value={Priority.LOW}>Low</option>
+            </select>
+          </div>
 
-            {/* Month filter */}
-            <div className="flex items-center gap-2 bg-stone-50 px-3 py-2 rounded-xl border border-stone-100">
-              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Month</span>
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                title="Filter by month"
-                className="text-xs px-2 py-1 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-              />
-            </div>
-
-            {/* Priority filter */}
-            <div className="flex items-center gap-2 bg-stone-50 px-3 py-2 rounded-xl border border-stone-100">
-              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Priority</span>
+          {/* AssignedTo filter - Admin only */}
+          {currentUser?.userRole === 'Admin' && (
+            <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100">
+              <span className="text-[10px] font-semibold text-stone-500 uppercase">Tech</span>
               <select
-                value={selectedPriority}
-                onChange={(e) => setSelectedPriority(e.target.value as Priority | 'ALL')}
-                title="Filter by priority"
-                className="text-xs px-2 py-1 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 pr-6 cursor-pointer"
+                value={selectedAssignedTo}
+                onChange={(e) => setSelectedAssignedTo(e.target.value)}
+                className="text-[11px] px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none min-w-[80px] cursor-pointer"
               >
-                <option value="ALL">All</option>
-                <option value={Priority.CRITICAL}>🔴 Critical</option>
-                <option value={Priority.HIGH}>🟠 High</option>
-                <option value={Priority.MEDIUM}>🟢 Medium</option>
-                <option value={Priority.LOW}>⚪ Low</option>
+                <option value="">All</option>
+                {technicians.map(tech => (
+                  <option key={tech.id} value={tech.name}>{tech.name}</option>
+                ))}
               </select>
             </div>
-
-            {/* AssignedTo filter - Admin only */}
-            {currentUser?.userRole === 'Admin' && (
-              <div className="flex items-center gap-2 bg-stone-50 px-3 py-2 rounded-xl border border-stone-100">
-                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Technician</span>
-                <select
-                  value={selectedAssignedTo}
-                  onChange={(e) => setSelectedAssignedTo(e.target.value)}
-                  title="Filter by technician"
-                  className="text-xs px-2 py-1 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 pr-6 min-w-[130px] cursor-pointer"
-                >
-                  <option value="">All</option>
-                  {technicians.map(tech => (
-                    <option key={tech.id} value={tech.name}>{tech.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Clear filters button */}
           <button
             type="button"
             onClick={() => { setStartDate(''); setEndDate(''); setSelectedMonth(''); setSelectedPriority('ALL'); setSearchText(''); setSelectedAssignedTo(''); }}
             title="Clear all filters"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-stone-500 hover:text-red-600 hover:bg-red-50 border border-stone-200 hover:border-red-200 transition-all"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 border border-stone-200 hover:border-red-200 transition-all ml-auto"
           >
-            <X size={14} />
-            Clear Filters
+            <X size={12} />
+            Clear
           </button>
         </div>
       </div>
@@ -802,28 +792,28 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
         {/* BOARD VIEW */}
         {viewMode === 'board' && (
-            <div className="h-full overflow-x-auto pb-4">
-                <div className="flex gap-4 h-full min-w-[1000px]">
+            <div className="h-full overflow-x-auto pb-2">
+                <div className="grid grid-cols-5 gap-3 h-full min-w-[900px]">
                     {columns.map(status => {
                         const columnWos = filteredWorkOrders.filter(wo => wo.status === status);
                         return (
                             <div
                                 key={status}
-                                className="flex-1 min-w-[280px] bg-stone-100/70 rounded-2xl flex flex-col max-h-full border border-stone-200/60"
+                                className="bg-stone-100/70 rounded-xl flex flex-col min-h-0 border border-stone-200/60"
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDrop(e, status)}
                             >
                                 {/* Column Header */}
-                                <div className="p-4 flex items-center justify-between sticky top-0 bg-stone-100/70 backdrop-blur-sm z-[1] rounded-t-2xl">
+                                <div className="p-3 flex items-center justify-between bg-stone-100/70 rounded-t-xl border-b border-stone-200/40">
                                     <div className="flex items-center gap-2">
-                                        <div className={`w-2.5 h-2.5 rounded-full ${statusColors[status].split(' ')[0].replace('bg-', 'bg-')}`}></div>
-                                        <h3 className="font-semibold text-stone-700 text-sm">{status}</h3>
-                                        <span className="bg-stone-200 text-stone-600 text-xs px-2 py-0.5 rounded-full">{columnWos.length}</span>
+                                        <div className={`w-2 h-2 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
+                                        <h3 className="font-semibold text-stone-700 text-xs">{status}</h3>
+                                        <span className="bg-stone-200 text-stone-600 text-[10px] px-1.5 py-0.5 rounded-full">{columnWos.length}</span>
                                     </div>
                                 </div>
 
                                 {/* Cards Area */}
-                                <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+                                <div className="flex-1 overflow-y-auto p-2 space-y-2">
                                     {columnWos.map(wo => {
                                         const woPermissions = currentUser ? getWorkOrderPermissions(
                                           wo.status,
@@ -839,29 +829,29 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                             draggable={isDraggable}
                                             onDragStart={(e) => handleDragStart(e, wo.id)}
                                             onClick={() => setSelectedWO(wo)}
-                                            className={`bg-white p-4 rounded-xl shadow-sm border border-stone-200/60 ${isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group relative
+                                            className={`bg-white p-3 rounded-lg shadow-sm border border-stone-200/60 ${isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group relative
                                                 ${draggedWoId === wo.id ? 'opacity-50 border-dashed border-stone-400' : ''}
-                                                ${currentUser?.name === wo.assignedTo ? 'border-l-4 border-l-teal-500' : ''}
+                                                ${currentUser?.name === wo.assignedTo ? 'border-l-3 border-l-teal-500' : ''}
                                                 ${!isDraggable ? 'opacity-75' : ''}
                                             `}
                                         >
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="text-xs font-mono text-stone-400">{wo.id}</span>
+                                            <div className="flex justify-between items-start mb-1.5">
+                                                <span className="text-[10px] font-mono text-stone-400 truncate max-w-[120px]">{wo.id}</span>
                                                 {isDraggable && (
                                                   <button
                                                       title="Drag to change status"
                                                       aria-label="Drag to change status"
                                                       className="text-stone-300 hover:text-stone-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                                   >
-                                                      <GripVertical size={14} />
+                                                      <GripVertical size={12} />
                                                   </button>
                                                 )}
                                             </div>
 
-                                            <h4 className="font-medium text-stone-800 text-sm mb-3 leading-snug">{wo.title}</h4>
+                                            <h4 className="font-medium text-stone-800 text-xs mb-2 leading-snug line-clamp-2">{wo.title}</h4>
 
-                                            <div className="flex items-center gap-2 mb-3">
-                                                 <span className={`px-2 py-0.5 rounded-lg border text-[10px] uppercase font-bold tracking-wider ${priorityColors[wo.priority]}`}>
+                                            <div className="flex items-center justify-between">
+                                                <span className={`px-1.5 py-0.5 rounded border text-[9px] uppercase font-bold ${priorityColors[wo.priority]}`}>
                                                     {wo.priority}
                                                 </span>
                                             </div>
@@ -893,17 +883,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                                 <div className="flex items-center gap-1.5 text-xs text-stone-500">
                                                      <div className={`w-5 h-5 rounded-lg border border-stone-200 flex items-center justify-center text-[10px] font-bold ${wo.assignedTo === currentUser?.name ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-stone-100 text-stone-600'}`}>
                                                         {wo.assignedTo?.charAt(0) || '?'}
-                                                     </div>
-                                                </div>
-                                                <div className="flex items-center gap-1 text-[10px] text-stone-400">
-                                                    <Calendar size={12} />
-                                                    <span>{new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                                    </div>
+                                                    <span className="text-[9px] text-stone-400">{new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     )})}
                                     {columnWos.length === 0 && (
-                                        <div className="h-24 border-2 border-dashed border-stone-200 rounded-xl flex items-center justify-center text-stone-400 text-xs italic">
+                                        <div className="h-20 border-2 border-dashed border-stone-200 rounded-lg flex items-center justify-center text-stone-400 text-[10px] italic">
                                             No orders
                                         </div>
                                     )}
@@ -1108,8 +1095,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 </div>
               )}
 
-              {/* Admin Review Section (visible to Admin when status is Pending) */}
-              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.PENDING && (
+              {/* Head Technician Review Section (visible only to Head Technician when status is Pending) */}
+              {currentUser?.userRole === 'Head Technician' && selectedWO?.status === Status.PENDING && (
                 <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
                   <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
                     <CheckSquare size={16} className="text-purple-600" /> Review Work Completion

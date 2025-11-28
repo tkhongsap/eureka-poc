@@ -427,6 +427,17 @@ export const deleteNotification = async (notificationId: string): Promise<void> 
   }
 };
 
+export const deleteAllReadNotifications = async (): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/notifications/read`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete read notifications');
+  }
+};
+
 // --- Health Check ---
 export const checkHealth = async (): Promise<boolean> => {
   try {
