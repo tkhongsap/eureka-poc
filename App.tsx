@@ -190,8 +190,8 @@ const App: React.FC = () => {
           partsUsed: [],
           imageIds: wo.imageIds || [],
           requestId: wo.requestId,
-          // @ts-ignore
-          adminReview: (wo as any).adminReview,
+          adminReview: wo.adminReview,
+          locationData: wo.locationData,
         }));
         // Merge with mock data if API returns empty
         setWorkOrders(mappedWorkOrders.length > 0 ? mappedWorkOrders : MOCK_WOS);
@@ -253,6 +253,7 @@ const App: React.FC = () => {
     description: string;
     imageIds: string[];
     assignedTo?: string;
+    locationData?: { latitude: number; longitude: number; address: string; googleMapsUrl: string };
   }) => {
     try {
       // Generate AI title from description
@@ -270,6 +271,7 @@ const App: React.FC = () => {
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         imageIds: request.imageIds,
         requestId: request.id,
+        locationData: request.locationData,
       });
 
       // Map to WorkOrder type for UI
@@ -287,6 +289,7 @@ const App: React.FC = () => {
         partsUsed: [],
         imageIds: createdWO.imageIds || [],
         requestId: createdWO.requestId,
+        locationData: createdWO.locationData,
       };
 
       setWorkOrders(prev => [newWO, ...prev]);
