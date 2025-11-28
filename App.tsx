@@ -151,8 +151,6 @@ const App: React.FC = () => {
           setIsLoggedIn(true);
           // Set user context for API calls
           setUserContext(user.userRole, user.name);
-          // เมื่อล็อกอินสำเร็จ ให้เข้า dashboard เสมอ
-          setCurrentView('dashboard');
         }
       } catch (e) {
         console.error('Failed to parse stored user:', e);
