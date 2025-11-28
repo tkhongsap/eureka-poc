@@ -7,7 +7,7 @@ import { Status, UserRole, WorkOrderStatusTransition, WorkOrderPermissions } fro
  * 1. Requester creates WO → status = Open
  * 2. Admin assigns technician → status = In Progress
  * 3. Technician marks job done → status = Pending
- * 4. Admin reviews:
+ * 4. Head Technician reviews:
  *    - Reject → status = In Progress
  *    - Approve → status = Complete
  * 5. Admin closes → status = Close
@@ -25,11 +25,11 @@ export const STATUS_TRANSITIONS: WorkOrderStatusTransition[] = [
   // Allow Admin to move as well
   { from: Status.IN_PROGRESS, to: Status.PENDING, allowedRoles: ['Technician', 'Admin'] },
   
-  // Admin rejects and sends back (Pending → In Progress)
-  { from: Status.PENDING, to: Status.IN_PROGRESS, allowedRoles: ['Admin'] },
+  // Head Technician or Admin rejects and sends back (Pending → In Progress)
+  { from: Status.PENDING, to: Status.IN_PROGRESS, allowedRoles: ['Head Technician', 'Admin'] },
   
-  // Admin approves (Pending → Complete)
-  { from: Status.PENDING, to: Status.COMPLETED, allowedRoles: ['Admin'] },
+  // Head Technician or Admin approves (Pending → Complete)
+  { from: Status.PENDING, to: Status.COMPLETED, allowedRoles: ['Head Technician', 'Admin'] },
   
   // Admin closes (Complete → Close)
   { from: Status.COMPLETED, to: Status.CLOSED, allowedRoles: ['Admin'] },
@@ -98,6 +98,14 @@ export function getWorkOrderPermissions(
     permissions.canDelete = status === Status.OPEN; // Can only delete Open work orders
   }
 
+  // Head Technician can review (approve/reject) pending work orders
+  if (userRole === 'Head Technician') {
+    permissions.canEdit = status === Status.PENDING;
+    permissions.canChangeStatus = status === Status.PENDING;
+    permissions.canAssign = false;
+    permissions.canDelete = false;
+  }
+
   // Requester can edit only when status is Open and they created it
   if (userRole === 'Requester') {
     permissions.canEdit = status === Status.OPEN;
@@ -130,11 +138,11 @@ export function getNotificationRecipients(
     case 'assigned':
       return ['Technician']; // Admin Assign → Technician
     case 'completed':
-      return ['Admin']; // Technician Mark Done → Admin
+      return ['Head Technician']; // Technician Mark Done → Head Technician for review
     case 'rejected':
-      return ['Technician']; // Admin Reject → Technician
+      return ['Technician']; // Head Technician Reject → Technician
     case 'approved':
-      return ['Requester', 'Technician']; // Admin Approve → Requester + Technician
+      return ['Requester', 'Technician']; // Head Technician Approve → Requester + Technician
     case 'closed':
       return ['Requester']; // Admin Close → Requester
     default:

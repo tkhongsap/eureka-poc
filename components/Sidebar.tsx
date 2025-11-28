@@ -13,7 +13,8 @@ import {
   ShieldCheck,
   HardHat,
   ClipboardList,
-  ChevronUp
+  ChevronUp,
+  Crown
 } from 'lucide-react';
 import { UserRole, User } from '../types';
 
@@ -33,12 +34,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
   // Define all possible items
   const allMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Admin'] },
-    { id: 'work-orders', label: 'Work Orders', icon: Wrench, roles: ['Admin', 'Technician'] },
-    { id: 'requests', label: 'Requests', icon: FileText, roles: ['Admin', 'Technician'] },
+    { id: 'work-orders', label: 'Work Orders', icon: Wrench, roles: ['Admin', 'Head Technician', 'Technician'] },
+    { id: 'requests', label: 'Requests', icon: FileText, roles: ['Admin', 'Head Technician', 'Technician'] },
     // { id: 'assets', label: 'Assets & Hierarchy', icon: Factory, roles: ['Admin', 'Technician'] },
-    { id: 'inventory', label: 'Inventory & Parts', icon: Package, roles: ['Admin', 'Technician'] },
+    { id: 'inventory', label: 'Inventory & Parts', icon: Package, roles: ['Admin', 'Head Technician', 'Technician'] },
     // { id: 'analytics', label: 'Analytics & OEE', icon: BarChart3, roles: ['Admin'] },
-    { id: 'team', label: 'Team & Shifts', icon: Users, roles: ['Admin'] },
+    { id: 'team', label: 'Team & Shifts', icon: Users, roles: ['Admin', 'Head Technician'] },
     // { id: 'settings', label: 'Settings', icon: Settings, roles: ['Admin'] },
   ];
 
@@ -100,8 +101,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
                     onClick={() => { onSwitchUser(u); setIsRoleSwitcherOpen(false); }}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 ${currentUser.userRole === u.userRole ? 'bg-teal-600 text-white' : 'hover:bg-stone-700 text-stone-300'}`}
                   >
-                    <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-500/20 text-purple-400' : u.userRole === 'Technician' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                      {u.userRole === 'Admin' ? <ShieldCheck size={14} /> : u.userRole === 'Technician' ? <HardHat size={14} /> : <ClipboardList size={14} />}
+                    <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-500/20 text-purple-400' : u.userRole === 'Head Technician' ? 'bg-amber-500/20 text-amber-400' : u.userRole === 'Technician' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                      {u.userRole === 'Admin' ? <ShieldCheck size={14} /> : u.userRole === 'Head Technician' ? <Crown size={14} /> : u.userRole === 'Technician' ? <HardHat size={14} /> : <ClipboardList size={14} />}
                     </div>
                     <div>
                       <div className="font-medium text-sm">{u.userRole}</div>

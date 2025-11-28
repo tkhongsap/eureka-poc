@@ -5,7 +5,7 @@ Workflow:
 1. Requester creates WO → status = Open
 2. Admin assigns technician → status = In Progress
 3. Technician marks job done → status = Pending
-4. Admin reviews:
+4. Head Technician reviews:
    - Reject → status = In Progress
    - Approve → status = Completed
 5. Admin closes → status = Closed
@@ -28,6 +28,7 @@ class UserRole(str, Enum):
     REQUESTER = "Requester"
     TECHNICIAN = "Technician"
     ADMIN = "Admin"
+    HEAD_TECHNICIAN = "Head Technician"
 
 
 # Define allowed status transitions: (from_status, to_status): allowed_roles
@@ -41,11 +42,11 @@ STATUS_TRANSITIONS: Dict[Tuple[str, str], Set[str]] = {
     # Technician completes work (In Progress → Pending) — allow Admin to move as well
     (Status.IN_PROGRESS, Status.PENDING): {UserRole.TECHNICIAN, UserRole.ADMIN},
     
-    # Admin rejects and sends back (Pending → In Progress)
-    (Status.PENDING, Status.IN_PROGRESS): {UserRole.ADMIN},
+    # Head Technician rejects and sends back (Pending → In Progress)
+    (Status.PENDING, Status.IN_PROGRESS): {UserRole.HEAD_TECHNICIAN, UserRole.ADMIN},
     
-    # Admin approves (Pending → Completed)
-    (Status.PENDING, Status.COMPLETED): {UserRole.ADMIN},
+    # Head Technician approves (Pending → Completed)
+    (Status.PENDING, Status.COMPLETED): {UserRole.HEAD_TECHNICIAN, UserRole.ADMIN},
     
     # Admin closes (Completed → Closed)
     (Status.COMPLETED, Status.CLOSED): {UserRole.ADMIN},
@@ -144,6 +145,13 @@ def get_work_order_permissions(
         permissions.can_assign = True
         permissions.can_delete = status == Status.OPEN
     
+    # Head Technician can review (approve/reject) pending work orders
+    elif user_role == UserRole.HEAD_TECHNICIAN:
+        permissions.can_edit = status == Status.PENDING
+        permissions.can_change_status = status == Status.PENDING
+        permissions.can_assign = False
+        permissions.can_delete = False
+    
     # Requester can edit only when status is Open
     elif user_role == UserRole.REQUESTER:
         permissions.can_edit = status == Status.OPEN
@@ -175,7 +183,7 @@ def get_notification_recipients(action: str) -> List[str]:
     notification_map = {
         'created': [UserRole.ADMIN],
         'assigned': [UserRole.TECHNICIAN],
-        'completed': [UserRole.ADMIN],
+        'completed': [UserRole.HEAD_TECHNICIAN],  # Notify Head Technician for review
         'rejected': [UserRole.TECHNICIAN],
         'approved': [UserRole.REQUESTER, UserRole.TECHNICIAN],
         'closed': [UserRole.REQUESTER],

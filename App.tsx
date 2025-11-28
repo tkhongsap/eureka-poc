@@ -9,7 +9,7 @@ import AssetHierarchy from './components/AssetHierarchy';
 import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
 import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
-import { UserCircle2, ShieldCheck, HardHat, ClipboardList } from 'lucide-react';
+import { UserCircle2, ShieldCheck, HardHat, ClipboardList, Crown } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
 import { listWorkOrders, createWorkOrder, WorkOrderItem, setUserContext, getNotifications } from './services/apiService';
 import { filterNotificationsForUser } from './services/notificationService';
@@ -24,6 +24,13 @@ const ALL_USERS: User[] = [
     role: 'Admin',
     userRole: 'Admin',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex'
+  },
+  {
+    id: 'u9',
+    name: 'Robert Chen',
+    role: 'Head Technician',
+    userRole: 'Head Technician',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Robert'
   },
   {
     id: 'u2',
@@ -84,6 +91,7 @@ const TECHNICIANS = ALL_USERS
 // USERS object for role-based lookup (used by login flow)
 const USERS: Record<UserRole, User> = {
   Admin: ALL_USERS.find(u => u.userRole === 'Admin')!,
+  'Head Technician': ALL_USERS.find(u => u.userRole === 'Head Technician')!,
   Technician: ALL_USERS.find(u => u.userRole === 'Technician')!,
   Requester: ALL_USERS.find(u => u.userRole === 'Requester')!,
 };
@@ -303,6 +311,8 @@ const App: React.FC = () => {
         setCurrentView('requests');
       } else if (currentUser.userRole === 'Technician') {
         setCurrentView('work-orders');
+      } else if (currentUser.userRole === 'Head Technician') {
+        setCurrentView('work-orders'); // Head Technician reviews work orders
       } else {
         setCurrentView('dashboard');
       }
@@ -439,8 +449,8 @@ const PersonaSwitcher: React.FC<{ currentUser: User, onSwitch: (u: User) => void
                   onClick={() => handleUserSwitch(u)}
                   className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${currentUser.id === u.id ? 'bg-brand-50 text-brand-700' : 'hover:bg-slate-50 text-slate-700'}`}
                 >
-                  <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-100 text-purple-600' : u.userRole === 'Technician' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
-                    {u.userRole === 'Admin' ? <ShieldCheck size={16} /> : u.userRole === 'Technician' ? <HardHat size={16} /> : <ClipboardList size={16} />}
+                  <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-100 text-purple-600' : u.userRole === 'Head Technician' ? 'bg-amber-100 text-amber-600' : u.userRole === 'Technician' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                    {u.userRole === 'Admin' ? <ShieldCheck size={16} /> : u.userRole === 'Head Technician' ? <Crown size={16} /> : u.userRole === 'Technician' ? <HardHat size={16} /> : <ClipboardList size={16} />}
                   </div>
                   <div>
                     <div className="font-bold text-sm">{u.name}</div>

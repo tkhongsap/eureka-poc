@@ -388,10 +388,10 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     }
   };
 
-  // Admin Approve Handler
+  // Admin or Head Technician Approve Handler
   const handleApprove = async () => {
     if (!selectedWO || !currentUser) return;
-    if (currentUser.userRole !== 'Admin') return;
+    if (currentUser.userRole !== 'Admin' && currentUser.userRole !== 'Head Technician') return;
     if (selectedWO.status !== Status.PENDING) return;
 
     setIsApproving(true);
@@ -433,10 +433,10 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     }
   };
 
-  // Admin Reject Handler
+  // Admin or Head Technician Reject Handler
   const handleReject = async () => {
     if (!selectedWO || !currentUser) return;
-    if (currentUser.userRole !== 'Admin') return;
+    if (currentUser.userRole !== 'Admin' && currentUser.userRole !== 'Head Technician') return;
     if (selectedWO.status !== Status.PENDING) return;
     
     // Validate rejection reason
@@ -1026,8 +1026,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 </div>
               )}
 
-              {/* Admin Review Section (visible to Admin when status is Pending) */}
-              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.PENDING && (
+              {/* Admin/Head Technician Review Section (visible to Admin or Head Technician when status is Pending) */}
+              {(currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician') && selectedWO?.status === Status.PENDING && (
                 <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
                   <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
                     <CheckSquare size={16} className="text-purple-600" /> Review Work Completion

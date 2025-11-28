@@ -58,7 +58,7 @@ export const createWOAssignedNotification = (
 
 /**
  * Create notification when Technician marks work as done
- * Notifies: Admin
+ * Notifies: Head Technician (for review)
  */
 export const createWOCompletedNotification = (
   workOrderId: string,
@@ -71,7 +71,7 @@ export const createWOCompletedNotification = (
     workOrderId,
     workOrderTitle,
     message: `Work order "${workOrderTitle}" has been completed and is pending review`,
-    recipientRole: 'Admin',
+    recipientRole: 'Head Technician',
     isRead: false,
     createdAt: new Date().toISOString(),
     triggeredBy: completedBy

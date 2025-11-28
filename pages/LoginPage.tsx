@@ -12,6 +12,7 @@ const LoginPage: React.FC = () => {
   // Mock users for demo
   const mockUsers = {
     'admin': { password: 'admin123', role: 'Admin' as const },
+    'headtech': { password: 'headtech123', role: 'Head Technician' as const },
     'tech': { password: 'tech123', role: 'Technician' as const },
     'user': { password: 'user123', role: 'Requester' as const },
   };
@@ -150,6 +151,10 @@ const LoginPage: React.FC = () => {
                 <div className="bg-stone-50 px-4 py-2.5 rounded-xl flex justify-between items-center border border-stone-100">
                   <span className="font-medium text-stone-700">Admin:</span>
                   <span className="font-mono text-teal-600">admin / admin123</span>
+                </div>
+                <div className="bg-amber-50 px-4 py-2.5 rounded-xl flex justify-between items-center border border-amber-100">
+                  <span className="font-medium text-amber-700">Head Technician:</span>
+                  <span className="font-mono text-amber-600">headtech / headtech123</span>
                 </div>
                 <div className="bg-stone-50 px-4 py-2.5 rounded-xl flex justify-between items-center border border-stone-100">
                   <span className="font-medium text-stone-700">Technician:</span>
