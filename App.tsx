@@ -145,8 +145,10 @@ const App: React.FC = () => {
     if (storedUser) {
       try {
         const { role } = JSON.parse(storedUser);
+        console.log('Loading user from sessionStorage:', role); // Debug log
         if (role && USERS[role as UserRole]) {
           const user = USERS[role as UserRole];
+          console.log('User loaded:', user); // Debug log
           setCurrentUser(user);
           setIsLoggedIn(true);
           // Set user context for API calls
@@ -320,8 +322,11 @@ const App: React.FC = () => {
 
   // Show nothing while checking login status or redirecting
   if (!isLoggedIn || !currentUser) {
+    console.log('Not logged in or no user, showing null. isLoggedIn:', isLoggedIn, 'currentUser:', currentUser); // Debug log
     return null;
   }
+
+  console.log('Rendering main app for user:', currentUser.name, currentUser.userRole, 'currentView:', currentView); // Debug log
 
   const renderContent = () => {
     switch (currentView) {

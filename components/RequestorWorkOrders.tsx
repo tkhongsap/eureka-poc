@@ -34,6 +34,11 @@ const statusConfig = {
     color: 'bg-stone-100 text-stone-700 border-stone-200',
     icon: XCircle,
     iconColor: 'text-stone-500'
+  },
+  [Status.CANCELED]: {
+    color: 'bg-rose-50 text-rose-700 border-rose-200',
+    icon: XCircle,
+    iconColor: 'text-rose-500'
   }
 };
 
@@ -149,7 +154,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
 
       <div className="space-y-3">
         {myWorkOrders.map(wo => {
-          const statusInfo = statusConfig[wo.status];
+          const statusInfo = statusConfig[wo.status] || statusConfig[Status.OPEN]; // Fallback to OPEN if status not found
           const StatusIcon = statusInfo.icon;
           
           return (
