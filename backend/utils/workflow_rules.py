@@ -5,7 +5,7 @@ Workflow:
 1. Requester creates WO → status = Open
 2. Admin assigns technician → status = In Progress
 3. Technician marks job done → status = Pending
-4. Admin reviews:
+4. Head Technician reviews:
    - Reject → status = In Progress
    - Approve → status = Completed
 5. Admin closes → status = Closed
@@ -28,6 +28,7 @@ class UserRole(str, Enum):
     REQUESTER = "Requester"
     TECHNICIAN = "Technician"
     ADMIN = "Admin"
+    HEAD_TECHNICIAN = "Head Technician"
 
 
 # Define allowed status transitions: (from_status, to_status): allowed_roles
@@ -41,11 +42,11 @@ STATUS_TRANSITIONS: Dict[Tuple[str, str], Set[str]] = {
     # Technician completes work (In Progress → Pending) — allow Admin to move as well
     (Status.IN_PROGRESS, Status.PENDING): {UserRole.TECHNICIAN, UserRole.ADMIN},
     
-    # Admin rejects and sends back (Pending → In Progress)
-    (Status.PENDING, Status.IN_PROGRESS): {UserRole.ADMIN},
+    # Head Technician rejects and sends back (Pending → In Progress) - Only Head Tech
+    (Status.PENDING, Status.IN_PROGRESS): {UserRole.HEAD_TECHNICIAN},
     
-    # Admin approves (Pending → Completed)
-    (Status.PENDING, Status.COMPLETED): {UserRole.ADMIN},
+    # Head Technician approves (Pending → Completed) - Only Head Tech
+    (Status.PENDING, Status.COMPLETED): {UserRole.HEAD_TECHNICIAN},
     
     # Admin closes (Completed → Closed)
     (Status.COMPLETED, Status.CLOSED): {UserRole.ADMIN},
@@ -86,14 +87,15 @@ def is_transition_allowed(
     Args:
         from_status: Current work order status
         to_status: Desired work order status
-        user_role: User's role (Requester, Technician, Admin)
+        user_role: User's role (Requester, Technician, Admin, Head Technician)
     
     Returns:
         True if transition is allowed, False otherwise
     """
     transition_key = (from_status, to_status)
     allowed_roles = STATUS_TRANSITIONS.get(transition_key, set())
-    return user_role in allowed_roles
+    # Compare string user_role with enum values
+    return any(role.value == user_role for role in allowed_roles)
 
 
 def get_allowed_next_statuses(
@@ -138,21 +140,28 @@ def get_work_order_permissions(
     permissions = WorkOrderPermissions()
     
     # Admin has full control except editing closed work orders
-    if user_role == UserRole.ADMIN:
+    if user_role == UserRole.ADMIN.value:
         permissions.can_edit = status not in (Status.CLOSED, Status.CANCELED)
         permissions.can_change_status = True
         permissions.can_assign = True
         permissions.can_delete = status == Status.OPEN
     
+    # Head Technician can review (approve/reject) pending work orders
+    elif user_role == UserRole.HEAD_TECHNICIAN.value:
+        permissions.can_edit = status == Status.PENDING
+        permissions.can_change_status = status == Status.PENDING
+        permissions.can_assign = False
+        permissions.can_delete = False
+    
     # Requester can edit only when status is Open
-    elif user_role == UserRole.REQUESTER:
+    elif user_role == UserRole.REQUESTER.value:
         permissions.can_edit = status == Status.OPEN
         permissions.can_change_status = False
         permissions.can_assign = False
         permissions.can_delete = status == Status.OPEN
     
     # Technician can update only when assigned and status is In Progress
-    elif user_role == UserRole.TECHNICIAN:
+    elif user_role == UserRole.TECHNICIAN.value:
         is_assigned = assigned_to == current_user_name
         permissions.can_edit = is_assigned and status == Status.IN_PROGRESS
         permissions.can_change_status = is_assigned and status == Status.IN_PROGRESS
@@ -175,7 +184,7 @@ def get_notification_recipients(action: str) -> List[str]:
     notification_map = {
         'created': [UserRole.ADMIN],
         'assigned': [UserRole.TECHNICIAN],
-        'completed': [UserRole.ADMIN],
+        'completed': [UserRole.HEAD_TECHNICIAN],  # Notify Head Technician for review
         'rejected': [UserRole.TECHNICIAN],
         'approved': [UserRole.REQUESTER, UserRole.TECHNICIAN],
         'closed': [UserRole.REQUESTER],

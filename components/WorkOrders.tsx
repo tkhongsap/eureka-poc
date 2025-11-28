@@ -202,6 +202,18 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       }
 
       const updated = await updateWorkOrder(selectedWO.id, payload);
+      
+      // Create notification for assigned technician (only when assigning from Open)
+      if (isFromOpen && adminAssignedTo) {
+        const notification = createWOAssignedNotification(
+          selectedWO.id,
+          selectedWO.title,
+          adminAssignedTo,
+          currentUser.name
+        );
+        await createNotification(notification);
+      }
+      
       // Reflect locally (map API fields to WorkOrder shape if needed)
       const updatedWO: WorkOrder = {
         ...selectedWO,
@@ -388,10 +400,10 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     }
   };
 
-  // Admin Approve Handler
+  // Head Technician Approve Handler (Admin should not approve, only close)
   const handleApprove = async () => {
     if (!selectedWO || !currentUser) return;
-    if (currentUser.userRole !== 'Admin') return;
+    if (currentUser.userRole !== 'Head Technician') return;
     if (selectedWO.status !== Status.PENDING) return;
 
     setIsApproving(true);
@@ -433,10 +445,10 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     }
   };
 
-  // Admin Reject Handler
+  // Head Technician Reject Handler (Admin should not reject)
   const handleReject = async () => {
     if (!selectedWO || !currentUser) return;
-    if (currentUser.userRole !== 'Admin') return;
+    if (currentUser.userRole !== 'Head Technician') return;
     if (selectedWO.status !== Status.PENDING) return;
     
     // Validate rejection reason
@@ -1026,8 +1038,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 </div>
               )}
 
-              {/* Admin Review Section (visible to Admin when status is Pending) */}
-              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.PENDING && (
+              {/* Head Technician Review Section (visible only to Head Technician when status is Pending) */}
+              {currentUser?.userRole === 'Head Technician' && selectedWO?.status === Status.PENDING && (
                 <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
                   <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
                     <CheckSquare size={16} className="text-purple-600" /> Review Work Completion

@@ -8,8 +8,9 @@ import WorkRequestPortal from './components/WorkRequestPortal';
 import AssetHierarchy from './components/AssetHierarchy';
 import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
+import NotificationCenter from './components/NotificationCenter';
 import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
-import { UserCircle2, ShieldCheck, HardHat, ClipboardList } from 'lucide-react';
+import { UserCircle2, ShieldCheck, HardHat, ClipboardList, Crown } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
 import { listWorkOrders, createWorkOrder, WorkOrderItem, setUserContext, getNotifications } from './services/apiService';
 import { filterNotificationsForUser } from './services/notificationService';
@@ -24,6 +25,13 @@ const ALL_USERS: User[] = [
     role: 'Admin',
     userRole: 'Admin',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex'
+  },
+  {
+    id: 'u9',
+    name: 'Robert Chen',
+    role: 'Head Technician',
+    userRole: 'Head Technician',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Robert'
   },
   {
     id: 'u2',
@@ -84,6 +92,7 @@ const TECHNICIANS = ALL_USERS
 // USERS object for role-based lookup (used by login flow)
 const USERS: Record<UserRole, User> = {
   Admin: ALL_USERS.find(u => u.userRole === 'Admin')!,
+  'Head Technician': ALL_USERS.find(u => u.userRole === 'Head Technician')!,
   Technician: ALL_USERS.find(u => u.userRole === 'Technician')!,
   Requester: ALL_USERS.find(u => u.userRole === 'Requester')!,
 };
@@ -239,8 +248,8 @@ const App: React.FC = () => {
   useEffect(() => {
     if (currentUser) {
       loadNotifications();
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(loadNotifications, 30000);
+      // Poll for new notifications every 10 seconds
+      const interval = setInterval(loadNotifications, 10000);
       return () => clearInterval(interval);
     }
   }, [currentUser]);
@@ -303,6 +312,8 @@ const App: React.FC = () => {
         setCurrentView('requests');
       } else if (currentUser.userRole === 'Technician') {
         setCurrentView('work-orders');
+      } else if (currentUser.userRole === 'Head Technician') {
+        setCurrentView('work-orders'); // Head Technician reviews work orders
       } else {
         setCurrentView('dashboard');
       }
@@ -367,7 +378,12 @@ const App: React.FC = () => {
              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
              <span className="font-bold text-slate-800">Eureka Request Portal</span>
            </div>
-           <div className="flex items-center gap-3">
+           <div className="flex items-center gap-4">
+             {/* Notification Center for Requester */}
+             <NotificationCenter 
+               notifications={notifications}
+               onNotificationsUpdate={loadNotifications}
+             />
              <button
                onClick={handleLogout}
                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-stone-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -439,8 +455,8 @@ const PersonaSwitcher: React.FC<{ currentUser: User, onSwitch: (u: User) => void
                   onClick={() => handleUserSwitch(u)}
                   className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${currentUser.id === u.id ? 'bg-brand-50 text-brand-700' : 'hover:bg-slate-50 text-slate-700'}`}
                 >
-                  <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-100 text-purple-600' : u.userRole === 'Technician' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
-                    {u.userRole === 'Admin' ? <ShieldCheck size={16} /> : u.userRole === 'Technician' ? <HardHat size={16} /> : <ClipboardList size={16} />}
+                  <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-100 text-purple-600' : u.userRole === 'Head Technician' ? 'bg-amber-100 text-amber-600' : u.userRole === 'Technician' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                    {u.userRole === 'Admin' ? <ShieldCheck size={16} /> : u.userRole === 'Head Technician' ? <Crown size={16} /> : u.userRole === 'Technician' ? <HardHat size={16} /> : <ClipboardList size={16} />}
                   </div>
                   <div>
                     <div className="font-bold text-sm">{u.name}</div>
