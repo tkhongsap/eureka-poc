@@ -129,14 +129,37 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      Array.from(files).forEach((file: File) => {
+      const maxImages = 10;
+      const maxVideoSize = 10 * 1024 * 1024; // 10 MB in bytes
+      
+      // Check if adding these files would exceed the limit
+      if (tempImages.length + files.length > maxImages) {
+        alert(`You can only upload a maximum of ${maxImages} images/videos. Currently you have ${tempImages.length} files.`);
+        return;
+      }
+      
+      // Validate each file
+      for (const file of Array.from(files)) {
+        // Check video file size
+        if (file.type.startsWith('video/') && file.size > maxVideoSize) {
+          alert(`Video "${file.name}" is too large. Maximum video size is 10 MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+          continue;
+        }
+        
         const preview = URL.createObjectURL(file);
-        setTempImages(prev => [...prev, { 
-          file: file,
-          preview: preview, 
-          name: file.name 
-        }]);
-      });
+        setTempImages(prev => {
+          // Double check we don't exceed the limit
+          if (prev.length >= maxImages) {
+            alert(`Maximum ${maxImages} files allowed.`);
+            return prev;
+          }
+          return [...prev, { 
+            file: file,
+            preview: preview, 
+            name: file.name 
+          }];
+        });
+      }
     }
   };
 
