@@ -162,6 +162,27 @@ async def mark_all_notifications_as_read(
     return {"message": "All notifications marked as read"}
 
 
+@router.delete("/notifications/read")
+async def delete_all_read_notifications(
+    x_user_role: Optional[str] = Header(None),
+    x_user_name: Optional[str] = Header(None)
+):
+    """
+    Delete all notifications that have been read
+    Only deletes read notifications, unread ones are kept
+    """
+    notifications = load_notifications()
+    
+    # Keep only unread notifications
+    unread_notifications = [n for n in notifications if not n.get("isRead", False)]
+    deleted_count = len(notifications) - len(unread_notifications)
+    
+    # Save
+    save_notifications(unread_notifications)
+    
+    return {"message": f"{deleted_count} read notifications deleted"}
+
+
 @router.delete("/notifications/{notification_id}")
 async def delete_notification(
     notification_id: str,
