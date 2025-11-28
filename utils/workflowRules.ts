@@ -25,11 +25,11 @@ export const STATUS_TRANSITIONS: WorkOrderStatusTransition[] = [
   // Allow Admin to move as well
   { from: Status.IN_PROGRESS, to: Status.PENDING, allowedRoles: ['Technician', 'Admin'] },
   
-  // Head Technician or Admin rejects and sends back (Pending → In Progress)
-  { from: Status.PENDING, to: Status.IN_PROGRESS, allowedRoles: ['Head Technician', 'Admin'] },
+  // Head Technician rejects and sends back (Pending → In Progress) - Only Head Tech
+  { from: Status.PENDING, to: Status.IN_PROGRESS, allowedRoles: ['Head Technician'] },
   
-  // Head Technician or Admin approves (Pending → Complete)
-  { from: Status.PENDING, to: Status.COMPLETED, allowedRoles: ['Head Technician', 'Admin'] },
+  // Head Technician approves (Pending → Complete) - Only Head Tech
+  { from: Status.PENDING, to: Status.COMPLETED, allowedRoles: ['Head Technician'] },
   
   // Admin closes (Complete → Close)
   { from: Status.COMPLETED, to: Status.CLOSED, allowedRoles: ['Admin'] },

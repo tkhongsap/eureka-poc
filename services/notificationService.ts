@@ -79,8 +79,8 @@ export const createWOCompletedNotification = (
 };
 
 /**
- * Create notifications when Admin approves work
- * Notifies: Requestor + Technician
+ * Create notifications when Head Technician approves work
+ * Notifies: Admin (for closing) + Requester + Technician
  */
 export const createWOApprovedNotifications = (
   workOrderId: string,
@@ -91,7 +91,20 @@ export const createWOApprovedNotifications = (
 ): Notification[] => {
   const notifications: Notification[] = [];
 
-  // Notification for Requestor
+  // Notification for Admin (to close the work order)
+  notifications.push({
+    id: generateNotificationId(),
+    type: NotificationType.WO_APPROVED,
+    workOrderId,
+    workOrderTitle,
+    message: `Work order "${workOrderTitle}" has been approved and is ready to be closed`,
+    recipientRole: 'Admin',
+    isRead: false,
+    createdAt: new Date().toISOString(),
+    triggeredBy: approvedBy
+  });
+
+  // Notification for Requester
   notifications.push({
     id: generateNotificationId(),
     type: NotificationType.WO_APPROVED,

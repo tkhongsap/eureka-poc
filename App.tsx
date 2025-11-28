@@ -8,6 +8,7 @@ import WorkRequestPortal from './components/WorkRequestPortal';
 import AssetHierarchy from './components/AssetHierarchy';
 import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
+import NotificationCenter from './components/NotificationCenter';
 import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
 import { UserCircle2, ShieldCheck, HardHat, ClipboardList, Crown } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
@@ -247,8 +248,8 @@ const App: React.FC = () => {
   useEffect(() => {
     if (currentUser) {
       loadNotifications();
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(loadNotifications, 30000);
+      // Poll for new notifications every 10 seconds
+      const interval = setInterval(loadNotifications, 10000);
       return () => clearInterval(interval);
     }
   }, [currentUser]);
@@ -377,7 +378,12 @@ const App: React.FC = () => {
              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
              <span className="font-bold text-slate-800">Eureka Request Portal</span>
            </div>
-           <div className="flex items-center gap-3">
+           <div className="flex items-center gap-4">
+             {/* Notification Center for Requester */}
+             <NotificationCenter 
+               notifications={notifications}
+               onNotificationsUpdate={loadNotifications}
+             />
              <button
                onClick={handleLogout}
                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-stone-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"

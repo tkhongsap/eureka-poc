@@ -220,15 +220,15 @@ async def admin_approve_workorder(
     x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
     x_user_name: Optional[str] = Header(None, alias="X-User-Name")
 ):
-    """Head Technician or Admin approves work order, changes status from Pending to Completed"""
+    """Head Technician approves work order, changes status from Pending to Completed"""
     workorders = load_json(WORKORDERS_FILE)
     
-    user_role = x_user_role or "Admin"
+    user_role = x_user_role or "Head Technician"
     user_name = x_user_name or "Unknown"
     
-    # Only Head Technician or Admin can approve
-    if user_role not in ["Admin", "Head Technician"]:
-        raise HTTPException(status_code=403, detail="Only Head Technician or Admin can approve work orders")
+    # Only Head Technician can approve (Admin should close, not approve)
+    if user_role != "Head Technician":
+        raise HTTPException(status_code=403, detail="Only Head Technician can approve work orders")
     
     for wo in workorders:
         if wo["id"] == wo_id:
@@ -265,15 +265,15 @@ async def admin_reject_workorder(
     x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
     x_user_name: Optional[str] = Header(None, alias="X-User-Name")
 ):
-    """Head Technician or Admin rejects work order with reason, changes status from Pending to In Progress"""
+    """Head Technician rejects work order with reason, changes status from Pending to In Progress"""
     workorders = load_json(WORKORDERS_FILE)
     
-    user_role = x_user_role or "Admin"
+    user_role = x_user_role or "Head Technician"
     user_name = x_user_name or "Unknown"
     
-    # Only Head Technician or Admin can reject
-    if user_role not in ["Admin", "Head Technician"]:
-        raise HTTPException(status_code=403, detail="Only Head Technician or Admin can reject work orders")
+    # Only Head Technician can reject (Admin should not review)
+    if user_role != "Head Technician":
+        raise HTTPException(status_code=403, detail="Only Head Technician can reject work orders")
     
     for wo in workorders:
         if wo["id"] == wo_id:
@@ -303,26 +303,7 @@ async def admin_reject_workorder(
             
             save_json(WORKORDERS_FILE, workorders)
             
-            # Send notification to Technician with rejection reason
-            try:
-                async with httpx.AsyncClient() as client:
-                    notification_data = {
-                        "type": "wo_rejected",
-                        "workOrderId": wo["id"],
-                        "workOrderTitle": wo.get("title", "Work Order"),
-                        "message": f'Work order "{wo.get("title", "Work Order")}" needs revision. Reason: {reject_data.rejectionReason}',
-                        "recipientRole": "Technician",
-                        "recipientName": technician_name,
-                        "isRead": False,
-                        "triggeredBy": user_name
-                    }
-                    await client.post(
-                        "http://localhost:8000/api/notifications",
-                        json=notification_data
-                    )
-            except Exception as e:
-                # Log error but don't fail the request
-                print(f"Failed to send notification: {e}")
+            # Note: Notification is sent by frontend to avoid duplication
             
             return wo
     

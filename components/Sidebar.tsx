@@ -17,6 +17,7 @@ import {
   Crown
 } from 'lucide-react';
 import { UserRole, User } from '../types';
+import { setUserContext } from '../services/apiService';
 
 interface SidebarProps {
   currentView: string;
@@ -98,7 +99,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
                 {allUsers.map((u) => (
                   <button
                     key={u.userRole}
-                    onClick={() => { onSwitchUser(u); setIsRoleSwitcherOpen(false); }}
+                    onClick={() => { 
+                      onSwitchUser(u); 
+                      setUserContext(u.userRole, u.name);
+                      setIsRoleSwitcherOpen(false); 
+                    }}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 ${currentUser.userRole === u.userRole ? 'bg-teal-600 text-white' : 'hover:bg-stone-700 text-stone-300'}`}
                   >
                     <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-500/20 text-purple-400' : u.userRole === 'Head Technician' ? 'bg-amber-500/20 text-amber-400' : u.userRole === 'Technician' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
