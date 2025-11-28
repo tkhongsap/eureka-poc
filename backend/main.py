@@ -1,15 +1,36 @@
+from contextlib import asynccontextmanager
+from datetime import datetime
+
+from config import close_db_pool, get_db_pool
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from datetime import datetime
+from routes import (
+    images_router,
+    notifications_router,
+    requests_router,
+    tenants_router,
+    workorders_router,
+)
 
-from routes import images_router, requests_router, workorders_router, notifications_router
 from utils import PICTURES_DIR
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan: startup and shutdown events."""
+    # Startup: Initialize database connection pool
+    await get_db_pool()
+    yield
+    # Shutdown: Close database connection pool
+    await close_db_pool()
+
 
 app = FastAPI(
     title="Eureka CMMS API",
     version="1.0.0",
-    description="Backend API for Eureka CMMS - Computerized Maintenance Management System"
+    description="Backend API for Eureka CMMS - Computerized Maintenance Management System",
+    lifespan=lifespan,
 )
 
 # CORS for frontend
@@ -35,6 +56,7 @@ app.include_router(images_router)
 app.include_router(requests_router)
 app.include_router(workorders_router)
 app.include_router(notifications_router)
+app.include_router(tenants_router)
 
 
 # Health Check
@@ -44,7 +66,7 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "version": "1.0.0"
+        "version": "1.0.0",
     }
 
 
@@ -56,7 +78,7 @@ async def root():
         "name": "Eureka CMMS API",
         "version": "1.0.0",
         "docs": "/docs",
-        "health": "/api/health"
+        "health": "/api/health",
     }
 
 
@@ -66,4 +88,5 @@ app.mount("/storage/pictures", StaticFiles(directory=PICTURES_DIR), name="pictur
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

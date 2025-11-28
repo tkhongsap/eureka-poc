@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: eureka-postgres
+    environment:
+      POSTGRES_USER: eureka
+      POSTGRES_PASSWORD: eureka_dev
+      POSTGRES_DB: eureka_cmms
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eureka"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+

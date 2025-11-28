@@ -168,7 +168,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 9.9 Create API response wrapper types
 
 - [ ] 10.0 Infrastructure Setup (Docker)
-  - [ ] 10.1 Create docker-compose.yml with PostgreSQL service
+  - [x] 10.1 Create docker-compose.yml with PostgreSQL service
   - [ ] 10.2 Add Redis service to docker-compose.yml
   - [ ] 10.3 Add InfluxDB service to docker-compose.yml
   - [ ] 10.4 Add MinIO service to docker-compose.yml
@@ -248,12 +248,12 @@ Update the file after completing each sub-task, not just after completing an ent
     - [ ] 15.5.4 Support multi-role checks (OR/AND logic)
 
 - [ ] 16.0 Multi-Tenant & Site Management
-  - [ ] 16.1 Implement tenant CRUD operations
-    - [ ] 16.1.1 Create tenant creation logic with validation
-    - [ ] 16.1.2 Implement tenant update logic
-    - [ ] 16.1.3 Implement tenant deletion/deactivation logic
-    - [ ] 16.1.4 Add tenant license pool management
-    - [ ] 16.1.5 Create tenant listing with pagination
+  - [x] 16.1 Implement tenant CRUD operations
+    - [x] 16.1.1 Create tenant creation logic with validation
+    - [x] 16.1.2 Implement tenant update logic
+    - [x] 16.1.3 Implement tenant deletion/deactivation logic
+    - [x] 16.1.4 Add tenant license pool management
+    - [x] 16.1.5 Create tenant listing with pagination
   - [ ] 16.2 Implement site CRUD operations
     - [ ] 16.2.1 Create site creation under tenant
     - [ ] 16.2.2 Link site to parent tenant with foreign key
