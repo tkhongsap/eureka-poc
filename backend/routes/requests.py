@@ -22,7 +22,8 @@ async def create_request(request: RequestCreate):
         "createdAt": get_current_datetime(),
         "imageIds": request.imageIds,
         "assignedTo": request.assignedTo,
-        "createdBy": request.createdBy
+        "createdBy": request.createdBy,
+        "locationData": request.locationData.dict() if request.locationData else None
     }
     
     requests = load_json(REQUESTS_FILE)
@@ -63,6 +64,8 @@ async def update_request(request_id: str, updates: RequestUpdate):
                 req["priority"] = updates.priority
             if updates.description is not None:
                 req["description"] = updates.description
+            if updates.locationData is not None:
+                req["locationData"] = updates.locationData.dict()
             save_json(REQUESTS_FILE, requests)
             return req
     

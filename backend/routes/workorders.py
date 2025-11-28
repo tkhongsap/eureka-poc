@@ -38,7 +38,8 @@ async def create_workorder(wo: WorkOrderCreate):
         "requestId": wo.requestId,
         "technicianNotes": None,
         "technicianImages": [],
-        "adminReview": None
+        "adminReview": None,
+        "locationData": wo.locationData.dict() if wo.locationData else None
     }
     
     workorders = load_json(WORKORDERS_FILE)

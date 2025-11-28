@@ -95,6 +95,13 @@ export const deleteImage = async (imageId: string): Promise<void> => {
 };
 
 // --- Request API ---
+export interface LocationData {
+  latitude: number;
+  longitude: number;
+  address: string;
+  googleMapsUrl: string;
+}
+
 export interface RequestItem {
   id: string;
   location: string;
@@ -105,6 +112,7 @@ export interface RequestItem {
   imageIds: string[];
   assignedTo?: string;
   createdBy?: string;
+  locationData?: LocationData;
 }
 
 export interface CreateRequestData {
@@ -114,6 +122,7 @@ export interface CreateRequestData {
   imageIds: string[];
   assignedTo?: string;
   createdBy?: string;
+  locationData?: LocationData;
 }
 
 export const createRequest = async (data: CreateRequestData): Promise<RequestItem> => {
@@ -185,6 +194,7 @@ export interface WorkOrderItem {
   technicianImages?: string[];
   partsUsed?: { id: string; name: string; quantity: number }[];
   adminReview?: string;
+  locationData?: LocationData;
 }
 
 export interface CreateWorkOrderData {
@@ -198,6 +208,7 @@ export interface CreateWorkOrderData {
   dueDate: string;
   imageIds?: string[];
   requestId?: string;
+  locationData?: LocationData;
 }
 
 export const createWorkOrder = async (data: CreateWorkOrderData): Promise<WorkOrderItem> => {

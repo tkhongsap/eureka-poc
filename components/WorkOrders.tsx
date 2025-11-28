@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, Filter, Download, MoreHorizontal, BrainCircuit, X, AlertTriangle, CheckSquare, Clock, ArrowRight, Zap,
   LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, HardHat, UserPlus,
-  Loader2, CheckCircle2, XCircle
+  Loader2, CheckCircle2, XCircle, Navigation, MapPin
 } from 'lucide-react';
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
@@ -854,8 +854,34 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                                 <span className={`px-1.5 py-0.5 rounded border text-[9px] uppercase font-bold ${priorityColors[wo.priority]}`}>
                                                     {wo.priority}
                                                 </span>
-                                                <div className="flex items-center gap-1.5">
-                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center text-[9px] font-bold ${wo.assignedTo === currentUser?.name ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-stone-100 text-stone-600 border-stone-200'}`}>
+                                            </div>
+
+                                            {/* Location Info */}
+                                            <div className="mb-3 text-xs text-stone-600">
+                                              <div className="flex items-start gap-1.5">
+                                                <MapPin size={12} className="text-stone-400 mt-0.5 flex-shrink-0" />
+                                                <span className="line-clamp-1">{wo.location}</span>
+                                              </div>
+                                            </div>
+
+                                            {/* GPS Navigation Link */}
+                                            {wo.locationData && (
+                                              <a
+                                                href={`https://www.google.com/maps/dir/?api=1&destination=${wo.locationData.latitude},${wo.locationData.longitude}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="flex items-center gap-1.5 mb-3 px-2 py-1.5 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg text-teal-700 text-xs transition-colors"
+                                              >
+                                                <Navigation size={12} />
+                                                <span className="truncate flex-1 text-left">{wo.locationData.address.split(',')[0]}</span>
+                                                <span className="text-teal-500 font-medium">นำทาง</span>
+                                              </a>
+                                            )}
+
+                                            <div className="flex items-center justify-between pt-3 border-t border-stone-100 mt-3">
+                                                <div className="flex items-center gap-1.5 text-xs text-stone-500">
+                                                     <div className={`w-5 h-5 rounded-lg border border-stone-200 flex items-center justify-center text-[10px] font-bold ${wo.assignedTo === currentUser?.name ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-stone-100 text-stone-600'}`}>
                                                         {wo.assignedTo?.charAt(0) || '?'}
                                                     </div>
                                                     <span className="text-[9px] text-stone-400">{new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
@@ -941,6 +967,65 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                   </div>
                 )}
               </div>
+
+              {/* GPS Location Section with Map */}
+              {/* Debug: check if locationData exists */}
+              {console.log('selectedWO.locationData:', selectedWO.locationData)}
+              {selectedWO.locationData && (
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
+                    <MapPin size={16} className="text-teal-600" /> 📍 GPS Location
+                  </h3>
+                  <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200 rounded-xl overflow-hidden">
+                    {/* Embedded Map using OpenStreetMap */}
+                    <div className="h-[200px] w-full">
+                      <iframe
+                        title="Location Map"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedWO.locationData.longitude - 0.005},${selectedWO.locationData.latitude - 0.003},${selectedWO.locationData.longitude + 0.005},${selectedWO.locationData.latitude + 0.003}&layer=mapnik&marker=${selectedWO.locationData.latitude},${selectedWO.locationData.longitude}`}
+                      />
+                    </div>
+                    
+                    {/* Location Details */}
+                    <div className="p-4">
+                      <p className="text-sm text-stone-700 mb-3 font-medium">{selectedWO.locationData.address}</p>
+                      <div className="flex items-center gap-3 text-xs text-stone-500 mb-4">
+                        <span className="font-mono bg-white px-2 py-1 rounded border border-stone-200">
+                          Lat: {selectedWO.locationData.latitude.toFixed(6)}
+                        </span>
+                        <span className="font-mono bg-white px-2 py-1 rounded border border-stone-200">
+                          Lng: {selectedWO.locationData.longitude.toFixed(6)}
+                        </span>
+                      </div>
+                      
+                      {/* Google Maps Links */}
+                      <div className="flex flex-wrap gap-2">
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${selectedWO.locationData.latitude},${selectedWO.locationData.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-xl transition-colors shadow-lg shadow-teal-600/20"
+                        >
+                          <Navigation size={18} />
+                          นำทาง (Navigate)
+                        </a>
+                        <a
+                          href={`https://www.google.com/maps?q=${selectedWO.locationData.latitude},${selectedWO.locationData.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-stone-50 text-teal-700 font-medium rounded-xl transition-colors border-2 border-teal-200"
+                        >
+                          <MapPin size={18} />
+                          ดูใน Google Maps
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Admin Assignment Section (visible to Admin when status is Open and not yet assigned) */}
               {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.OPEN && (

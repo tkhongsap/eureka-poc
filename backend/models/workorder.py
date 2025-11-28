@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from .request import LocationData
 
 
 class WorkOrderCreate(BaseModel):
@@ -13,6 +14,7 @@ class WorkOrderCreate(BaseModel):
     dueDate: str
     imageIds: List[str] = []
     requestId: Optional[str] = None
+    locationData: Optional[LocationData] = None
 
 
 class WorkOrder(BaseModel):
@@ -31,6 +33,7 @@ class WorkOrder(BaseModel):
     technicianNotes: Optional[str] = None
     technicianImages: List[str] = []
     adminReview: Optional[str] = None
+    locationData: Optional[LocationData] = None
 
 
 class WorkOrderUpdate(BaseModel):
@@ -44,6 +47,7 @@ class WorkOrderUpdate(BaseModel):
     dueDate: Optional[str] = None
     imageIds: Optional[List[str]] = None
     adminReview: Optional[str] = None
+    locationData: Optional[LocationData] = None
 
 
 class TechnicianUpdate(BaseModel):

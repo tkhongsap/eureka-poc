@@ -5,6 +5,14 @@ export enum Priority {
   LOW = 'Low'
 }
 
+// Location data for Google Maps integration
+export interface LocationData {
+  latitude: number;
+  longitude: number;
+  address: string;
+  googleMapsUrl: string;
+}
+
 export enum Status {
   OPEN = 'Open',
   IN_PROGRESS = 'In Progress',
@@ -48,6 +56,7 @@ export interface WorkOrder {
   technicianNotes?: string;  // Notes added by technician
   technicianImages?: string[];  // Images added by technician
   adminReview?: string; // Review/approval notes by admin
+  locationData?: LocationData; // GPS location for navigation
 }
 
 export interface Asset {

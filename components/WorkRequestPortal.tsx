@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Send, MapPin, AlertCircle, History, Clock, CheckCircle, X, Image as ImageIcon, UserCheck } from 'lucide-react';
+import { Camera, Send, MapPin, AlertCircle, History, Clock, CheckCircle, X, Image as ImageIcon, UserCheck, Navigation } from 'lucide-react';
 import { 
   uploadImage, 
   createRequest, 
@@ -7,11 +7,13 @@ import {
   getImageUrl,
   RequestItem as ApiRequestItem,
   ImageInfo,
-  createNotification
+  createNotification,
+  LocationData
 } from '../services/apiService';
 import { User, UserRole, WorkOrder } from '../types';
 import RequestorWorkOrders from './RequestorWorkOrders';
 import { createWOCreatedNotification } from '../services/notificationService';
+import LocationPicker, { LocationDisplay, InlineLocationPicker } from './LocationPicker';
 
 interface RequestItem {
   id: string;
@@ -23,6 +25,7 @@ interface RequestItem {
   imageIds: string[];  // Store image IDs instead of base64
   assignedTo?: string;
   createdBy?: string;
+  locationData?: LocationData;
 }
 
 interface TempImage {
@@ -39,6 +42,7 @@ interface WorkRequestPortalProps {
     description: string;
     imageIds: string[];
     assignedTo?: string;
+    locationData?: LocationData;
   }) => void;
   currentUser?: User;
   technicians?: { id: string; name: string }[];
@@ -67,6 +71,9 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Location picker state
+  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
 
   // Check if current user can assign technicians
   const canAssign = currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Technician';
@@ -89,6 +96,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
             imageIds: r.imageIds,
             assignedTo: r.assignedTo,
             createdBy: r.createdBy,
+            locationData: r.locationData,
           }));
         setRequests(mappedRequests);
       } catch (error) {
@@ -185,13 +193,14 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
       // Determine assignedTo value
       const assignedToValue = canAssign ? (assignedTo || undefined) : undefined;
 
-      // Create request via API
+      // Create request via API with location data
       const createdRequest = await createRequest({
         location: location,
         priority: priorityValue,
         description: description,
         imageIds: savedImageIds,
         assignedTo: assignedToValue,
+        locationData: selectedLocation || undefined,
       });
 
       const now = new Date();
@@ -206,6 +215,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
         date: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         imageIds: createdRequest.imageIds,
         assignedTo: createdRequest.assignedTo,
+        locationData: createdRequest.locationData,
       };
 
       // Notify parent to create Work Order
@@ -217,6 +227,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
           description: createdRequest.description,
           imageIds: createdRequest.imageIds,
           assignedTo: createdRequest.assignedTo,
+          locationData: createdRequest.locationData,
         });
       }
 
@@ -235,6 +246,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
       setLocation('');
       setPriority('Low - Cosmetic issue');
       setDescription('');
+      setSelectedLocation(null); // Reset location
       // Reset assignedTo only for Admin (Technician keeps self-assigned)
       if (currentUser?.userRole === 'Admin') {
         setAssignedTo('');
@@ -307,6 +319,17 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                             <option>Critical - Safety Hazard</option>
                         </select>
                         </div>
+                    </div>
+
+                    {/* GPS Location Picker - Inline Map */}
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-2">
+                        📍 GPS Location <span className="text-stone-400 font-normal">(Optional - Click map to pin)</span>
+                      </label>
+                      <InlineLocationPicker
+                        selectedLocation={selectedLocation}
+                        onLocationSelect={setSelectedLocation}
+                      />
                     </div>
 
                     {/* Assign Technician - Only visible for Admin and Technician */}
@@ -466,6 +489,21 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                             <span>{req.assignedTo}</span>
                           </div>
                         )}
+                        {req.locationData && (
+                          <div className="flex items-center gap-1 text-xs text-stone-500 mb-2">
+                            <Navigation size={12} className="text-teal-500" />
+                            <a
+                              href={req.locationData.googleMapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="hover:text-teal-600 hover:underline truncate max-w-[180px]"
+                              title={req.locationData.address}
+                            >
+                              GPS Location
+                            </a>
+                          </div>
+                        )}
                         {req.imageIds.length > 0 && (
                           <div className="flex items-center gap-1 text-xs text-stone-400 mb-2">
                             <ImageIcon size={12} />
@@ -543,6 +581,36 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                    <div className="flex items-center gap-2">
                      <UserCheck size={16} className="text-teal-500" />
                      <span className="text-stone-800 font-medium">{selectedRequest.assignedTo}</span>
+                   </div>
+                 </div>
+               )}
+
+               {/* GPS Location with Navigate Button */}
+               {selectedRequest.locationData && (
+                 <div>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">📍 GPS Location</label>
+                   <div className="bg-stone-50 p-4 rounded-xl border border-stone-200">
+                     <div className="flex items-start gap-3">
+                       <div className="p-2 bg-teal-100 text-teal-600 rounded-lg flex-shrink-0">
+                         <MapPin size={18} />
+                       </div>
+                       <div className="flex-1 min-w-0">
+                         <p className="text-sm text-stone-800 mb-1">{selectedRequest.locationData.address}</p>
+                         <p className="text-xs text-stone-400 font-mono">
+                           {selectedRequest.locationData.latitude.toFixed(6)}, {selectedRequest.locationData.longitude.toFixed(6)}
+                         </p>
+                       </div>
+                       <a
+                         href={`https://www.google.com/maps/dir/?api=1&destination=${selectedRequest.locationData.latitude},${selectedRequest.locationData.longitude}`}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors flex-shrink-0"
+                         title="Navigate with Google Maps"
+                       >
+                         <Navigation size={16} />
+                         Navigate
+                       </a>
+                     </div>
                    </div>
                  </div>
                )}
