@@ -1,56 +1,54 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import FileResponse
 from typing import List
 from datetime import datetime
+from sqlalchemy.orm import Session
 import os
 import uuid
 import aiofiles
 
 from models import ImageInfo
-from utils import PICTURES_DIR, IMAGES_FILE, load_json, save_json
+from database import get_db
+from db_models import Image as ImageModel
+from utils import PICTURES_DIR
 
 router = APIRouter(prefix="/api/images", tags=["Images"])
 
 
 @router.post("/upload", response_model=ImageInfo)
-async def upload_image(file: UploadFile = File(...)):
+async def upload_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """Upload an image and return its ID"""
-    # Generate unique ID and filename
     image_id = f"IMG-{int(datetime.now().timestamp() * 1000)}-{uuid.uuid4().hex[:8]}"
     ext = os.path.splitext(file.filename)[1] or ".jpg"
     filename = f"{image_id}{ext}"
     filepath = os.path.join(PICTURES_DIR, filename)
     
-    # Save file
     async with aiofiles.open(filepath, 'wb') as f:
         content = await file.read()
         await f.write(content)
     
-    # Save image info
-    image_info = {
-        "id": image_id,
-        "originalName": file.filename,
-        "filename": filename,
-        "createdAt": datetime.now().isoformat()
-    }
+    new_image = ImageModel(
+        id=image_id,
+        original_name=file.filename,
+        filename=filename
+    )
     
-    images = load_json(IMAGES_FILE)
-    images.append(image_info)
-    save_json(IMAGES_FILE, images)
+    db.add(new_image)
+    db.commit()
+    db.refresh(new_image)
     
-    return image_info
+    return new_image.to_dict()
 
 
 @router.get("/{image_id}")
-async def get_image(image_id: str):
+async def get_image(image_id: str, db: Session = Depends(get_db)):
     """Get image file by ID"""
-    images = load_json(IMAGES_FILE)
-    image = next((img for img in images if img["id"] == image_id), None)
+    image = db.query(ImageModel).filter(ImageModel.id == image_id).first()
     
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
     
-    filepath = os.path.join(PICTURES_DIR, image["filename"])
+    filepath = os.path.join(PICTURES_DIR, image.filename)
     if not os.path.exists(filepath):
         raise HTTPException(status_code=404, detail="Image file not found")
     
@@ -58,27 +56,25 @@ async def get_image(image_id: str):
 
 
 @router.get("", response_model=List[ImageInfo])
-async def list_images():
+async def list_images(db: Session = Depends(get_db)):
     """List all images"""
-    return load_json(IMAGES_FILE)
+    images = db.query(ImageModel).order_by(ImageModel.created_at.desc()).all()
+    return [img.to_dict() for img in images]
 
 
 @router.delete("/{image_id}")
-async def delete_image(image_id: str):
+async def delete_image(image_id: str, db: Session = Depends(get_db)):
     """Delete an image"""
-    images = load_json(IMAGES_FILE)
-    image = next((img for img in images if img["id"] == image_id), None)
+    image = db.query(ImageModel).filter(ImageModel.id == image_id).first()
     
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
     
-    # Delete file
-    filepath = os.path.join(PICTURES_DIR, image["filename"])
+    filepath = os.path.join(PICTURES_DIR, image.filename)
     if os.path.exists(filepath):
         os.remove(filepath)
     
-    # Remove from list
-    images = [img for img in images if img["id"] != image_id]
-    save_json(IMAGES_FILE, images)
+    db.delete(image)
+    db.commit()
     
     return {"message": "Image deleted"}
