@@ -3,25 +3,16 @@ Notification Routes for CMMS System
 Handles notification CRUD operations and workflow notifications
 """
 
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Depends
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
-import json
-import os
+from sqlalchemy.orm import Session
+
+from database import get_db
+from db_models import Notification as NotificationModel
 
 router = APIRouter(prefix="/api", tags=["Notifications"])
-
-# Path to notifications storage
-STORAGE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'storage', 'information', 'notifications.json')
-
-# Ensure storage directory exists
-os.makedirs(os.path.dirname(STORAGE_PATH), exist_ok=True)
-
-# Initialize storage file if it doesn't exist
-if not os.path.exists(STORAGE_PATH):
-    with open(STORAGE_PATH, 'w') as f:
-        json.dump([], f)
 
 
 class NotificationCreate(BaseModel):
@@ -48,105 +39,72 @@ class Notification(BaseModel):
     triggeredBy: str
 
 
-def load_notifications() -> List[dict]:
-    """Load notifications from JSON storage"""
-    try:
-        with open(STORAGE_PATH, 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-
-
-def save_notifications(notifications: List[dict]):
-    """Save notifications to JSON storage"""
-    with open(STORAGE_PATH, 'w') as f:
-        json.dump(notifications, f, indent=2)
-
-
 @router.get("/notifications", response_model=List[Notification])
 async def get_notifications(
     x_user_role: Optional[str] = Header(None),
-    x_user_name: Optional[str] = Header(None)
+    x_user_name: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
 ):
-    """
-    Get all notifications
-    Can be filtered by user role and name on the frontend
-    """
-    notifications = load_notifications()
-    return notifications
+    """Get all notifications"""
+    notifications = db.query(NotificationModel).order_by(NotificationModel.created_at.desc()).all()
+    return [n.to_dict() for n in notifications]
 
 
 @router.post("/notifications", response_model=Notification)
 async def create_notification(
     notification: NotificationCreate,
     x_user_role: Optional[str] = Header(None),
-    x_user_name: Optional[str] = Header(None)
+    x_user_name: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
 ):
-    """
-    Create a new notification
-    """
-    notifications = load_notifications()
-    
-    # Generate unique ID
+    """Create a new notification"""
     notification_id = f"notif-{int(datetime.now().timestamp() * 1000)}"
     
-    # Create notification object
-    new_notification = {
-        "id": notification_id,
-        "type": notification.type,
-        "workOrderId": notification.workOrderId,
-        "workOrderTitle": notification.workOrderTitle,
-        "message": notification.message,
-        "recipientRole": notification.recipientRole,
-        "recipientName": notification.recipientName,
-        "isRead": notification.isRead,
-        "createdAt": datetime.now().isoformat(),
-        "triggeredBy": notification.triggeredBy
-    }
+    new_notification = NotificationModel(
+        id=notification_id,
+        type=notification.type,
+        work_order_id=notification.workOrderId,
+        work_order_title=notification.workOrderTitle,
+        message=notification.message,
+        recipient_role=notification.recipientRole,
+        recipient_name=notification.recipientName,
+        is_read=notification.isRead,
+        triggered_by=notification.triggeredBy
+    )
     
-    # Add to list
-    notifications.append(new_notification)
+    db.add(new_notification)
+    db.commit()
+    db.refresh(new_notification)
     
-    # Save
-    save_notifications(notifications)
-    
-    return new_notification
+    return new_notification.to_dict()
 
 
 @router.patch("/notifications/{notification_id}/read", response_model=Notification)
 async def mark_notification_as_read(
     notification_id: str,
     x_user_role: Optional[str] = Header(None),
-    x_user_name: Optional[str] = Header(None)
+    x_user_name: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
 ):
-    """
-    Mark a specific notification as read
-    """
-    notifications = load_notifications()
-    
-    # Find notification
-    notification = next((n for n in notifications if n["id"] == notification_id), None)
+    """Mark a specific notification as read"""
+    notification = db.query(NotificationModel).filter(NotificationModel.id == notification_id).first()
     
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
     
-    # Mark as read
-    notification["isRead"] = True
+    notification.is_read = True
+    db.commit()
+    db.refresh(notification)
     
-    # Save
-    save_notifications(notifications)
-    
-    return notification
+    return notification.to_dict()
 
 
-def is_notification_for_user(notification: dict, user_role: str, user_name: str) -> bool:
+def is_notification_for_user(notification: NotificationModel, user_role: str, user_name: str) -> bool:
     """Check if notification belongs to a specific user"""
-    # Must match role
-    if notification.get("recipientRole") != user_role:
+    if notification.recipient_role != user_role:
         return False
     
-    # If notification has specific recipient name, must match
-    recipient_name = notification.get("recipientName")
+    recipient_name = notification.recipient_name
     if recipient_name and recipient_name != user_name:
         return False
     
@@ -156,23 +114,20 @@ def is_notification_for_user(notification: dict, user_role: str, user_name: str)
 @router.patch("/notifications/read-all")
 async def mark_all_notifications_as_read(
     x_user_role: Optional[str] = Header(None),
-    x_user_name: Optional[str] = Header(None)
+    x_user_name: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
 ):
-    """
-    Mark all notifications as read for the current user only
-    """
-    notifications = load_notifications()
+    """Mark all notifications as read for the current user only"""
+    notifications = db.query(NotificationModel).all()
     
     marked_count = 0
-    # Mark as read only for current user's notifications
     for notification in notifications:
-        if is_notification_for_user(notification, x_user_role, x_user_name):
-            if not notification.get("isRead", False):
-                notification["isRead"] = True
+        if is_notification_for_user(notification, x_user_role or "", x_user_name or ""):
+            if not notification.is_read:
+                notification.is_read = True
                 marked_count += 1
     
-    # Save
-    save_notifications(notifications)
+    db.commit()
     
     return {"message": f"{marked_count} notifications marked as read"}
 
@@ -180,35 +135,20 @@ async def mark_all_notifications_as_read(
 @router.delete("/notifications/read")
 async def delete_all_read_notifications(
     x_user_role: Optional[str] = Header(None),
-    x_user_name: Optional[str] = Header(None)
+    x_user_name: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
 ):
-    """
-    Delete read notifications for the current user only
-    Other users' notifications are preserved
-    """
-    notifications = load_notifications()
+    """Delete read notifications for the current user only"""
+    notifications = db.query(NotificationModel).all()
     
-    # Keep notifications that are:
-    # 1. Not for current user (preserve others' notifications)
-    # 2. Or for current user but still unread
-    remaining_notifications = []
     deleted_count = 0
-    
-    for n in notifications:
-        if is_notification_for_user(n, x_user_role, x_user_name):
-            # This is current user's notification
-            if n.get("isRead", False):
-                # Read notification - delete it
+    for notification in notifications:
+        if is_notification_for_user(notification, x_user_role or "", x_user_name or ""):
+            if notification.is_read:
+                db.delete(notification)
                 deleted_count += 1
-            else:
-                # Unread - keep it
-                remaining_notifications.append(n)
-        else:
-            # Not for current user - always keep
-            remaining_notifications.append(n)
     
-    # Save
-    save_notifications(remaining_notifications)
+    db.commit()
     
     return {"message": f"{deleted_count} read notifications deleted"}
 
@@ -217,17 +157,14 @@ async def delete_all_read_notifications(
 async def delete_notification(
     notification_id: str,
     x_user_role: Optional[str] = Header(None),
-    x_user_name: Optional[str] = Header(None)
+    x_user_name: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
 ):
-    """
-    Delete a specific notification
-    """
-    notifications = load_notifications()
+    """Delete a specific notification"""
+    notification = db.query(NotificationModel).filter(NotificationModel.id == notification_id).first()
     
-    # Find and remove notification
-    notifications = [n for n in notifications if n["id"] != notification_id]
-    
-    # Save
-    save_notifications(notifications)
+    if notification:
+        db.delete(notification)
+        db.commit()
     
     return {"message": "Notification deleted"}

@@ -4,17 +4,17 @@
 
 Eureka CMMS is a comprehensive maintenance management system that helps track repair requests, work orders, inventory, and team schedules. The system features AI-powered analysis using Google Gemini to help diagnose maintenance issues.
 
-**Current Status**: ✅ Fully configured and running on Replit
+**Current Status**: Fully configured and running on Replit with PostgreSQL database
 
 ## Project Architecture
 
 ### Tech Stack
 - **Frontend**: React 19.2 + TypeScript + Vite 6.2 + Tailwind CSS
 - **Backend**: Python 3.11 + FastAPI 0.104 + Uvicorn
+- **Database**: PostgreSQL (Replit built-in) + SQLAlchemy 2.0
 - **AI Integration**: Google Gemini API
 - **Charts**: Recharts 3.5
 - **Icons**: Lucide React
-- **Storage**: File-based JSON storage
 
 ### Project Structure
 ```
@@ -33,12 +33,13 @@ eureka-cmms/
 │   └── geminiService.ts
 ├── backend/           # FastAPI backend
 │   ├── main.py        # FastAPI app entry point
+│   ├── database.py    # SQLAlchemy database connection
+│   ├── db_models.py   # SQLAlchemy table models
 │   ├── routes/        # API route handlers
 │   ├── models/        # Pydantic data models
 │   └── utils/         # Helper utilities
-├── storage/           # Auto-generated data storage
-│   ├── pictures/      # Uploaded images
-│   └── information/   # JSON data files
+├── storage/           # File storage for images
+│   └── pictures/      # Uploaded images
 └── App.tsx           # Main React application
 ```
 
@@ -51,6 +52,7 @@ eureka-cmms/
 - **Team Scheduling** - Manage technician schedules
 - **AI Analysis** - Gemini-powered issue diagnosis
 - **Image Upload** - Attach photos to work orders and requests
+- **Notifications** - Workflow notifications for role-based updates
 
 ### API Endpoints
 | Method | Endpoint | Description |
@@ -67,58 +69,71 @@ eureka-cmms/
 | GET | `/api/workorders` | List all work orders |
 | PUT | `/api/workorders/{id}` | Update work order |
 | DELETE | `/api/workorders/{id}` | Delete work order |
+| GET | `/api/notifications` | List all notifications |
+| POST | `/api/notifications` | Create notification |
 
 ## Recent Changes
 
+### November 30, 2025 - PostgreSQL Database Integration
+- Added SQLAlchemy 2.0 with PostgreSQL support
+- Created database models for Requests, WorkOrders, Images, and Notifications
+- Migrated all routes from JSON file storage to PostgreSQL database
+- Database tables are auto-created on application startup
+- Added proper JSON serialization for API responses
+
 ### November 26, 2025 - Replit Setup
-- ✅ Installed Node.js 20 and Python 3.11 modules
-- ✅ Configured Vite to run on port 5000 for Replit webview
-- ✅ Updated API service to auto-detect Replit backend URL
-- ✅ Configured HMR WebSocket for Replit proxy
-- ✅ Updated .gitignore for Node.js and Python artifacts
-- ✅ Installed all frontend and backend dependencies
-- ✅ Created "Backend API" workflow (localhost:8000)
-- ✅ Created "Frontend" workflow (0.0.0.0:5000)
-- ✅ Configured autoscale deployment
-- ✅ Verified application is running successfully
+- Installed Node.js 20 and Python 3.11 modules
+- Configured Vite to run on port 5000 for Replit webview
+- Updated API service to auto-detect Replit backend URL
+- Configured HMR WebSocket for Replit proxy
+- Updated .gitignore for Node.js and Python artifacts
+- Installed all frontend and backend dependencies
+- Created "Backend API" workflow (localhost:8000)
+- Created "Frontend" workflow (0.0.0.0:5000)
+- Configured autoscale deployment
+- Verified application is running successfully
 
 ## Configuration
 
 ### Environment Variables
-The app supports the following environment variable:
+The app uses the following environment variables:
+- `DATABASE_URL` - PostgreSQL connection string (auto-configured by Replit)
+- `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` - Individual PostgreSQL settings
 - `GEMINI_API_KEY` - Optional API key for Google Gemini AI analysis features
 
 ### Workflows
 Two workflows are configured to run the application:
 
 1. **Backend API** (Console)
-   - Command: `cd backend && python -m uvicorn main:app --host localhost --port 8000 --reload`
+   - Command: `cd backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload`
    - Port: 8000 (internal)
-   - Status: ✅ Running
+   - Status: Running
 
 2. **Frontend** (Webview)
    - Command: `npm run dev`
    - Port: 5000 (exposed to web)
-   - Status: ✅ Running
+   - Status: Running
 
 ### Development vs Production
 - **Development**: Both workflows run with hot-reload enabled
 - **Production**: Deployment uses autoscale with built frontend and FastAPI backend
 
-## Storage
+## Database
 
-The application uses file-based storage in the `storage/` directory:
+The application uses PostgreSQL for data persistence with SQLAlchemy ORM:
 
-```
-storage/
-├── pictures/            # Uploaded images (IMG-xxx.jpg/png)
-└── information/         # JSON data files
-    ├── requests.json    # Repair requests
-    ├── workorders.json  # Work orders
-    └── images.json      # Image metadata
-```
+### Tables
+- **requests** - Maintenance requests from users
+- **workorders** - Work orders for technicians
+- **images** - Image metadata (files stored in storage/pictures/)
+- **notifications** - Workflow notifications
 
-⚠️ **Note**: The `storage/` directory is auto-created on first run and excluded from git.
+### Database Files
+- `backend/database.py` - Database connection configuration
+- `backend/db_models.py` - SQLAlchemy table models
+
+### Image Storage
+Images are stored in the filesystem at `storage/pictures/` while metadata is stored in the database.
 
 ## How to Use
 
@@ -138,7 +153,6 @@ npm install <package-name>
 ```bash
 cd backend
 pip install <package-name>
-# Add to requirements.txt
 ```
 
 ### API Testing
@@ -169,7 +183,12 @@ None specified yet.
 ### Backend API errors
 - Check Backend API workflow logs
 - Verify Python dependencies are installed
-- Check storage directory permissions
+- Check database connection (DATABASE_URL must be set)
+
+### Database issues
+- Verify DATABASE_URL environment variable is set
+- Check PostgreSQL is provisioned in Replit
+- Tables are auto-created on startup - restart Backend API workflow
 
 ### Images not uploading
 - Ensure storage/pictures directory exists

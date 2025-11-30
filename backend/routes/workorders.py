@@ -1,52 +1,57 @@
-from fastapi import APIRouter, HTTPException, Query, Header
+from fastapi import APIRouter, HTTPException, Query, Header, Depends
 from typing import List, Optional
 from pydantic import BaseModel
-import httpx
+from sqlalchemy.orm import Session
+from datetime import datetime
 
 from models import WorkOrderCreate, WorkOrder, WorkOrderUpdate, TechnicianUpdate
-from utils import WORKORDERS_FILE, load_json, save_json, generate_id, get_current_date
+from database import get_db
+from db_models import WorkOrder as WorkOrderModel
+from utils import generate_id, get_current_date
 from utils.workflow_rules import (
     validate_status_transition,
     get_work_order_permissions,
     is_transition_allowed
 )
 
-# Models for admin actions
+
 class AdminRejectData(BaseModel):
     rejectionReason: str
+
 
 router = APIRouter(prefix="/api/workorders", tags=["Work Orders"])
 
 
-@router.post("", response_model=WorkOrder)
-async def create_workorder(wo: WorkOrderCreate):
-    """Create a new work order"""
+async def create_workorder_internal(wo: WorkOrderCreate, db: Session) -> dict:
+    """Internal function to create work order, used by both POST endpoint and request conversion"""
     wo_id = generate_id("WO")
     
-    new_wo = {
-        "id": wo_id,
-        "title": wo.title,
-        "description": wo.description,
-        "assetName": wo.assetName,
-        "location": wo.location,
-        "priority": wo.priority,
-        "status": wo.status,
-        "assignedTo": wo.assignedTo,
-        "dueDate": wo.dueDate,
-        "createdAt": get_current_date(),
-        "imageIds": wo.imageIds,
-        "requestId": wo.requestId,
-        "technicianNotes": None,
-        "technicianImages": [],
-        "adminReview": None,
-        "locationData": wo.locationData.dict() if wo.locationData else None
-    }
+    new_wo = WorkOrderModel(
+        id=wo_id,
+        title=wo.title,
+        description=wo.description,
+        asset_name=wo.assetName,
+        location=wo.location,
+        priority=wo.priority,
+        status=wo.status,
+        assigned_to=wo.assignedTo,
+        due_date=wo.dueDate,
+        image_ids=wo.imageIds,
+        request_id=wo.requestId,
+        location_data=wo.locationData.dict() if wo.locationData else None
+    )
     
-    workorders = load_json(WORKORDERS_FILE)
-    workorders.insert(0, new_wo)
-    save_json(WORKORDERS_FILE, workorders)
+    db.add(new_wo)
+    db.commit()
+    db.refresh(new_wo)
     
-    return new_wo
+    return new_wo.to_dict()
+
+
+@router.post("", response_model=WorkOrder)
+async def create_workorder(wo: WorkOrderCreate, db: Session = Depends(get_db)):
+    """Create a new work order"""
+    return await create_workorder_internal(wo, db)
 
 
 @router.get("", response_model=List[WorkOrder])
@@ -55,51 +60,42 @@ async def list_workorders(
     startDate: Optional[str] = Query(default=None, description="Filter by createdAt >= startDate (YYYY-MM-DD)"),
     endDate: Optional[str] = Query(default=None, description="Filter by createdAt <= endDate (YYYY-MM-DD)"),
     assignedTo: Optional[str] = Query(default=None, description="Filter by assigned technician name"),
+    db: Session = Depends(get_db)
 ):
     """List work orders with optional filtering and search"""
-    workorders = load_json(WORKORDERS_FILE)
-
-    # Text search on title + description
+    query = db.query(WorkOrderModel)
+    
     if search:
-        s = search.lower()
-        workorders = [
-            w
-            for w in workorders
-            if s in str(w.get("title", "")).lower()
-            or s in str(w.get("description", "")).lower()
-        ]
-
-    # Filter by assigned technician
+        s = f"%{search.lower()}%"
+        query = query.filter(
+            (WorkOrderModel.title.ilike(s)) | 
+            (WorkOrderModel.description.ilike(s))
+        )
+    
     if assignedTo:
-        workorders = [w for w in workorders if w.get("assignedTo") == assignedTo]
-
-    # Date range filter on createdAt (expects ISO-like date string prefix match)
+        query = query.filter(WorkOrderModel.assigned_to == assignedTo)
+    
     if startDate:
-        workorders = [
-            w
-            for w in workorders
-            if str(w.get("createdAt", "")) >= startDate
-        ]
+        start_dt = datetime.strptime(startDate, "%Y-%m-%d")
+        query = query.filter(WorkOrderModel.created_at >= start_dt)
+    
     if endDate:
-        workorders = [
-            w
-            for w in workorders
-            if str(w.get("createdAt", "")) <= endDate
-        ]
-
-    return workorders
+        end_dt = datetime.strptime(endDate, "%Y-%m-%d")
+        query = query.filter(WorkOrderModel.created_at <= end_dt)
+    
+    workorders = query.order_by(WorkOrderModel.created_at.desc()).all()
+    return [wo.to_dict() for wo in workorders]
 
 
 @router.get("/{wo_id}", response_model=WorkOrder)
-async def get_workorder(wo_id: str):
+async def get_workorder(wo_id: str, db: Session = Depends(get_db)):
     """Get a specific work order"""
-    workorders = load_json(WORKORDERS_FILE)
-    wo = next((w for w in workorders if w["id"] == wo_id), None)
+    wo = db.query(WorkOrderModel).filter(WorkOrderModel.id == wo_id).first()
     
     if not wo:
         raise HTTPException(status_code=404, detail="Work order not found")
     
-    return wo
+    return wo.to_dict()
 
 
 @router.put("/{wo_id}", response_model=WorkOrder)
@@ -107,58 +103,78 @@ async def update_workorder(
     wo_id: str,
     updates: WorkOrderUpdate,
     x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
-    x_user_name: Optional[str] = Header(None, alias="X-User-Name")
+    x_user_name: Optional[str] = Header(None, alias="X-User-Name"),
+    db: Session = Depends(get_db)
 ):
     """Update a work order with workflow validation"""
-    workorders = load_json(WORKORDERS_FILE)
-    
-    # Default to Admin if no role provided (for backward compatibility)
     user_role = x_user_role or "Admin"
     user_name = x_user_name or "Unknown"
     
-    for wo in workorders:
-        if wo["id"] == wo_id:
-            # Check if status is being changed
-            update_data = updates.model_dump(exclude_unset=True)
-            
-            if "status" in update_data:
-                new_status = update_data["status"]
-                current_status = wo["status"]
-                
-                # Validate status transition
-                try:
-                    validate_status_transition(current_status, new_status, user_role)
-                except ValueError as e:
-                    raise HTTPException(status_code=403, detail=str(e))
-            
-            # Check permissions for editing
-            permissions = get_work_order_permissions(
-                wo["status"],
-                user_role,
-                wo.get("assignedTo"),
-                user_name
-            )
-            
-            if not permissions.can_edit:
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"User with role '{user_role}' cannot edit work order with status '{wo['status']}'"
-                )
-            
-            # Apply updates
-            wo.update(update_data)
-            save_json(WORKORDERS_FILE, workorders)
-            return wo
+    wo = db.query(WorkOrderModel).filter(WorkOrderModel.id == wo_id).first()
     
-    raise HTTPException(status_code=404, detail="Work order not found")
+    if not wo:
+        raise HTTPException(status_code=404, detail="Work order not found")
+    
+    update_data = updates.model_dump(exclude_unset=True)
+    
+    if "status" in update_data:
+        new_status = update_data["status"]
+        current_status = wo.status
+        
+        try:
+            validate_status_transition(current_status, new_status, user_role)
+        except ValueError as e:
+            raise HTTPException(status_code=403, detail=str(e))
+    
+    permissions = get_work_order_permissions(
+        wo.status,
+        user_role,
+        wo.assigned_to,
+        user_name
+    )
+    
+    if not permissions.can_edit:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User with role '{user_role}' cannot edit work order with status '{wo.status}'"
+        )
+    
+    field_mapping = {
+        "title": "title",
+        "description": "description",
+        "assetName": "asset_name",
+        "location": "location",
+        "priority": "priority",
+        "status": "status",
+        "assignedTo": "assigned_to",
+        "dueDate": "due_date",
+        "imageIds": "image_ids",
+        "adminReview": "admin_review",
+        "locationData": "location_data"
+    }
+    
+    for api_key, db_key in field_mapping.items():
+        if api_key in update_data:
+            value = update_data[api_key]
+            if api_key == "locationData" and value is not None:
+                value = value.dict() if hasattr(value, 'dict') else value
+            setattr(wo, db_key, value)
+    
+    db.commit()
+    db.refresh(wo)
+    
+    return wo.to_dict()
 
 
 @router.delete("/{wo_id}")
-async def delete_workorder(wo_id: str):
+async def delete_workorder(wo_id: str, db: Session = Depends(get_db)):
     """Delete a work order"""
-    workorders = load_json(WORKORDERS_FILE)
-    workorders = [w for w in workorders if w["id"] != wo_id]
-    save_json(WORKORDERS_FILE, workorders)
+    wo = db.query(WorkOrderModel).filter(WorkOrderModel.id == wo_id).first()
+    
+    if wo:
+        db.delete(wo)
+        db.commit()
+    
     return {"message": "Work order deleted"}
 
 
@@ -167,96 +183,91 @@ async def technician_update_workorder(
     wo_id: str,
     technician_update: TechnicianUpdate,
     x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
-    x_user_name: Optional[str] = Header(None, alias="X-User-Name")
+    x_user_name: Optional[str] = Header(None, alias="X-User-Name"),
+    db: Session = Depends(get_db)
 ):
     """Update work order by technician with notes and images, moves status to Pending"""
-    workorders = load_json(WORKORDERS_FILE)
-    
     user_role = x_user_role or "Technician"
     user_name = x_user_name or "Unknown"
     
-    for wo in workorders:
-        if wo["id"] == wo_id:
-            current_status = wo["status"]
-            
-            # Validate technician can update (must be In Progress)
-            if current_status != "In Progress":
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Technician updates only allowed when status is 'In Progress', current status: '{current_status}'"
-                )
-            
-            # Validate technician is assigned
-            if wo.get("assignedTo") != user_name and user_role == "Technician":
-                raise HTTPException(
-                    status_code=403,
-                    detail="Technician can only update work orders assigned to them"
-                )
-            
-            # Validate status transition (In Progress → Pending)
-            try:
-                validate_status_transition(current_status, "Pending", user_role)
-            except ValueError as e:
-                raise HTTPException(status_code=403, detail=str(e))
-            
-            # Update technician-specific fields
-            wo["technicianNotes"] = technician_update.technicianNotes
-            wo["technicianImages"] = technician_update.technicianImages
-            wo["status"] = "Pending"  # Always move to Pending when technician submits
-            
-            # Merge technician images with existing images (preserve original images)
-            existing_images = wo.get("imageIds", [])
-            all_images = existing_images + technician_update.technicianImages
-            wo["imageIds"] = all_images
-            
-            save_json(WORKORDERS_FILE, workorders)
-            return wo
+    wo = db.query(WorkOrderModel).filter(WorkOrderModel.id == wo_id).first()
     
-    raise HTTPException(status_code=404, detail="Work order not found")
+    if not wo:
+        raise HTTPException(status_code=404, detail="Work order not found")
+    
+    current_status = wo.status
+    
+    if current_status != "In Progress":
+        raise HTTPException(
+            status_code=403,
+            detail=f"Technician updates only allowed when status is 'In Progress', current status: '{current_status}'"
+        )
+    
+    if wo.assigned_to != user_name and user_role == "Technician":
+        raise HTTPException(
+            status_code=403,
+            detail="Technician can only update work orders assigned to them"
+        )
+    
+    try:
+        validate_status_transition(current_status, "Pending", user_role)
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    
+    wo.technician_notes = technician_update.technicianNotes
+    wo.technician_images = technician_update.technicianImages
+    wo.status = "Pending"
+    
+    existing_images = wo.image_ids or []
+    all_images = existing_images + technician_update.technicianImages
+    wo.image_ids = all_images
+    
+    db.commit()
+    db.refresh(wo)
+    
+    return wo.to_dict()
 
 
 @router.patch("/{wo_id}/approve", response_model=WorkOrder)
 async def admin_approve_workorder(
     wo_id: str,
     x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
-    x_user_name: Optional[str] = Header(None, alias="X-User-Name")
+    x_user_name: Optional[str] = Header(None, alias="X-User-Name"),
+    db: Session = Depends(get_db)
 ):
     """Head Technician approves work order, changes status from Pending to Completed"""
-    workorders = load_json(WORKORDERS_FILE)
-    
     user_role = x_user_role or "Head Technician"
     user_name = x_user_name or "Unknown"
     
-    # Only Head Technician can approve (Admin should close, not approve)
     if user_role != "Head Technician":
         raise HTTPException(status_code=403, detail="Only Head Technician can approve work orders")
     
-    for wo in workorders:
-        if wo["id"] == wo_id:
-            current_status = wo["status"]
-            
-            # Must be in Pending status
-            if current_status != "Pending":
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Can only approve work orders in 'Pending' status, current: '{current_status}'"
-                )
-            
-            # Validate transition
-            try:
-                validate_status_transition(current_status, "Completed", user_role)
-            except ValueError as e:
-                raise HTTPException(status_code=403, detail=str(e))
-            
-            # Approve
-            wo["status"] = "Completed"
-            wo["approvedBy"] = user_name
-            wo["approvedAt"] = get_current_date()
-            
-            save_json(WORKORDERS_FILE, workorders)
-            return wo
+    wo = db.query(WorkOrderModel).filter(WorkOrderModel.id == wo_id).first()
     
-    raise HTTPException(status_code=404, detail="Work order not found")
+    if not wo:
+        raise HTTPException(status_code=404, detail="Work order not found")
+    
+    current_status = wo.status
+    
+    if current_status != "Pending":
+        raise HTTPException(
+            status_code=403,
+            detail=f"Can only approve work orders in 'Pending' status, current: '{current_status}'"
+        )
+    
+    try:
+        validate_status_transition(current_status, "Completed", user_role)
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    
+    wo.status = "Completed"
+    wo.approved_by = user_name
+    wo.approved_at = datetime.now()
+    
+    db.commit()
+    db.refresh(wo)
+    
+    return wo.to_dict()
 
 
 @router.patch("/{wo_id}/reject", response_model=WorkOrder)
@@ -264,92 +275,82 @@ async def admin_reject_workorder(
     wo_id: str,
     reject_data: AdminRejectData,
     x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
-    x_user_name: Optional[str] = Header(None, alias="X-User-Name")
+    x_user_name: Optional[str] = Header(None, alias="X-User-Name"),
+    db: Session = Depends(get_db)
 ):
     """Head Technician rejects work order with reason, changes status from Pending to In Progress"""
-    workorders = load_json(WORKORDERS_FILE)
-    
     user_role = x_user_role or "Head Technician"
     user_name = x_user_name or "Unknown"
     
-    # Only Head Technician can reject (Admin should not review)
     if user_role != "Head Technician":
         raise HTTPException(status_code=403, detail="Only Head Technician can reject work orders")
     
-    for wo in workorders:
-        if wo["id"] == wo_id:
-            current_status = wo["status"]
-            
-            # Must be in Pending status
-            if current_status != "Pending":
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Can only reject work orders in 'Pending' status, current: '{current_status}'"
-                )
-            
-            # Validate transition (back to In Progress)
-            try:
-                validate_status_transition(current_status, "In Progress", user_role)
-            except ValueError as e:
-                raise HTTPException(status_code=403, detail=str(e))
-            
-            # Get technician name for notification
-            technician_name = wo.get("assignedTo", "Unknown")
-            
-            # Reject and send back
-            wo["status"] = "In Progress"
-            wo["rejectionReason"] = reject_data.rejectionReason
-            wo["rejectedBy"] = user_name
-            wo["rejectedAt"] = get_current_date()
-            
-            save_json(WORKORDERS_FILE, workorders)
-            
-            # Note: Notification is sent by frontend to avoid duplication
-            
-            return wo
+    wo = db.query(WorkOrderModel).filter(WorkOrderModel.id == wo_id).first()
     
-    raise HTTPException(status_code=404, detail="Work order not found")
+    if not wo:
+        raise HTTPException(status_code=404, detail="Work order not found")
+    
+    current_status = wo.status
+    
+    if current_status != "Pending":
+        raise HTTPException(
+            status_code=403,
+            detail=f"Can only reject work orders in 'Pending' status, current: '{current_status}'"
+        )
+    
+    try:
+        validate_status_transition(current_status, "In Progress", user_role)
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    
+    wo.status = "In Progress"
+    wo.rejection_reason = reject_data.rejectionReason
+    wo.rejected_by = user_name
+    wo.rejected_at = datetime.now()
+    
+    db.commit()
+    db.refresh(wo)
+    
+    return wo.to_dict()
 
 
 @router.patch("/{wo_id}/close", response_model=WorkOrder)
 async def admin_close_workorder(
     wo_id: str,
     x_user_role: Optional[str] = Header(None, alias="X-User-Role"),
-    x_user_name: Optional[str] = Header(None, alias="X-User-Name")
+    x_user_name: Optional[str] = Header(None, alias="X-User-Name"),
+    db: Session = Depends(get_db)
 ):
     """Admin closes work order, changes status from Completed to Closed"""
-    workorders = load_json(WORKORDERS_FILE)
-    
     user_role = x_user_role or "Admin"
     user_name = x_user_name or "Unknown"
     
-    # Only Admin can close
     if user_role != "Admin":
         raise HTTPException(status_code=403, detail="Only Admin can close work orders")
     
-    for wo in workorders:
-        if wo["id"] == wo_id:
-            current_status = wo["status"]
-            
-            # Must be in Completed status
-            if current_status != "Completed":
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Can only close work orders in 'Completed' status, current: '{current_status}'"
-                )
-            
-            # Validate transition
-            try:
-                validate_status_transition(current_status, "Closed", user_role)
-            except ValueError as e:
-                raise HTTPException(status_code=403, detail=str(e))
-            
-            # Close
-            wo["status"] = "Closed"
-            wo["closedBy"] = user_name
-            wo["closedAt"] = get_current_date()
-            
-            save_json(WORKORDERS_FILE, workorders)
-            return wo
+    wo = db.query(WorkOrderModel).filter(WorkOrderModel.id == wo_id).first()
     
-    raise HTTPException(status_code=404, detail="Work order not found")
+    if not wo:
+        raise HTTPException(status_code=404, detail="Work order not found")
+    
+    current_status = wo.status
+    
+    if current_status != "Completed":
+        raise HTTPException(
+            status_code=403,
+            detail=f"Can only close work orders in 'Completed' status, current: '{current_status}'"
+        )
+    
+    try:
+        validate_status_transition(current_status, "Closed", user_role)
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    
+    wo.status = "Closed"
+    wo.closed_by = user_name
+    wo.closed_at = datetime.now()
+    
+    db.commit()
+    db.refresh(wo)
+    
+    return wo.to_dict()
