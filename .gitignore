@@ -78,3 +78,4 @@ pnpm-debug.log*
 .breakpoints
 
 package-lock.json
+*.yml

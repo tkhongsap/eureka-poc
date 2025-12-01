@@ -308,9 +308,39 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     const files = event.target.files;
     if (!files) return;
 
+    const maxImages = 10;
+    const maxVideoSize = 10 * 1024 * 1024; // 10 MB in bytes
+
+    // Check if adding these files would exceed the limit
+    if (technicianImages.length + files.length > maxImages) {
+      alert(`You can only upload a maximum of ${maxImages} images/videos. Currently you have ${technicianImages.length} files.`);
+      event.target.value = '';
+      return;
+    }
+
+    // Validate each file before uploading
+    const validFiles: File[] = [];
+    for (const file of Array.from(files)) {
+      // Check video file size
+      if (file.type.startsWith('video/') && file.size > maxVideoSize) {
+        alert(`Video "${file.name}" is too large. Maximum video size is 10 MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    // Double check we don't exceed the limit after filtering
+    const allowedCount = maxImages - technicianImages.length;
+    const filesToUpload = validFiles.slice(0, allowedCount);
+
+    if (filesToUpload.length === 0) {
+      event.target.value = '';
+      return;
+    }
+
     setIsUploading(true);
     try {
-      const uploadPromises = Array.from(files as FileList).map((file: File) => uploadImage(file));
+      const uploadPromises = filesToUpload.map((file: File) => uploadImage(file));
       const uploadResults = await Promise.all(uploadPromises);
       const newImageIds = uploadResults.map(result => result.id);
       setTechnicianImages(prev => [...prev, ...newImageIds]);
