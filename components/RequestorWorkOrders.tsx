@@ -11,9 +11,9 @@ interface RequestorWorkOrdersProps {
 
 const statusConfig = {
   [Status.OPEN]: {
-    color: 'bg-teal-50 text-teal-700 border-teal-200',
+    color: 'bg-blue-50 text-blue-600 border-blue-200',
     icon: AlertCircle,
-    iconColor: 'text-teal-500'
+    iconColor: 'text-blue-500'
   },
   [Status.IN_PROGRESS]: {
     color: 'bg-violet-50 text-violet-700 border-violet-200',

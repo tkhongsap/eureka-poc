@@ -23,7 +23,7 @@ interface WorkOrdersProps {
 }
 
 const statusColors = {
-  [Status.OPEN]: 'bg-teal-50 text-teal-700 border-teal-200',
+  [Status.OPEN]: 'bg-blue-50 text-blue-600 border-blue-200',
   [Status.IN_PROGRESS]: 'bg-violet-50 text-violet-700 border-violet-200',
   [Status.PENDING]: 'bg-amber-50 text-amber-700 border-amber-200',
   [Status.COMPLETED]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -320,7 +320,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
     // Validate each file before uploading
     const validFiles: File[] = [];
-    for (const file of Array.from(files)) {
+    const fileArray = Array.from(files) as File[];
+    for (const file of fileArray) {
       // Check video file size
       if (file.type.startsWith('video/') && file.size > maxVideoSize) {
         alert(`Video "${file.name}" is too large. Maximum video size is 10 MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
