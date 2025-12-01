@@ -50,7 +50,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [viewMode, setViewMode] = useState<'list' | 'board'>('board');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(initialWorkOrders);
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
-  const [selectedWOImages, setSelectedWOImages] = useState<string[]>([]);
+  const [selectedWOImages, setSelectedWOImages] = useState<string[]>([]); // Original request images
+  const [selectedTechImages, setSelectedTechImages] = useState<string[]>([]); // Technician work images for display
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [checklist, setChecklist] = useState<string[]>([]);
@@ -119,12 +120,22 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
   // Load images when selecting a work order
   useEffect(() => {
+    // Load original request images
     if (selectedWO && selectedWO.imageIds && selectedWO.imageIds.length > 0) {
       const imageUrls = selectedWO.imageIds.map(id => getImageUrl(id));
       setSelectedWOImages(imageUrls);
     } else {
       setSelectedWOImages([]);
     }
+    
+    // Load technician work images for display (separate from upload state)
+    if (selectedWO && selectedWO.technicianImages && selectedWO.technicianImages.length > 0) {
+      const techImageUrls = selectedWO.technicianImages.map(id => getImageUrl(id));
+      setSelectedTechImages(techImageUrls);
+    } else {
+      setSelectedTechImages([]);
+    }
+    
     // Initialize technician fields when selecting a work order so technician can edit inline
     if (selectedWO) {
       setTechnicianNotes(selectedWO.technicianNotes || '');
@@ -1146,13 +1157,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                           Work Photos ({selectedWO.technicianImages.length}):
                         </p>
                         <div className="grid grid-cols-3 gap-2">
-                          {selectedWO.technicianImages.map((imgUrl, idx) => (
+                          {selectedWO.technicianImages.map((imgId, idx) => (
                             <img
                               key={idx}
-                              src={imgUrl}
+                              src={getImageUrl(imgId)}
                               alt={`Work photo ${idx + 1}`}
                               className="w-full h-20 object-cover rounded-lg border border-stone-200 cursor-pointer hover:opacity-80 transition-opacity"
-                              onClick={() => setFullscreenImage(imgUrl)}
+                              onClick={() => setFullscreenImage(getImageUrl(imgId))}
                             />
                           ))}
                         </div>
@@ -1388,22 +1399,53 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 </div>
               )}
 
-              {/* Attached Images */}
+              {/* Original Request Images */}
               {selectedWOImages.length > 0 && (
                 <div>
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-teal-600" /> Attached Images ({selectedWOImages.length})
+                    <ImageIcon size={16} className="text-teal-600" /> Original Request Images ({selectedWOImages.length})
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {selectedWOImages.map((imgUrl, idx) => (
                       <div
                         key={idx}
-                        className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-stone-200 hover:border-teal-400 transition-all duration-200"
+                        className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-teal-200 hover:border-teal-400 transition-all duration-200"
                         onClick={() => setFullscreenImage(imgUrl)}
                       >
                         <img
                           src={imgUrl}
-                          alt={`Attachment ${idx + 1}`}
+                          alt={`Request image ${idx + 1}`}
+                          className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
+                          <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Technician Work Images */}
+              {selectedTechImages.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <ImageIcon size={16} className="text-violet-600" /> Technician Work Images ({selectedTechImages.length})
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {selectedTechImages.map((imgUrl, idx) => (
+                      <div
+                        key={idx}
+                        className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-violet-200 hover:border-violet-400 transition-all duration-200"
+                        onClick={() => setFullscreenImage(imgUrl)}
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={`Technician image ${idx + 1}`}
                           className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">

@@ -218,9 +218,8 @@ async def technician_update_workorder(
     wo.technician_images = technician_update.technicianImages
     wo.status = "Pending"
     
-    existing_images = wo.image_ids or []
-    all_images = existing_images + technician_update.technicianImages
-    wo.image_ids = all_images
+    # Keep original request images separate from technician images
+    # Do NOT merge technicianImages into image_ids
     
     db.commit()
     db.refresh(wo)
