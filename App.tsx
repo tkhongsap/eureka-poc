@@ -201,6 +201,8 @@ const App: React.FC = () => {
           requestId: wo.requestId,
           adminReview: wo.adminReview,
           locationData: wo.locationData,
+          technicianNotes: wo.technicianNotes,
+          technicianImages: wo.technicianImages || [],
         }));
         // Merge with mock data if API returns empty
         setWorkOrders(mappedWorkOrders.length > 0 ? mappedWorkOrders : MOCK_WOS);
