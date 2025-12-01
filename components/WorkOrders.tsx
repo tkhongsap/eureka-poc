@@ -612,14 +612,6 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
              {currentUser?.userRole === 'Technician' ? 'My Assigned Tasks' : 'Manage Maintenance Tasks'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-             {currentUser?.userRole !== 'Technician' && (
-                <button className="bg-teal-600 hover:bg-teal-700 text-white px-3 lg:px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all duration-200 text-sm">
-                    <Plus size={16} />
-                    <span className="font-medium">Create Order</span>
-                </button>
-             )}
-        </div>
       </div>
 
       {/* Toolbar */}
