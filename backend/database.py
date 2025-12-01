@@ -12,7 +12,7 @@ class Base(DeclarativeBase):
 
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
-
+print("[DEBUG] Loaded DATABASE_URL =", DATABASE_URL)
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set")
 

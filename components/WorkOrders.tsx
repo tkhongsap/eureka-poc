@@ -1061,74 +1061,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 </div>
               )}
 
-              {/* Admin Assignment Section (visible to Admin when status is Open and not yet assigned) */}
-              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.OPEN && (
-                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
-                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <UserPlus size={16} className="text-purple-600" /> Assign Technician
-                  </h3>
-
-                  {!selectedWO.assignedTo ? (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-purple-700 mb-2">
-                          Select Technician
-                        </label>
-                        <select
-                          value={selectedTechnician}
-                          onChange={(e) => setSelectedTechnician(e.target.value)}
-                          className="w-full px-4 py-3 bg-white border-2 border-purple-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                          disabled={isAssigning}
-                        >
-                          <option value="">-- Select a technician --</option>
-                          {technicians.map(tech => (
-                            <option key={tech.id} value={tech.name}>
-                              {tech.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <button
-                        onClick={handleAssign}
-                        disabled={!selectedTechnician || isAssigning}
-                        className="w-full px-5 py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:shadow-xl hover:shadow-purple-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                      >
-                        <UserPlus size={18} />
-                        {isAssigning ? 'Assigning...' : 'Assign & Start Work Order'}
-                      </button>
-
-                      <div className="bg-purple-100/50 border border-purple-200 p-3 rounded-xl">
-                        <p className="text-xs text-purple-700 flex items-start gap-2">
-                          <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
-                          <span>
-                            Assigning a technician will change the work order status to <strong>"In Progress"</strong> and notify the technician.
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-white p-4 rounded-xl border border-purple-200">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold">
-                          {selectedWO.assignedTo.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-purple-900">
-                            {selectedWO.assignedTo}
-                          </p>
-                          <p className="text-xs text-purple-600">Assigned Technician</p>
-                        </div>
-                      </div>
-                      <p className="text-xs text-purple-700 mt-3 flex items-center gap-1">
-                        <CheckSquare size={12} />
-                        Work order is now in progress
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
+             
               {/* Head Technician Review Section (visible only to Head Technician when status is Pending) */}
               {currentUser?.userRole === 'Head Technician' && selectedWO?.status === Status.PENDING && (
                 <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
@@ -1372,9 +1305,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
               {/* Admin Assignment Block (appears before AI Assistant) */}
               {currentUser?.userRole === 'Admin' && (
-                <div className="bg-white border border-stone-200/60 rounded-2xl p-5">
-                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-4 flex items-center gap-2">
-                    <HardHat size={16} className="text-violet-600" /> Assign To
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <UserPlus size={16} className="text-purple-600" /> Assign Technician
                   </h3>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <select
