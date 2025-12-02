@@ -15,6 +15,7 @@ class WorkOrderCreate(BaseModel):
     imageIds: List[str] = []
     requestId: Optional[str] = None
     locationData: Optional[LocationData] = None
+    preferredDate: Optional[str] = None  # Preferred maintenance date from request
 
 
 class WorkOrder(BaseModel):
@@ -34,6 +35,7 @@ class WorkOrder(BaseModel):
     technicianImages: List[str] = []
     adminReview: Optional[str] = None
     locationData: Optional[LocationData] = None
+    preferredDate: Optional[str] = None  # Preferred maintenance date from request
 
 
 class WorkOrderUpdate(BaseModel):
@@ -48,6 +50,7 @@ class WorkOrderUpdate(BaseModel):
     imageIds: Optional[List[str]] = None
     adminReview: Optional[str] = None
     locationData: Optional[LocationData] = None
+    preferredDate: Optional[str] = None  # Preferred maintenance date
 
 
 class TechnicianUpdate(BaseModel):

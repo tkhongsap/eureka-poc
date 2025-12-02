@@ -22,6 +22,7 @@ class Request(Base):
     assigned_to = Column(String(255), nullable=True)
     created_by = Column(String(255), nullable=True)
     location_data = Column(JSON, nullable=True)
+    preferred_date = Column(String(50), nullable=True)  # Preferred maintenance date (YYYY-MM-DD)
     
     def to_dict(self):
         image_ids_list = list(self.image_ids) if self.image_ids else []
@@ -41,7 +42,8 @@ class Request(Base):
             "imageIds": image_ids_list,
             "assignedTo": self.assigned_to,
             "createdBy": self.created_by,
-            "locationData": location_data_dict
+            "locationData": location_data_dict,
+            "preferredDate": self.preferred_date
         }
 
 
@@ -64,6 +66,7 @@ class WorkOrder(Base):
     technician_images = Column(JSON, default=list)
     admin_review = Column(Text, nullable=True)
     location_data = Column(JSON, nullable=True)
+    preferred_date = Column(String(50), nullable=True)  # Preferred maintenance date from request (YYYY-MM-DD)
     approved_by = Column(String(255), nullable=True)
     approved_at = Column(DateTime(timezone=True), nullable=True)
     rejected_by = Column(String(255), nullable=True)
@@ -99,6 +102,7 @@ class WorkOrder(Base):
             "technicianImages": technician_images_list,
             "adminReview": self.admin_review,
             "locationData": location_data_dict,
+            "preferredDate": self.preferred_date,
             "approvedBy": self.approved_by,
             "approvedAt": approved_at_str,
             "rejectedBy": self.rejected_by,

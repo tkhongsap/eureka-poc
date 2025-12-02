@@ -17,6 +17,7 @@ class RequestCreate(BaseModel):
     assignedTo: Optional[str] = None  # Technician assigned to this request
     createdBy: Optional[str] = None  # User who created this request
     locationData: Optional[LocationData] = None  # GPS location data
+    preferredDate: Optional[str] = None  # Preferred date for maintenance visit (YYYY-MM-DD)
 
 
 class RequestItem(BaseModel):
@@ -30,6 +31,7 @@ class RequestItem(BaseModel):
     assignedTo: Optional[str] = None
     createdBy: Optional[str] = None
     locationData: Optional[LocationData] = None  # GPS location data
+    preferredDate: Optional[str] = None  # Preferred date for maintenance visit
 
 
 class RequestUpdate(BaseModel):
@@ -38,3 +40,4 @@ class RequestUpdate(BaseModel):
     description: Optional[str] = None
     assignedTo: Optional[str] = None
     locationData: Optional[LocationData] = None
+    preferredDate: Optional[str] = None  # Preferred date for maintenance visit

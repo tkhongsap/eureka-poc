@@ -163,12 +163,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
          wo.description.toLowerCase().includes(searchText.toLowerCase()))
       : true;
 
-    const created = wo.createdAt || '';
-    const matchesStart = startDate ? created >= startDate : true;
-    const matchesEnd = endDate ? created <= endDate : true;
+    // Use preferredDate for filtering if available, otherwise fall back to createdAt
+    const dateToFilter = wo.preferredDate || wo.createdAt || '';
+    const matchesStart = startDate ? dateToFilter >= startDate : true;
+    const matchesEnd = endDate ? dateToFilter <= endDate : true;
 
-    // Month filter: compare YYYY-MM prefix of createdAt
-    const matchesMonth = selectedMonth ? created.startsWith(selectedMonth) : true;
+    // Month filter: compare YYYY-MM prefix of preferredDate (or createdAt)
+    const matchesMonth = selectedMonth ? dateToFilter.startsWith(selectedMonth) : true;
 
     const matchesPriority = selectedPriority === 'ALL' ? true : wo.priority === selectedPriority;
 
@@ -709,7 +710,15 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => {
+                const newStartDate = e.target.value;
+                setStartDate(newStartDate);
+                // Reset endDate if it's before the new startDate
+                if (endDate && newStartDate && endDate < newStartDate) {
+                  setEndDate('');
+                }
+              }}
+              title="Start date filter"
               className="px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none text-[11px] w-24"
             />
             <span className="text-stone-300">→</span>
@@ -717,6 +726,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
+              min={startDate || undefined}
+              title="End date filter"
               className="px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none text-[11px] w-24"
             />
           </div>
@@ -727,6 +738,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             <select
               value={selectedPriority}
               onChange={(e) => setSelectedPriority(e.target.value as Priority | 'ALL')}
+              title="Filter by priority"
               className="text-[11px] px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none cursor-pointer"
             >
               <option value="ALL">All</option>
@@ -744,6 +756,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               <select
                 value={selectedAssignedTo}
                 onChange={(e) => setSelectedAssignedTo(e.target.value)}
+                title="Filter by technician"
                 className="text-[11px] px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none min-w-[80px] cursor-pointer"
               >
                 <option value="">All</option>
@@ -891,12 +904,20 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                             </div>
 
                                             {/* Location Info */}
-                                            <div className="mb-3 text-xs text-stone-600">
+                                            <div className="mb-2 text-xs text-stone-600">
                                               <div className="flex items-start gap-1.5">
                                                 <MapPin size={12} className="text-stone-400 mt-0.5 flex-shrink-0" />
                                                 <span className="line-clamp-1">{wo.location}</span>
                                               </div>
                                             </div>
+
+                                            {/* Preferred Date */}
+                                            {wo.preferredDate && (
+                                              <div className="mb-3 px-2 py-1 bg-amber-50 border border-amber-200 rounded text-[10px] text-amber-700 flex items-center gap-1">
+                                                <Calendar size={10} />
+                                                <span>Requested: {new Date(wo.preferredDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                              </div>
+                                            )}
 
                                             {/* GPS Navigation Link */}
                                             {wo.locationData && (
@@ -960,6 +981,12 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                    )}
                 </div>
                 <p className="text-stone-500 text-sm">Created on {selectedWO.createdAt} • Due {selectedWO.dueDate}</p>
+                {selectedWO.preferredDate && (
+                  <p className="text-amber-600 text-sm mt-1 flex items-center gap-1.5">
+                    <Calendar size={14} />
+                    <span>Requested visit: <span className="font-medium">{new Date(selectedWO.preferredDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span></span>
+                  </p>
+                )}
                 {selectedWO.assignedTo && (
                   <p className="text-stone-600 text-sm mt-1">
                     Assigned to: <span className="font-medium">{selectedWO.assignedTo}</span>
@@ -1017,8 +1044,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         title="Location Map"
                         width="100%"
                         height="100%"
-                        style={{ border: 0 }}
-                        loading="lazy"
+                        className="border-0"
                         src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedWO.locationData.longitude - 0.005},${selectedWO.locationData.latitude - 0.003},${selectedWO.locationData.longitude + 0.005},${selectedWO.locationData.latitude + 0.003}&layer=mapnik&marker=${selectedWO.locationData.latitude},${selectedWO.locationData.longitude}`}
                       />
                     </div>
@@ -1058,6 +1084,75 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       </div>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Admin Assignment Section (visible to Admin when status is Open and not yet assigned) */}
+              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.OPEN && (
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <UserPlus size={16} className="text-purple-600" /> Assign Technician
+                  </h3>
+
+                  {!selectedWO.assignedTo ? (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-purple-700 mb-2">
+                          Select Technician
+                        </label>
+                        <select
+                          value={selectedTechnician}
+                          onChange={(e) => setSelectedTechnician(e.target.value)}
+                          title="Select technician to assign"
+                          className="w-full px-4 py-3 bg-white border-2 border-purple-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                          disabled={isAssigning}
+                        >
+                          <option value="">-- Select a technician --</option>
+                          {technicians.map(tech => (
+                            <option key={tech.id} value={tech.name}>
+                              {tech.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <button
+                        onClick={handleAssign}
+                        disabled={!selectedTechnician || isAssigning}
+                        className="w-full px-5 py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:shadow-xl hover:shadow-purple-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                      >
+                        <UserPlus size={18} />
+                        {isAssigning ? 'Assigning...' : 'Assign & Start Work Order'}
+                      </button>
+
+                      <div className="bg-purple-100/50 border border-purple-200 p-3 rounded-xl">
+                        <p className="text-xs text-purple-700 flex items-start gap-2">
+                          <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                          <span>
+                            Assigning a technician will change the work order status to <strong>"In Progress"</strong> and notify the technician.
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white p-4 rounded-xl border border-purple-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold">
+                          {selectedWO.assignedTo.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-purple-900">
+                            {selectedWO.assignedTo}
+                          </p>
+                          <p className="text-xs text-purple-600">Assigned Technician</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-purple-700 mt-3 flex items-center gap-1">
+                        <CheckSquare size={12} />
+                        Work order is now in progress
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1268,6 +1363,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                             <img src={getImageUrl(id)} alt={`work-photo-${idx}`} className="w-full h-28 object-cover" />
                             <button 
                               onClick={() => removeTechnicianImage(idx)} 
+                              title="Remove image"
+                              aria-label="Remove image"
                               className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-md"
                             >
                               <Trash2 size={14} />
@@ -1632,14 +1729,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-auto p-6 z-20">
             <div className="flex justify-between items-start mb-4">
               <h3 className="font-serif text-lg text-stone-900">Update Work Order — Technician</h3>
-              <button onClick={() => setShowTechnicianModal(false)} className="p-2 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors duration-200">
+              <button onClick={() => setShowTechnicianModal(false)} title="Close modal" aria-label="Close modal" className="p-2 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors duration-200">
                 <X size={20} />
               </button>
             </div>
 
             <div className="space-y-4">
               <label className="block text-sm font-medium text-stone-700">Notes</label>
-              <textarea value={technicianNotes} onChange={(e) => setTechnicianNotes(e.target.value)} rows={5} className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-stone-50 transition-all duration-200" />
+              <textarea value={technicianNotes} onChange={(e) => setTechnicianNotes(e.target.value)} rows={5} placeholder="Enter notes here..." className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-stone-50 transition-all duration-200" />
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">Add Images</label>
@@ -1657,7 +1754,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                     {technicianImages.map((id, idx) => (
                       <div key={idx} className="relative rounded-xl overflow-hidden border border-stone-200">
                         <img src={getImageUrl(id)} alt={`img-${idx}`} className="w-full h-28 object-cover" />
-                        <button onClick={() => removeTechnicianImage(idx)} className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
+                        <button onClick={() => removeTechnicianImage(idx)} title="Remove image" aria-label="Remove image" className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
                           <Trash2 size={14} />
                         </button>
                       </div>

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 
 from models import RequestCreate, RequestItem, RequestUpdate, WorkOrderCreate, WorkOrder
 from database import get_db
@@ -24,7 +25,8 @@ async def create_request(request: RequestCreate, db: Session = Depends(get_db)):
         image_ids=request.imageIds,
         assigned_to=request.assignedTo,
         created_by=request.createdBy,
-        location_data=request.locationData.dict() if request.locationData else None
+        location_data=request.locationData.dict() if request.locationData else None,
+        preferred_date=request.preferredDate
     )
     
     db.add(new_request)
@@ -97,15 +99,24 @@ async def convert_request_to_workorder(request_id: str, db: Session = Depends(ge
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
     
+    # Calculate dueDate: if preferredDate exists, set dueDate to 1 day after preferredDate
+    # Otherwise use current date
+    if request.preferred_date:
+        preferred = datetime.strptime(request.preferred_date, "%Y-%m-%d")
+        due_date = (preferred + timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        due_date = get_current_datetime().split("T")[0]
+    
     wo_data = WorkOrderCreate(
         title=f"{request.description[:50]}{'...' if len(request.description) > 50 else ''}",
         description=request.description,
         assetName=request.location,
         location=request.location,
         priority=request.priority,
-        dueDate=get_current_datetime().split("T")[0],
+        dueDate=due_date,
         imageIds=request.image_ids or [],
-        requestId=request_id
+        requestId=request_id,
+        preferredDate=request.preferred_date
     )
     
     new_wo = await create_workorder_internal(wo_data, db)

@@ -38,7 +38,8 @@ async def create_workorder_internal(wo: WorkOrderCreate, db: Session) -> dict:
         due_date=wo.dueDate,
         image_ids=wo.imageIds,
         request_id=wo.requestId,
-        location_data=wo.locationData.dict() if wo.locationData else None
+        location_data=wo.locationData.dict() if wo.locationData else None,
+        preferred_date=wo.preferredDate
     )
     
     db.add(new_wo)
@@ -150,7 +151,8 @@ async def update_workorder(
         "dueDate": "due_date",
         "imageIds": "image_ids",
         "adminReview": "admin_review",
-        "locationData": "location_data"
+        "locationData": "location_data",
+        "preferredDate": "preferred_date"
     }
     
     for api_key, db_key in field_mapping.items():

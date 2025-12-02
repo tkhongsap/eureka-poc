@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Send, MapPin, AlertCircle, History, Clock, CheckCircle, X, Image as ImageIcon, UserCheck, Navigation } from 'lucide-react';
+import { Camera, Send, MapPin, AlertCircle, History, Clock, CheckCircle, X, Image as ImageIcon, UserCheck, Navigation, Calendar } from 'lucide-react';
 import { 
   uploadImage, 
   createRequest, 
@@ -26,6 +26,7 @@ interface RequestItem {
   assignedTo?: string;
   createdBy?: string;
   locationData?: LocationData;
+  preferredDate?: string; // Preferred date for maintenance visit
 }
 
 interface TempImage {
@@ -65,6 +66,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
   const [priority, setPriority] = useState('Low - Cosmetic issue');
   const [description, setDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState<string>('');
+  const [preferredDate, setPreferredDate] = useState<string>(''); // Preferred maintenance date
   const [tempImages, setTempImages] = useState<TempImage[]>([]); // Temporary images before submit
   const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
   const [selectedRequestImages, setSelectedRequestImages] = useState<string[]>([]); // Image URLs
@@ -97,6 +99,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
             assignedTo: r.assignedTo,
             createdBy: r.createdBy,
             locationData: r.locationData,
+            preferredDate: r.preferredDate,
           }));
         setRequests(mappedRequests);
       } catch (error) {
@@ -147,7 +150,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
       }
       
       // Validate each file
-      for (const file of Array.from(files)) {
+      const fileArray = Array.from(files) as File[];
+      for (const file of fileArray) {
         // Check video file size
         if (file.type.startsWith('video/') && file.size > maxVideoSize) {
           alert(`Video "${file.name}" is too large. Maximum video size is 10 MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
@@ -193,7 +197,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
       // Determine assignedTo value
       const assignedToValue = canAssign ? (assignedTo || undefined) : undefined;
 
-      // Create request via API with location data
+      // Create request via API with location data and preferred date
       const createdRequest = await createRequest({
         location: location,
         priority: priorityValue,
@@ -201,6 +205,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
         imageIds: savedImageIds,
         assignedTo: assignedToValue,
         locationData: selectedLocation || undefined,
+        preferredDate: preferredDate || undefined,
       });
 
       const now = new Date();
@@ -216,6 +221,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
         imageIds: createdRequest.imageIds,
         assignedTo: createdRequest.assignedTo,
         locationData: createdRequest.locationData,
+        preferredDate: createdRequest.preferredDate,
       };
 
       // Notify parent to create Work Order
@@ -228,6 +234,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
           imageIds: createdRequest.imageIds,
           assignedTo: createdRequest.assignedTo,
           locationData: createdRequest.locationData,
+          preferredDate: createdRequest.preferredDate,
         });
       }
 
@@ -247,6 +254,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
       setPriority('Low - Cosmetic issue');
       setDescription('');
       setSelectedLocation(null); // Reset location
+      setPreferredDate(''); // Reset preferred date
       // Reset assignedTo only for Admin (Technician keeps self-assigned)
       if (currentUser?.userRole === 'Admin') {
         setAssignedTo('');
@@ -319,6 +327,26 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                             <option>Critical - Safety Hazard</option>
                         </select>
                         </div>
+                    </div>
+
+                    {/* Preferred Maintenance Date */}
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-2">
+                        📅 Preferred Maintenance Date <span className="text-stone-400 font-normal">(Optional)</span>
+                      </label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3.5 top-3.5 text-stone-400" size={18} />
+                        <input
+                          type="date"
+                          value={preferredDate}
+                          onChange={(e) => setPreferredDate(e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          title="Select preferred maintenance date"
+                          aria-label="Preferred maintenance date"
+                          className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
+                        />
+                      </div>
+                      <p className="text-xs text-stone-400 mt-1">Select the date you'd like the technician to visit</p>
                     </div>
 
                     {/* GPS Location Picker - Inline Map */}
@@ -511,6 +539,12 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                         </div>
                         <p className="text-sm font-medium text-stone-800 mb-1">{req.desc}</p>
                         <p className="text-xs text-stone-500 mb-2">📍 {req.location} • Priority: {req.priority}</p>
+                        {req.preferredDate && (
+                          <div className="flex items-center gap-1 text-xs text-violet-600 mb-2">
+                            <Calendar size={12} />
+                            <span>Preferred: {new Date(req.preferredDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                          </div>
+                        )}
                         {req.assignedTo && (
                           <div className="flex items-center gap-1 text-xs text-teal-600 mb-2">
                             <UserCheck size={12} />
@@ -597,6 +631,24 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                    {selectedRequest.priority}
                  </span>
                </div>
+
+               {/* Preferred Maintenance Date */}
+               {selectedRequest.preferredDate && (
+                 <div>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">📅 Preferred Maintenance Date</label>
+                   <div className="flex items-center gap-2 bg-violet-50 p-3 rounded-xl border border-violet-100">
+                     <Calendar size={18} className="text-violet-500" />
+                     <span className="text-violet-800 font-medium">
+                       {new Date(selectedRequest.preferredDate).toLocaleDateString('en-US', { 
+                         weekday: 'long', 
+                         year: 'numeric', 
+                         month: 'long', 
+                         day: 'numeric' 
+                       })}
+                     </span>
+                   </div>
+                 </div>
+               )}
 
                <div>
                  <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Description</label>

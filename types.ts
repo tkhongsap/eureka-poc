@@ -57,6 +57,7 @@ export interface WorkOrder {
   technicianImages?: string[];  // Images added by technician
   adminReview?: string; // Review/approval notes by admin
   locationData?: LocationData; // GPS location for navigation
+  preferredDate?: string; // Preferred maintenance date from request
 }
 
 export interface Asset {

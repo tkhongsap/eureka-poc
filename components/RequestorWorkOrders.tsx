@@ -324,6 +324,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                       <select
                         value={editPriority}
                         onChange={(e) => setEditPriority(e.target.value as Priority)}
+                        title="Select priority level"
                         className="text-sm font-bold px-3 py-1.5 rounded-lg border-2 border-teal-300 focus:border-teal-500 outline-none bg-white transition-all duration-200"
                       >
                         <option value={Priority.LOW}>Low</option>
