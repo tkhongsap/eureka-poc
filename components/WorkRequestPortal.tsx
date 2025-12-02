@@ -647,7 +647,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                {/* Preferred Maintenance Date - Only Admin or Head Technician */}
                {selectedRequest.preferredDate && canSetPreferredDate && (
                  <div>
-                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">📅 วันที่นัดหมาย</label>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">📅 Preferred Maintenance Date</label>
                    <div className="flex items-center gap-2 bg-violet-50 p-3 rounded-xl border border-violet-100">
                      <Calendar size={18} className="text-violet-500" />
                      <span className="text-violet-800 font-medium">
