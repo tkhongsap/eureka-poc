@@ -3,6 +3,7 @@ import { Bell, Check, CheckCheck, X, AlertCircle, Clock, CalendarClock } from 'l
 import { Notification, NotificationType } from '../types';
 import { markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, deleteAllReadNotifications } from '../services/apiService';
 import { getUnreadCount } from '../services/notificationService';
+import { useLanguage } from '../lib/i18n';
 
 interface NotificationCenterProps {
   notifications: Notification[];
@@ -13,6 +14,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
   notifications, 
   onNotificationsUpdate 
 }) => {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -89,10 +91,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return t('date.justNow');
+    if (diffMins < 60) return `${diffMins}${t('date.minutesAgo')}`;
+    if (diffHours < 24) return `${diffHours}${t('date.hoursAgo')}`;
+    if (diffDays < 7) return `${diffDays} ${t('date.daysAgo')}`;
     // Format as DD/MM/YYYY
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -183,7 +185,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
             <div className="p-4 border-b border-stone-200 flex items-center justify-between bg-gradient-to-r from-teal-50 to-blue-50">
               <div className="flex items-center gap-2">
                 <Bell size={18} className="text-teal-700" />
-                <h3 className="font-semibold text-stone-900">Notifications</h3>
+                <h3 className="font-semibold text-stone-900">{t('notif.title')}</h3>
                 {unreadCount > 0 && (
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
                     {unreadCount}
@@ -197,7 +199,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                     disabled={isProcessing}
                     className="text-xs text-teal-600 hover:text-teal-700 font-medium transition-colors disabled:opacity-50 px-2 py-1.5 hover:bg-white/50 rounded-lg"
                   >
-                    Mark all read
+                    {t('notif.markAllRead')}
                   </button>
                 )}
                 {notifications.length > 0 && notifications.some(n => n.isRead) && (
@@ -219,8 +221,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-stone-200 border-dashed">
                     <Bell size={32} className="text-stone-300" />
                   </div>
-                  <p className="text-stone-600 font-medium mb-1">All caught up!</p>
-                  <p className="text-stone-400 text-sm">No new notifications</p>
+                  <p className="text-stone-600 font-medium mb-1">{t('notif.allCaughtUp')}</p>
+                  <p className="text-stone-400 text-sm">{t('notif.noNotifications')}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-stone-100">
