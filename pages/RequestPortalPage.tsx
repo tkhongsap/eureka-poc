@@ -5,6 +5,8 @@ import { User, UserRole } from '../types';
 import { generateTitleFromDescription } from '../services/geminiService';
 import { createWorkOrder } from '../services/apiService';
 import { ArrowLeft, Wrench } from 'lucide-react';
+import { useLanguage } from '../lib/i18n';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 // Default guest user for public request portal
 const GUEST_USER: User = {
@@ -24,6 +26,7 @@ const TECHNICIANS = [
 ];
 
 const RequestPortalPage: React.FC = () => {
+  const { t } = useLanguage();
   const [currentUser] = useState<User>(GUEST_USER);
 
   // Handler to create work order from request
@@ -68,22 +71,25 @@ const RequestPortalPage: React.FC = () => {
             className="flex items-center gap-2 text-slate-500 hover:text-brand-600 transition"
           >
             <ArrowLeft size={20} />
-            <span className="text-sm font-medium hidden sm:inline">Back to Home</span>
+            <span className="text-sm font-medium hidden sm:inline">{t('common.back')}</span>
           </Link>
           <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
           <div className="flex items-center gap-2">
             <div className="bg-brand-600 text-white p-1.5 rounded-lg">
               <Wrench size={20} />
             </div>
-            <span className="font-bold text-slate-800">Eureka <span className="text-brand-600">Request Portal</span></span>
+            <span className="font-bold text-slate-800">Eureka <span className="text-brand-600">{t('requestor.requestPortal')}</span></span>
           </div>
         </div>
-        <Link 
-          to="/dashboard" 
-          className="px-4 py-2 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 transition shadow-sm"
-        >
-          Staff Login
-        </Link>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher variant="minimal" />
+          <Link 
+            to="/dashboard" 
+            className="px-4 py-2 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 transition shadow-sm"
+          >
+            {t('requestor.staffLogin')}
+          </Link>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -97,7 +103,7 @@ const RequestPortalPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 px-6 text-center text-sm text-slate-500">
-        <p>© 2023 Eureka CMMS. Need help? Contact your facilities team.</p>
+        <p>{t('requestor.footerText')}</p>
       </footer>
     </div>
   );
