@@ -278,3 +278,75 @@ export const createWOReminder3DaysNotification = (
     triggeredBy: 'System'
   };
 };
+
+/**
+ * Create notification for due date reminder (7 days before due date)
+ * Notifies: Assigned Technician
+ */
+export const createWODue7DaysNotification = (
+  workOrderId: string,
+  workOrderTitle: string,
+  dueDate: string,
+  assignedTo: string
+): Notification => {
+  return {
+    id: generateNotificationId(),
+    type: NotificationType.WO_DUE_7_DAYS,
+    workOrderId,
+    workOrderTitle,
+    message: `📅 งาน "${workOrderTitle}" จะถึงกำหนดส่งในอีก 7 วัน (${dueDate})`,
+    recipientRole: 'Technician',
+    recipientName: assignedTo,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+    triggeredBy: 'System'
+  };
+};
+
+/**
+ * Create notification for due date reminder (3 days before due date)
+ * Notifies: Assigned Technician
+ */
+export const createWODue3DaysNotification = (
+  workOrderId: string,
+  workOrderTitle: string,
+  dueDate: string,
+  assignedTo: string
+): Notification => {
+  return {
+    id: generateNotificationId(),
+    type: NotificationType.WO_DUE_3_DAYS,
+    workOrderId,
+    workOrderTitle,
+    message: `⚠️ งาน "${workOrderTitle}" จะถึงกำหนดส่งในอีก 3 วัน (${dueDate}) กรุณาเร่งดำเนินการ`,
+    recipientRole: 'Technician',
+    recipientName: assignedTo,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+    triggeredBy: 'System'
+  };
+};
+
+/**
+ * Create notification for due date reminder (1 day before due date)
+ * Notifies: Assigned Technician
+ */
+export const createWODue1DayNotification = (
+  workOrderId: string,
+  workOrderTitle: string,
+  dueDate: string,
+  assignedTo: string
+): Notification => {
+  return {
+    id: generateNotificationId(),
+    type: NotificationType.WO_DUE_1_DAY,
+    workOrderId,
+    workOrderTitle,
+    message: `🚨 งาน "${workOrderTitle}" จะถึงกำหนดส่งพรุ่งนี้ (${dueDate}) กรุณาดำเนินการให้เสร็จ!`,
+    recipientRole: 'Technician',
+    recipientName: assignedTo,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+    triggeredBy: 'System'
+  };
+};

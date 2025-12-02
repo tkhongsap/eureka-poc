@@ -261,6 +261,106 @@ async def check_and_create_reminders(
             # Skip work orders with invalid date format
             continue
     
+    # ==========================================
+    # Check Due Date reminders (7, 3, 1 days)
+    # ==========================================
+    work_orders_with_due = db.query(WorkOrderModel).filter(
+        WorkOrderModel.due_date.isnot(None),
+        WorkOrderModel.assigned_to.isnot(None),
+        WorkOrderModel.status.notin_(['Completed', 'Closed', 'Canceled'])
+    ).all()
+    
+    for wo in work_orders_with_due:
+        try:
+            due_date = datetime.strptime(wo.due_date, "%Y-%m-%d").date()
+            days_until_due = (due_date - today).days
+            formatted_due = due_date.strftime("%d/%m/%Y")
+            
+            # Check for 7-day due date reminder
+            if days_until_due == 7:
+                existing = db.query(NotificationModel).filter(
+                    NotificationModel.work_order_id == wo.id,
+                    NotificationModel.type == "wo_due_7_days"
+                ).first()
+                
+                if not existing:
+                    notification_id = f"notif-{int(datetime.now().timestamp() * 1000)}-due7d"
+                    new_notification = NotificationModel(
+                        id=notification_id,
+                        type="wo_due_7_days",
+                        work_order_id=wo.id,
+                        work_order_title=wo.title,
+                        message=f'📅 งาน "{wo.title}" จะถึงกำหนดส่งในอีก 7 วัน ({formatted_due})',
+                        recipient_role="Technician",
+                        recipient_name=wo.assigned_to,
+                        is_read=False,
+                        triggered_by="System"
+                    )
+                    db.add(new_notification)
+                    created_notifications.append({
+                        "workOrderId": wo.id,
+                        "type": "wo_due_7_days",
+                        "assignedTo": wo.assigned_to
+                    })
+            
+            # Check for 3-day due date reminder
+            elif days_until_due == 3:
+                existing = db.query(NotificationModel).filter(
+                    NotificationModel.work_order_id == wo.id,
+                    NotificationModel.type == "wo_due_3_days"
+                ).first()
+                
+                if not existing:
+                    notification_id = f"notif-{int(datetime.now().timestamp() * 1000)}-due3d"
+                    new_notification = NotificationModel(
+                        id=notification_id,
+                        type="wo_due_3_days",
+                        work_order_id=wo.id,
+                        work_order_title=wo.title,
+                        message=f'⚠️ งาน "{wo.title}" จะถึงกำหนดส่งในอีก 3 วัน ({formatted_due}) กรุณาเร่งดำเนินการ',
+                        recipient_role="Technician",
+                        recipient_name=wo.assigned_to,
+                        is_read=False,
+                        triggered_by="System"
+                    )
+                    db.add(new_notification)
+                    created_notifications.append({
+                        "workOrderId": wo.id,
+                        "type": "wo_due_3_days",
+                        "assignedTo": wo.assigned_to
+                    })
+            
+            # Check for 1-day due date reminder
+            elif days_until_due == 1:
+                existing = db.query(NotificationModel).filter(
+                    NotificationModel.work_order_id == wo.id,
+                    NotificationModel.type == "wo_due_1_day"
+                ).first()
+                
+                if not existing:
+                    notification_id = f"notif-{int(datetime.now().timestamp() * 1000)}-due1d"
+                    new_notification = NotificationModel(
+                        id=notification_id,
+                        type="wo_due_1_day",
+                        work_order_id=wo.id,
+                        work_order_title=wo.title,
+                        message=f'🚨 งาน "{wo.title}" จะถึงกำหนดส่งพรุ่งนี้ ({formatted_due}) กรุณาดำเนินการให้เสร็จ!',
+                        recipient_role="Technician",
+                        recipient_name=wo.assigned_to,
+                        is_read=False,
+                        triggered_by="System"
+                    )
+                    db.add(new_notification)
+                    created_notifications.append({
+                        "workOrderId": wo.id,
+                        "type": "wo_due_1_day",
+                        "assignedTo": wo.assigned_to
+                    })
+                    
+        except (ValueError, TypeError) as e:
+            # Skip work orders with invalid date format
+            continue
+    
     db.commit()
     
     return {

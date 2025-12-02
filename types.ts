@@ -127,7 +127,10 @@ export enum NotificationType {
   WO_REJECTED = 'wo_rejected',
   WO_CLOSED = 'wo_closed',
   WO_REMINDER_7_DAYS = 'wo_reminder_7_days',
-  WO_REMINDER_3_DAYS = 'wo_reminder_3_days'
+  WO_REMINDER_3_DAYS = 'wo_reminder_3_days',
+  WO_DUE_7_DAYS = 'wo_due_7_days',
+  WO_DUE_3_DAYS = 'wo_due_3_days',
+  WO_DUE_1_DAY = 'wo_due_1_day'
 }
 
 export interface Notification {
