@@ -15,7 +15,7 @@ from routes import (
 
 from utils import PICTURES_DIR
 
-SHOULD_INIT_DB = os.getenv("INIT_DB_WITH_METADATA") == "1"
+SHOULD_INIT_DB = os.getenv("INIT_DB_WITH_METADATA", "1") == "1"
 
 
 @asynccontextmanager
