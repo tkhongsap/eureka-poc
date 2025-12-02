@@ -3,6 +3,17 @@ import { ChevronRight, ChevronDown, Activity, AlertTriangle, CheckCircle, Zap } 
 import { Asset } from '../types';
 import { analyzeAssetReliability } from '../services/geminiService';
 
+// Helper function to format date as DD/MM/YYYY
+const formatDateDDMMYYYY = (dateString: string | undefined): string => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'N/A';
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 // Mock Tree Data
 const INITIAL_ASSETS: Asset[] = [
   {
@@ -195,7 +206,7 @@ const AssetHierarchy: React.FC = () => {
                         </div>
                         <div className="flex justify-between py-2 border-b border-slate-100">
                             <span className="text-slate-500">Install Date</span>
-                            <span className="font-medium text-slate-800">{selectedAsset.installDate || 'N/A'}</span>
+                            <span className="font-medium text-slate-800">{formatDateDDMMYYYY(selectedAsset.installDate)}</span>
                         </div>
                         <div className="flex justify-between py-2 border-b border-slate-100">
                             <span className="text-slate-500">Serial Number</span>
