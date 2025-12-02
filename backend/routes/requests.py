@@ -99,11 +99,11 @@ async def convert_request_to_workorder(request_id: str, db: Session = Depends(ge
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
     
-    # Calculate dueDate: if preferredDate exists, set dueDate to 1 day after preferredDate
+    # Calculate dueDate: if preferredDate exists, set dueDate to 7 days after preferredDate
     # Otherwise use current date
     if request.preferred_date:
         preferred = datetime.strptime(request.preferred_date, "%Y-%m-%d")
-        due_date = (preferred + timedelta(days=1)).strftime("%Y-%m-%d")
+        due_date = (preferred + timedelta(days=7)).strftime("%Y-%m-%d")
     else:
         due_date = get_current_datetime().split("T")[0]
     

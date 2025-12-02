@@ -230,3 +230,123 @@ export const markAsRead = (notification: Notification): Notification => {
 export const markAllAsRead = (notifications: Notification[]): Notification[] => {
   return notifications.map(n => ({ ...n, isRead: true }));
 };
+
+/**
+ * Create notification for work order reminder (7 days before preferred date)
+ * Notifies: Assigned Technician
+ */
+export const createWOReminder7DaysNotification = (
+  workOrderId: string,
+  workOrderTitle: string,
+  preferredDate: string,
+  assignedTo: string
+): Notification => {
+  return {
+    id: generateNotificationId(),
+    type: NotificationType.WO_REMINDER_7_DAYS,
+    workOrderId,
+    workOrderTitle,
+    message: `งาน "${workOrderTitle}" มีกำหนดนัดหมายในอีก 7 วัน (${preferredDate})`,
+    recipientRole: 'Technician',
+    recipientName: assignedTo,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+    triggeredBy: 'System'
+  };
+};
+
+/**
+ * Create notification for work order reminder (3 days before preferred date)
+ * Notifies: Assigned Technician
+ */
+export const createWOReminder3DaysNotification = (
+  workOrderId: string,
+  workOrderTitle: string,
+  preferredDate: string,
+  assignedTo: string
+): Notification => {
+  return {
+    id: generateNotificationId(),
+    type: NotificationType.WO_REMINDER_3_DAYS,
+    workOrderId,
+    workOrderTitle,
+    message: `⚠️ งาน "${workOrderTitle}" มีกำหนดนัดหมายในอีก 3 วัน (${preferredDate}) กรุณาเตรียมตัวให้พร้อม`,
+    recipientRole: 'Technician',
+    recipientName: assignedTo,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+    triggeredBy: 'System'
+  };
+};
+
+/**
+ * Create notification for due date reminder (7 days before due date)
+ * Notifies: Assigned Technician
+ */
+export const createWODue7DaysNotification = (
+  workOrderId: string,
+  workOrderTitle: string,
+  dueDate: string,
+  assignedTo: string
+): Notification => {
+  return {
+    id: generateNotificationId(),
+    type: NotificationType.WO_DUE_7_DAYS,
+    workOrderId,
+    workOrderTitle,
+    message: `📅 งาน "${workOrderTitle}" จะถึงกำหนดส่งในอีก 7 วัน (${dueDate})`,
+    recipientRole: 'Technician',
+    recipientName: assignedTo,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+    triggeredBy: 'System'
+  };
+};
+
+/**
+ * Create notification for due date reminder (3 days before due date)
+ * Notifies: Assigned Technician
+ */
+export const createWODue3DaysNotification = (
+  workOrderId: string,
+  workOrderTitle: string,
+  dueDate: string,
+  assignedTo: string
+): Notification => {
+  return {
+    id: generateNotificationId(),
+    type: NotificationType.WO_DUE_3_DAYS,
+    workOrderId,
+    workOrderTitle,
+    message: `⚠️ งาน "${workOrderTitle}" จะถึงกำหนดส่งในอีก 3 วัน (${dueDate}) กรุณาเร่งดำเนินการ`,
+    recipientRole: 'Technician',
+    recipientName: assignedTo,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+    triggeredBy: 'System'
+  };
+};
+
+/**
+ * Create notification for due date reminder (1 day before due date)
+ * Notifies: Assigned Technician
+ */
+export const createWODue1DayNotification = (
+  workOrderId: string,
+  workOrderTitle: string,
+  dueDate: string,
+  assignedTo: string
+): Notification => {
+  return {
+    id: generateNotificationId(),
+    type: NotificationType.WO_DUE_1_DAY,
+    workOrderId,
+    workOrderTitle,
+    message: `🚨 งาน "${workOrderTitle}" จะถึงกำหนดส่งพรุ่งนี้ (${dueDate}) กรุณาดำเนินการให้เสร็จ!`,
+    recipientRole: 'Technician',
+    recipientName: assignedTo,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+    triggeredBy: 'System'
+  };
+};
