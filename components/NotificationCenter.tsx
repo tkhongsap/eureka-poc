@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Check, CheckCheck, X, AlertCircle } from 'lucide-react';
+import { Bell, Check, CheckCheck, X, AlertCircle, Clock } from 'lucide-react';
 import { Notification, NotificationType } from '../types';
 import { markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, deleteAllReadNotifications } from '../services/apiService';
 import { getUnreadCount } from '../services/notificationService';
@@ -37,6 +37,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
         return <X size={16} className="text-red-600" />;
       case NotificationType.WO_CLOSED:
         return <Check size={16} className="text-stone-600" />;
+      case NotificationType.WO_REMINDER_7_DAYS:
+        return <Clock size={16} className="text-amber-600" />;
+      case NotificationType.WO_REMINDER_3_DAYS:
+        return <Clock size={16} className="text-orange-600" />;
       default:
         return <Bell size={16} className="text-stone-600" />;
     }
@@ -56,6 +60,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
         return 'bg-red-50 border-red-200';
       case NotificationType.WO_CLOSED:
         return 'bg-stone-50 border-stone-200';
+      case NotificationType.WO_REMINDER_7_DAYS:
+        return 'bg-amber-50 border-amber-200';
+      case NotificationType.WO_REMINDER_3_DAYS:
+        return 'bg-orange-50 border-orange-200';
       default:
         return 'bg-stone-50 border-stone-200';
     }

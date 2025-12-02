@@ -12,7 +12,7 @@ import NotificationCenter from './components/NotificationCenter';
 import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
 import { UserCircle2, ShieldCheck, HardHat, ClipboardList, Crown } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
-import { listWorkOrders, createWorkOrder, WorkOrderItem, setUserContext, getNotifications } from './services/apiService';
+import { listWorkOrders, createWorkOrder, WorkOrderItem, setUserContext, getNotifications, checkAndCreateReminders } from './services/apiService';
 import { filterNotificationsForUser } from './services/notificationService';
 
 // --- MOCK DATA ---
@@ -250,7 +250,17 @@ const App: React.FC = () => {
   // Load notifications when user logs in or changes
   useEffect(() => {
     if (currentUser) {
-      loadNotifications();
+      // Check and create reminder notifications first, then load notifications
+      const initNotifications = async () => {
+        try {
+          await checkAndCreateReminders();
+        } catch (error) {
+          console.error('Failed to check reminders:', error);
+        }
+        loadNotifications();
+      };
+      
+      initNotifications();
       // Poll for new notifications every 10 seconds
       const interval = setInterval(loadNotifications, 10000);
       return () => clearInterval(interval);

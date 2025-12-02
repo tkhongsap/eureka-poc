@@ -6,11 +6,11 @@ Handles notification CRUD operations and workflow notifications
 from fastapi import APIRouter, HTTPException, Header, Depends
 from typing import List, Optional
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 from database import get_db
-from db_models import Notification as NotificationModel
+from db_models import Notification as NotificationModel, WorkOrder as WorkOrderModel
 
 router = APIRouter(prefix="/api", tags=["Notifications"])
 
@@ -168,3 +168,102 @@ async def delete_notification(
         db.commit()
     
     return {"message": "Notification deleted"}
+
+
+@router.post("/notifications/check-reminders")
+async def check_and_create_reminders(
+    db: Session = Depends(get_db)
+):
+    """
+    Check all work orders with preferredDate and create reminder notifications
+    for technicians when:
+    - 7 days before preferred date
+    - 3 days before preferred date
+    
+    This should be called periodically (e.g., once per day or on app load)
+    """
+    today = datetime.now().date()
+    created_notifications = []
+    
+    # Get all work orders with preferredDate and assignedTo that are not completed/closed
+    work_orders = db.query(WorkOrderModel).filter(
+        WorkOrderModel.preferred_date.isnot(None),
+        WorkOrderModel.assigned_to.isnot(None),
+        WorkOrderModel.status.notin_(['Completed', 'Closed', 'Canceled'])
+    ).all()
+    
+    for wo in work_orders:
+        try:
+            preferred_date = datetime.strptime(wo.preferred_date, "%Y-%m-%d").date()
+            days_until = (preferred_date - today).days
+            
+            # Check for 7-day reminder
+            if days_until == 7:
+                # Check if reminder already exists for this WO and type
+                existing = db.query(NotificationModel).filter(
+                    NotificationModel.work_order_id == wo.id,
+                    NotificationModel.type == "wo_reminder_7_days"
+                ).first()
+                
+                if not existing:
+                    notification_id = f"notif-{int(datetime.now().timestamp() * 1000)}-7d"
+                    formatted_date = preferred_date.strftime("%d/%m/%Y")
+                    
+                    new_notification = NotificationModel(
+                        id=notification_id,
+                        type="wo_reminder_7_days",
+                        work_order_id=wo.id,
+                        work_order_title=wo.title,
+                        message=f'งาน "{wo.title}" มีกำหนดนัดหมายในอีก 7 วัน ({formatted_date})',
+                        recipient_role="Technician",
+                        recipient_name=wo.assigned_to,
+                        is_read=False,
+                        triggered_by="System"
+                    )
+                    db.add(new_notification)
+                    created_notifications.append({
+                        "workOrderId": wo.id,
+                        "type": "wo_reminder_7_days",
+                        "assignedTo": wo.assigned_to
+                    })
+            
+            # Check for 3-day reminder
+            elif days_until == 3:
+                # Check if reminder already exists for this WO and type
+                existing = db.query(NotificationModel).filter(
+                    NotificationModel.work_order_id == wo.id,
+                    NotificationModel.type == "wo_reminder_3_days"
+                ).first()
+                
+                if not existing:
+                    notification_id = f"notif-{int(datetime.now().timestamp() * 1000)}-3d"
+                    formatted_date = preferred_date.strftime("%d/%m/%Y")
+                    
+                    new_notification = NotificationModel(
+                        id=notification_id,
+                        type="wo_reminder_3_days",
+                        work_order_id=wo.id,
+                        work_order_title=wo.title,
+                        message=f'⚠️ งาน "{wo.title}" มีกำหนดนัดหมายในอีก 3 วัน ({formatted_date}) กรุณาเตรียมตัวให้พร้อม',
+                        recipient_role="Technician",
+                        recipient_name=wo.assigned_to,
+                        is_read=False,
+                        triggered_by="System"
+                    )
+                    db.add(new_notification)
+                    created_notifications.append({
+                        "workOrderId": wo.id,
+                        "type": "wo_reminder_3_days",
+                        "assignedTo": wo.assigned_to
+                    })
+                    
+        except (ValueError, TypeError) as e:
+            # Skip work orders with invalid date format
+            continue
+    
+    db.commit()
+    
+    return {
+        "message": f"Created {len(created_notifications)} reminder notifications",
+        "notifications": created_notifications
+    }

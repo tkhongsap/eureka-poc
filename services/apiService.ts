@@ -442,6 +442,20 @@ export const deleteAllReadNotifications = async (): Promise<void> => {
   }
 };
 
+// Check and create reminder notifications for upcoming work orders
+export const checkAndCreateReminders = async (): Promise<{ message: string; notifications: { workOrderId: string; type: string; assignedTo: string }[] }> => {
+  const response = await fetch(`${API_BASE_URL}/notifications/check-reminders`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to check reminders');
+  }
+
+  return response.json();
+};
+
 // --- Health Check ---
 export const checkHealth = async (): Promise<boolean> => {
   try {
