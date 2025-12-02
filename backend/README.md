@@ -158,3 +158,32 @@ alembic current
   - Apply with `alembic upgrade head`.
 
 This keeps database structure consistent across all environments and under version control.
+
+## Running tests (pytest)
+
+### Basic commands
+
+- **รันทุก test ของ backend**
+
+```bash
+cd backend
+python -m pytest
+```
+
+- **รันเฉพาะไฟล์**
+
+```bash
+cd backend
+python -m pytest tests/test_images.py
+python -m pytest tests/test_notifications.py
+python -m pytest tests/test_workorders.py
+python -m pytest tests/test_requests.py
+```
+
+- **รันเฉพาะ test หนึ่งตัว**
+
+```bash
+cd backend
+python -m pytest tests/test_notifications.py::test_delete_single_notification
+python -m pytest tests/test_images.py::test_upload_image
+```
