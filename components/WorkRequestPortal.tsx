@@ -393,37 +393,65 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                           aria-label="Upload photos or videos"
                           className="hidden"
                         />
-
-                        {/* Image Previews */}
-                        {tempImages.length > 0 && (
-                          <div className="flex flex-wrap gap-3 mb-4">
-                            {tempImages.map((img, idx) => (
-                              <div key={idx} className="relative group">
-                                <img src={img.preview} alt={`Upload ${idx + 1}`} className="w-20 h-20 object-cover rounded-xl border border-stone-200" />
-                                <button
-                                  type="button"
-                                  onClick={() => removeImage(idx)}
-                                  title="Remove image"
-                                  aria-label="Remove image"
-                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                                >
-                                  <X size={12} />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
+                        {/* Combined Dropzone + Preview Area */}
                         <div
-                          onClick={() => fileInputRef.current?.click()}
-                          className="border-2 border-dashed border-stone-300 rounded-2xl p-8 text-center hover:bg-stone-50 transition-colors duration-200 cursor-pointer group"
+                          onClick={!tempImages.length ? () => fileInputRef.current?.click() : undefined}
+                          className={`relative border-2 border-dashed border-stone-300 rounded-2xl p-4 md:p-6 transition-colors duration-200 ${
+                            tempImages.length ? 'cursor-default' : 'cursor-pointer hover:bg-stone-50 text-center group'
+                          }`}
+                          title={tempImages.length ? undefined : 'Click to upload or drag & drop'}
+                          aria-label={tempImages.length ? 'Uploaded files area' : 'Click to upload or drag & drop'}
                         >
-                          <div className="w-12 h-12 bg-stone-100 text-stone-400 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-50 group-hover:text-teal-500 transition-colors duration-200">
-                            <Camera size={24} />
-                          </div>
-                          <p className="text-sm text-stone-600 font-medium">Click to upload or drag & drop</p>
-                          <p className="text-xs text-stone-400 mt-1">JPG, PNG, MP4 up to 50MB</p>
+                          {tempImages.length === 0 ? (
+                            <>
+                              <div className="w-12 h-12 bg-stone-100 text-stone-400 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-50 group-hover:text-teal-500 transition-colors duration-200">
+                                <Camera size={24} />
+                              </div>
+                              <p className="text-sm text-stone-600 font-medium">Click to upload or drag & drop</p>
+                              <p className="text-xs text-stone-400 mt-1">JPG, PNG, MP4 up to 50MB</p>
+                            </>
+                          ) : (
+                            <>
+                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-64 overflow-auto pr-2">
+                                {tempImages.map((img, idx) => (
+                                  <div key={idx} className="relative group">
+                                    <img
+                                      src={img.preview}
+                                      alt={`Upload ${idx + 1}`}
+                                      className="w-full h-24 object-cover rounded-xl border border-stone-200"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => removeImage(idx)}
+                                      title="Remove image"
+                                      aria-label="Remove image"
+                                      className="absolute top-1 right-1 z-10 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md ring-2 ring-white"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Bottom-right Upload Button when images exist */}
+                                {/* Removed the absolute button */}
+                            </>
+                          )}
                         </div>
+                          {tempImages.length > 0 && (
+                            <div className="flex justify-end mt-2">
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                title="Add more files"
+                                aria-label="Add more files"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg shadow-sm"
+                              >
+                                <Camera size={16} />
+                                Add more
+                              </button>
+                            </div>
+                          )}
                     </div>
 
                     <div className="pt-4">
