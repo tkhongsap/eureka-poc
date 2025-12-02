@@ -273,11 +273,11 @@ const App: React.FC = () => {
       const aiTitle = await generateTitleFromDescription(request.description);
 
       // Create work order via API
-      // dueDate should be 1 day after preferredDate if set, otherwise 7 days from now
+      // dueDate should be 7 days after preferredDate if set, otherwise 7 days from now
       const calculateDueDate = () => {
         if (request.preferredDate) {
           const preferred = new Date(request.preferredDate);
-          preferred.setDate(preferred.getDate() + 1);
+          preferred.setDate(preferred.getDate() + 7);
           return preferred.toISOString().split('T')[0];
         }
         return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
