@@ -203,6 +203,7 @@ const App: React.FC = () => {
           locationData: wo.locationData,
           technicianNotes: wo.technicianNotes,
           technicianImages: wo.technicianImages || [],
+          preferredDate: wo.preferredDate,
         }));
         // Merge with mock data if API returns empty
         setWorkOrders(mappedWorkOrders.length > 0 ? mappedWorkOrders : MOCK_WOS);
@@ -265,12 +266,23 @@ const App: React.FC = () => {
     imageIds: string[];
     assignedTo?: string;
     locationData?: { latitude: number; longitude: number; address: string; googleMapsUrl: string };
+    preferredDate?: string;
   }) => {
     try {
       // Generate AI title from description
       const aiTitle = await generateTitleFromDescription(request.description);
 
       // Create work order via API
+      // dueDate should be 1 day after preferredDate if set, otherwise 7 days from now
+      const calculateDueDate = () => {
+        if (request.preferredDate) {
+          const preferred = new Date(request.preferredDate);
+          preferred.setDate(preferred.getDate() + 1);
+          return preferred.toISOString().split('T')[0];
+        }
+        return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      };
+
       const createdWO = await createWorkOrder({
         title: aiTitle,
         description: request.description,
@@ -279,10 +291,11 @@ const App: React.FC = () => {
         priority: request.priority,
         status: 'Open',
         assignedTo: request.assignedTo,
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        dueDate: calculateDueDate(),
         imageIds: request.imageIds,
         requestId: request.id,
         locationData: request.locationData,
+        preferredDate: request.preferredDate,
       });
 
       // Map to WorkOrder type for UI
@@ -301,6 +314,7 @@ const App: React.FC = () => {
         imageIds: createdWO.imageIds || [],
         requestId: createdWO.requestId,
         locationData: createdWO.locationData,
+        preferredDate: createdWO.preferredDate,
       };
 
       setWorkOrders(prev => [newWO, ...prev]);
