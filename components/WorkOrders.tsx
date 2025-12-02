@@ -4,6 +4,23 @@ import {
   LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, HardHat, UserPlus,
   Loader2, CheckCircle2, XCircle, Navigation, MapPin
 } from 'lucide-react';
+
+// Helper function to format date as DD/MM/YYYY
+const formatDateDDMMYYYY = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+// Helper function to format date as DD/MM (short format)
+const formatDateShort = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  return `${day}/${month}`;
+};
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
 import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, AdminRejectData, adminCloseWorkOrder, createNotification } from '../services/apiService';
@@ -822,7 +839,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                               <div className="flex items-center gap-1.5 text-violet-700">
                                 <Calendar size={14} className="text-violet-500" />
                                 <span className="text-xs font-medium">
-                                  {new Date(wo.preferredDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                                  {formatDateDDMMYYYY(wo.preferredDate)}
                                 </span>
                               </div>
                             ) : (
@@ -920,7 +937,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                             {wo.preferredDate && (
                                               <div className="mb-2 px-2 py-1.5 bg-violet-50 border border-violet-200 rounded-lg text-[10px] text-violet-700 flex items-center gap-1.5">
                                                 <Calendar size={12} className="text-violet-500" />
-                                                <span className="font-medium">นัดหมาย: {new Date(wo.preferredDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                <span className="font-medium">นัดหมาย: {formatDateDDMMYYYY(wo.preferredDate)}</span>
                                               </div>
                                             )}
 
@@ -952,7 +969,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                                      <div className={`w-5 h-5 rounded-lg border border-stone-200 flex items-center justify-center text-[10px] font-bold ${wo.assignedTo === currentUser?.name ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-stone-100 text-stone-600'}`}>
                                                         {wo.assignedTo?.charAt(0) || '?'}
                                                     </div>
-                                                    <span className="text-[9px] text-stone-400">{new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                                    <span className="text-[9px] text-stone-400">{formatDateShort(wo.dueDate)}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -993,11 +1010,11 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                      </span>
                    )}
                 </div>
-                <p className="text-stone-500 text-sm">Created on {selectedWO.createdAt} • Due {selectedWO.dueDate}</p>
+                <p className="text-stone-500 text-sm">สร้างเมื่อ {formatDateDDMMYYYY(selectedWO.createdAt)} • กำหนดเสร็จ {formatDateDDMMYYYY(selectedWO.dueDate)}</p>
                 {selectedWO.preferredDate && (
-                  <p className="text-amber-600 text-sm mt-1 flex items-center gap-1.5">
+                  <p className="text-violet-600 text-sm mt-1 flex items-center gap-1.5">
                     <Calendar size={14} />
-                    <span>Requested visit: <span className="font-medium">{new Date(selectedWO.preferredDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span></span>
+                    <span>วันนัดหมาย: <span className="font-medium">{formatDateDDMMYYYY(selectedWO.preferredDate)}</span></span>
                   </p>
                 )}
                 {selectedWO.assignedTo && (

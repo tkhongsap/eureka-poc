@@ -1,5 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Send, MapPin, AlertCircle, History, Clock, CheckCircle, X, Image as ImageIcon, UserCheck, Navigation, Calendar } from 'lucide-react';
+
+// Helper function to format date as DD/MM/YYYY
+const formatDateDDMMYYYY = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
 import { 
   uploadImage, 
   createRequest, 
@@ -94,7 +103,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
             priority: r.priority,
             desc: r.description,
             status: r.status,
-            date: new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            date: formatDateDDMMYYYY(r.createdAt),
             imageIds: r.imageIds,
             assignedTo: r.assignedTo,
             createdBy: r.createdBy,
@@ -217,7 +226,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
         priority: createdRequest.priority,
         desc: createdRequest.description,
         status: createdRequest.status,
-        date: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        date: formatDateDDMMYYYY(now.toISOString()),
         imageIds: createdRequest.imageIds,
         assignedTo: createdRequest.assignedTo,
         locationData: createdRequest.locationData,
@@ -329,25 +338,27 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                         </div>
                     </div>
 
-                    {/* Preferred Maintenance Date */}
-                    <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-2">
-                        📅 Preferred Maintenance Date <span className="text-stone-400 font-normal">(Optional)</span>
-                      </label>
-                      <div className="relative">
-                        <Calendar className="absolute left-3.5 top-3.5 text-stone-400" size={18} />
-                        <input
-                          type="date"
-                          value={preferredDate}
-                          onChange={(e) => setPreferredDate(e.target.value)}
-                          min={new Date().toISOString().split('T')[0]}
-                          title="Select preferred maintenance date"
-                          aria-label="Preferred maintenance date"
-                          className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
-                        />
+                    {/* Preferred Maintenance Date - Hidden for Requester role */}
+                    {!isRequester && (
+                      <div>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">
+                          📅 Preferred Maintenance Date <span className="text-stone-400 font-normal">(Optional)</span>
+                        </label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3.5 top-3.5 text-stone-400" size={18} />
+                          <input
+                            type="date"
+                            value={preferredDate}
+                            onChange={(e) => setPreferredDate(e.target.value)}
+                            min={new Date().toISOString().split('T')[0]}
+                            title="Select preferred maintenance date"
+                            aria-label="Preferred maintenance date"
+                            className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
+                          />
+                        </div>
+                        <p className="text-xs text-stone-400 mt-1">Select the date you'd like the technician to visit</p>
                       </div>
-                      <p className="text-xs text-stone-400 mt-1">Select the date you'd like the technician to visit</p>
-                    </div>
+                    )}
 
                     {/* GPS Location Picker - Inline Map */}
                     <div>
@@ -539,10 +550,10 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                         </div>
                         <p className="text-sm font-medium text-stone-800 mb-1">{req.desc}</p>
                         <p className="text-xs text-stone-500 mb-2">📍 {req.location} • Priority: {req.priority}</p>
-                        {req.preferredDate && (
+                        {req.preferredDate && !isRequester && (
                           <div className="flex items-center gap-1 text-xs text-violet-600 mb-2">
                             <Calendar size={12} />
-                            <span>Preferred: {new Date(req.preferredDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            <span>นัดหมาย: {formatDateDDMMYYYY(req.preferredDate)}</span>
                           </div>
                         )}
                         {req.assignedTo && (
@@ -632,19 +643,14 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                  </span>
                </div>
 
-               {/* Preferred Maintenance Date */}
-               {selectedRequest.preferredDate && (
+               {/* Preferred Maintenance Date - Hidden for Requester */}
+               {selectedRequest.preferredDate && !isRequester && (
                  <div>
-                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">📅 Preferred Maintenance Date</label>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">📅 วันที่นัดหมาย</label>
                    <div className="flex items-center gap-2 bg-violet-50 p-3 rounded-xl border border-violet-100">
                      <Calendar size={18} className="text-violet-500" />
                      <span className="text-violet-800 font-medium">
-                       {new Date(selectedRequest.preferredDate).toLocaleDateString('en-US', { 
-                         weekday: 'long', 
-                         year: 'numeric', 
-                         month: 'long', 
-                         day: 'numeric' 
-                       })}
+                       {formatDateDDMMYYYY(selectedRequest.preferredDate)}
                      </span>
                    </div>
                  </div>

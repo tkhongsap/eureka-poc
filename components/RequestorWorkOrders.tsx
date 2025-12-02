@@ -4,6 +4,23 @@ import { Clock, CheckCircle, AlertCircle, XCircle, Package, Calendar, X, Image a
 import { getImageUrl, updateWorkOrder } from '../services/apiService';
 import { getWorkOrderPermissions } from '../utils/workflowRules';
 
+// Helper function to format date as DD/MM/YYYY
+const formatDateDDMMYYYY = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+// Helper function to format date as DD/MM (short format)
+const formatDateShort = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  return `${day}/${month}`;
+};
+
 interface RequestorWorkOrdersProps {
   workOrders: WorkOrder[];
   requestorName: string;
@@ -208,7 +225,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                 </div>
                 <div className="flex items-center gap-1 text-[10px] text-stone-400">
                   <Calendar size={12} />
-                  <span>Due {new Date(wo.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                  <span>กำหนดเสร็จ {formatDateShort(wo.dueDate)}</span>
                 </div>
               </div>
 
