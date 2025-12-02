@@ -794,6 +794,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Title</th>
                         <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Asset</th>
                         <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Priority</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">นัดหมาย</th>
                         <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Status</th>
                         <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Assignee</th>
                     </tr>
@@ -815,6 +816,18 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                             <span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${priorityColors[wo.priority]}`}>
                             {wo.priority}
                             </span>
+                        </td>
+                        <td className="px-6 py-4">
+                            {wo.preferredDate ? (
+                              <div className="flex items-center gap-1.5 text-violet-700">
+                                <Calendar size={14} className="text-violet-500" />
+                                <span className="text-xs font-medium">
+                                  {new Date(wo.preferredDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-stone-400">-</span>
+                            )}
                         </td>
                         <td className="px-6 py-4">
                             <span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${statusColors[wo.status]}`}>
@@ -897,11 +910,19 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
                                             <h4 className="font-medium text-stone-800 text-xs mb-2 leading-snug line-clamp-2">{wo.title}</h4>
 
-                                            <div className="flex items-center justify-between">
+                                            <div className="flex items-center justify-between mb-2">
                                                 <span className={`px-1.5 py-0.5 rounded border text-[9px] uppercase font-bold ${priorityColors[wo.priority]}`}>
                                                     {wo.priority}
                                                 </span>
                                             </div>
+
+                                            {/* Preferred Date - Show prominently if set */}
+                                            {wo.preferredDate && (
+                                              <div className="mb-2 px-2 py-1.5 bg-violet-50 border border-violet-200 rounded-lg text-[10px] text-violet-700 flex items-center gap-1.5">
+                                                <Calendar size={12} className="text-violet-500" />
+                                                <span className="font-medium">นัดหมาย: {new Date(wo.preferredDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                              </div>
+                                            )}
 
                                             {/* Location Info */}
                                             <div className="mb-2 text-xs text-stone-600">
@@ -910,14 +931,6 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                                 <span className="line-clamp-1">{wo.location}</span>
                                               </div>
                                             </div>
-
-                                            {/* Preferred Date */}
-                                            {wo.preferredDate && (
-                                              <div className="mb-3 px-2 py-1 bg-amber-50 border border-amber-200 rounded text-[10px] text-amber-700 flex items-center gap-1">
-                                                <Calendar size={10} />
-                                                <span>Requested: {new Date(wo.preferredDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                                              </div>
-                                            )}
 
                                             {/* GPS Navigation Link */}
                                             {wo.locationData && (

@@ -107,6 +107,12 @@ async def convert_request_to_workorder(request_id: str, db: Session = Depends(ge
     else:
         due_date = get_current_datetime().split("T")[0]
     
+    # Parse location_data if it exists
+    location_data = None
+    if request.location_data:
+        from models.request import LocationData
+        location_data = LocationData(**request.location_data)
+    
     wo_data = WorkOrderCreate(
         title=f"{request.description[:50]}{'...' if len(request.description) > 50 else ''}",
         description=request.description,
@@ -116,6 +122,7 @@ async def convert_request_to_workorder(request_id: str, db: Session = Depends(ge
         dueDate=due_date,
         imageIds=request.image_ids or [],
         requestId=request_id,
+        locationData=location_data,
         preferredDate=request.preferred_date
     )
     
