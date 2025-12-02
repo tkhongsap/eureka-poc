@@ -1156,6 +1156,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 </div>
               )}
 
+             
               {/* Head Technician Review Section (visible only to Head Technician when status is Pending) */}
               {currentUser?.userRole === 'Head Technician' && selectedWO?.status === Status.PENDING && (
                 <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
@@ -1401,9 +1402,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
               {/* Admin Assignment Block (appears before AI Assistant) */}
               {currentUser?.userRole === 'Admin' && (
-                <div className="bg-white border border-stone-200/60 rounded-2xl p-5">
-                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-4 flex items-center gap-2">
-                    <HardHat size={16} className="text-violet-600" /> Assign To
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <UserPlus size={16} className="text-purple-600" /> Assign Technician
                   </h3>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <select
