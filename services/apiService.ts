@@ -113,6 +113,7 @@ export interface RequestItem {
   assignedTo?: string;
   createdBy?: string;
   locationData?: LocationData;
+  preferredDate?: string; // Preferred date for maintenance visit
 }
 
 export interface CreateRequestData {
@@ -123,6 +124,7 @@ export interface CreateRequestData {
   assignedTo?: string;
   createdBy?: string;
   locationData?: LocationData;
+  preferredDate?: string; // Preferred date for maintenance visit
 }
 
 export const createRequest = async (data: CreateRequestData): Promise<RequestItem> => {
@@ -195,6 +197,7 @@ export interface WorkOrderItem {
   partsUsed?: { id: string; name: string; quantity: number }[];
   adminReview?: string;
   locationData?: LocationData;
+  preferredDate?: string; // Preferred maintenance date from request
 }
 
 export interface CreateWorkOrderData {
@@ -209,6 +212,7 @@ export interface CreateWorkOrderData {
   imageIds?: string[];
   requestId?: string;
   locationData?: LocationData;
+  preferredDate?: string; // Preferred maintenance date from request
 }
 
 export const createWorkOrder = async (data: CreateWorkOrderData): Promise<WorkOrderItem> => {
