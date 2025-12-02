@@ -4,6 +4,8 @@ import {
   LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, HardHat, UserPlus,
   Loader2, CheckCircle2, XCircle, Navigation, MapPin
 } from 'lucide-react';
+import { DateInputSmall } from './DateInput';
+import { useLanguage } from '../lib/i18n';
 
 // Helper function to format date as DD/MM/YYYY
 const formatDateDDMMYYYY = (dateString: string): string => {
@@ -64,6 +66,7 @@ const AVAILABLE_PARTS = [
 ];
 
 const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, currentUser, technicians = [] }) => {
+  const { t, language } = useLanguage();
   const [viewMode, setViewMode] = useState<'list' | 'board'>('board');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(initialWorkOrders);
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
@@ -667,9 +670,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     <div className="p-4 lg:p-6 h-full flex flex-col bg-stone-50/50 overflow-hidden">
       <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
         <div>
-          <h2 className="font-serif text-xl lg:text-2xl text-stone-900">Work Orders</h2>
+          <h2 className="font-serif text-xl lg:text-2xl text-stone-900">{t('workOrders.title')}</h2>
           <p className="text-stone-500 text-xs lg:text-sm">
-             {currentUser?.userRole === 'Technician' ? 'My Assigned Tasks' : 'Manage Maintenance Tasks'}
+             {currentUser?.userRole === 'Technician' ? t('workOrders.myAssignedTasks') : t('workOrders.manageMaintenanceTasks')}
           </p>
         </div>
       </div>
@@ -703,7 +706,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 type="text"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Search..."
+                placeholder={t('common.search')}
                 className="text-xs pl-8 pr-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-40 lg:w-52 transition-all"
               />
               <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -715,7 +718,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           {/* Order count badge */}
           <div className="flex items-center gap-1.5 text-xs font-semibold text-teal-700 px-2.5 py-1 bg-teal-50 rounded-lg border border-teal-100">
             <span className="text-sm">{filteredWorkOrders.length}</span>
-            <span className="text-teal-600 font-medium">Orders</span>
+            <span className="text-teal-600 font-medium">{t('workOrders.orders')}</span>
           </div>
         </div>
 
@@ -723,12 +726,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         <div className="flex flex-wrap items-center gap-2">
           {/* Date range filter */}
           <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100 text-xs">
-            <Calendar size={12} className="text-stone-400" />
-            <input
-              type="date"
+            <DateInputSmall
               value={startDate}
-              onChange={(e) => {
-                const newStartDate = e.target.value;
+              onChange={(newStartDate) => {
                 setStartDate(newStartDate);
                 // Reset endDate if it's before the new startDate
                 if (endDate && newStartDate && endDate < newStartDate) {
@@ -736,47 +736,44 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 }
               }}
               title="Start date filter"
-              className="px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none text-[11px] w-24"
             />
             <span className="text-stone-300">→</span>
-            <input
-              type="date"
+            <DateInputSmall
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(value) => setEndDate(value)}
               min={startDate || undefined}
               title="End date filter"
-              className="px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none text-[11px] w-24"
             />
           </div>
 
           {/* Priority filter */}
           <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100">
-            <span className="text-[10px] font-semibold text-stone-500 uppercase">Priority</span>
+            <span className="text-[10px] font-semibold text-stone-500 uppercase">{t('workOrders.priority')}</span>
             <select
               value={selectedPriority}
               onChange={(e) => setSelectedPriority(e.target.value as Priority | 'ALL')}
               title="Filter by priority"
               className="text-[11px] px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none cursor-pointer"
             >
-              <option value="ALL">All</option>
-              <option value={Priority.CRITICAL}>Critical</option>
-              <option value={Priority.HIGH}>High</option>
-              <option value={Priority.MEDIUM}>Medium</option>
-              <option value={Priority.LOW}>Low</option>
+              <option value="ALL">{t('common.all')}</option>
+              <option value={Priority.CRITICAL}>{t('priority.critical')}</option>
+              <option value={Priority.HIGH}>{t('priority.high')}</option>
+              <option value={Priority.MEDIUM}>{t('priority.medium')}</option>
+              <option value={Priority.LOW}>{t('priority.low')}</option>
             </select>
           </div>
 
           {/* AssignedTo filter - Admin only */}
           {currentUser?.userRole === 'Admin' && (
             <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100">
-              <span className="text-[10px] font-semibold text-stone-500 uppercase">Tech</span>
+              <span className="text-[10px] font-semibold text-stone-500 uppercase">{language === 'th' ? 'ช่าง' : 'Tech'}</span>
               <select
                 value={selectedAssignedTo}
                 onChange={(e) => setSelectedAssignedTo(e.target.value)}
                 title="Filter by technician"
                 className="text-[11px] px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none min-w-[80px] cursor-pointer"
               >
-                <option value="">All</option>
+                <option value="">{t('common.all')}</option>
                 {technicians.map(tech => (
                   <option key={tech.id} value={tech.name}>{tech.name}</option>
                 ))}
@@ -792,7 +789,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 border border-stone-200 hover:border-red-200 transition-all ml-auto"
           >
             <X size={12} />
-            Clear
+            {t('workOrders.clearFilters')}
           </button>
         </div>
       </div>
@@ -807,13 +804,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-stone-50 sticky top-0 z-[1]">
                     <tr>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">ID</th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Title</th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Asset</th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Priority</th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">นัดหมาย</th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Status</th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">Assignee</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.id')}</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.titleField')}</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.asset')}</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.priority')}</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.appointment')}</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.status')}</th>
+                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.assignee')}</th>
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
@@ -937,7 +934,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                             {wo.preferredDate && (
                                               <div className="mb-2 px-2 py-1.5 bg-violet-50 border border-violet-200 rounded-lg text-[10px] text-violet-700 flex items-center gap-1.5">
                                                 <Calendar size={12} className="text-violet-500" />
-                                                <span className="font-medium">นัดหมาย: {formatDateDDMMYYYY(wo.preferredDate)}</span>
+                                                <span className="font-medium">{t('workOrders.appointment')}: {formatDateDDMMYYYY(wo.preferredDate)}</span>
                                               </div>
                                             )}
 
@@ -960,7 +957,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                               >
                                                 <Navigation size={12} />
                                                 <span className="truncate flex-1 text-left">{wo.locationData.address.split(',')[0]}</span>
-                                                <span className="text-teal-500 font-medium">นำทาง</span>
+                                                <span className="text-teal-500 font-medium">{t('workOrders.navigateBtn')}</span>
                                               </a>
                                             )}
 
@@ -976,7 +973,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                     )})}
                                     {columnWos.length === 0 && (
                                         <div className="h-20 border-2 border-dashed border-stone-200 rounded-lg flex items-center justify-center text-stone-400 text-[10px] italic">
-                                            No orders
+                                            {t('workOrders.noOrders')}
                                         </div>
                                     )}
                                 </div>
@@ -1006,22 +1003,22 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                          ? 'bg-green-50 text-green-700 border-green-200' 
                          : 'bg-stone-100 text-stone-600 border-stone-200'
                      }`}>
-                       {selectedWOPermissions.canEdit ? '✓ Editable' : '🔒 Read-only'}
+                       {selectedWOPermissions.canEdit ? `✓ ${t('workOrders.editable')}` : `🔒 ${t('workOrders.readOnly')}`}
                      </span>
                    )}
                 </div>
-                <p className="text-stone-500 text-sm">สร้างเมื่อ {formatDateDDMMYYYY(selectedWO.createdAt)} • กำหนดเสร็จ {formatDateDDMMYYYY(selectedWO.dueDate)}</p>
+                <p className="text-stone-500 text-sm">{t('workOrders.createdOnDate')} {formatDateDDMMYYYY(selectedWO.createdAt)} • {t('workOrders.dueDateDisplay')} {formatDateDDMMYYYY(selectedWO.dueDate)}</p>
                 {selectedWO.preferredDate && (
                   <p className="text-violet-600 text-sm mt-1 flex items-center gap-1.5">
                     <Calendar size={14} />
-                    <span>วันนัดหมาย: <span className="font-medium">{formatDateDDMMYYYY(selectedWO.preferredDate)}</span></span>
+                    <span>{t('workOrders.appointmentDate')}: <span className="font-medium">{formatDateDDMMYYYY(selectedWO.preferredDate)}</span></span>
                   </p>
                 )}
                 {selectedWO.assignedTo && (
                   <p className="text-stone-600 text-sm mt-1">
-                    Assigned to: <span className="font-medium">{selectedWO.assignedTo}</span>
+                    {t('workOrders.assignedTo')}: <span className="font-medium">{selectedWO.assignedTo}</span>
                     {selectedWO.assignedTo === currentUser?.name && (
-                      <span className="ml-2 text-teal-600 font-medium">(You)</span>
+                      <span className="ml-2 text-teal-600 font-medium">{t('workOrders.you')}</span>
                     )}
                   </p>
                 )}
@@ -1040,21 +1037,21 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
               {/* Description */}
               <div>
-                <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2">Description</h3>
+                <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2">{t('workOrders.description')}</h3>
                 <p className="text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100">
                   {selectedWO.description}
                 </p>
                 {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.PENDING && (
                   <div className="mt-4">
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Review</label>
+                    <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('workOrders.review')}</label>
                     <textarea
                       value={adminReview}
                       onChange={(e) => setAdminReview(e.target.value)}
                       rows={4}
                       className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-white"
-                      placeholder="Write your review or approval notes..."
+                      placeholder={t('workOrders.reviewPlaceholder')}
                     />
-                    <p className="text-xs text-stone-500 mt-1">Saving will mark this work order as Completed.</p>
+                    <p className="text-xs text-stone-500 mt-1">{t('workOrders.reviewNote')}</p>
                   </div>
                 )}
               </div>
@@ -1065,7 +1062,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               {selectedWO.locationData && (
                 <div>
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
-                    <MapPin size={16} className="text-teal-600" /> 📍 GPS Location
+                    <MapPin size={16} className="text-teal-600" /> 📍 {t('workOrders.gpsLocation')}
                   </h3>
                   <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200 rounded-xl overflow-hidden">
                     {/* Embedded Map using OpenStreetMap */}
@@ -1100,7 +1097,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                           className="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-xl transition-colors shadow-lg shadow-teal-600/20"
                         >
                           <Navigation size={18} />
-                          นำทาง (Navigate)
+                          {t('workOrders.navigateBtn')}
                         </a>
                         <a
                           href={`https://www.google.com/maps?q=${selectedWO.locationData.latitude},${selectedWO.locationData.longitude}`}
@@ -1109,7 +1106,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                           className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-stone-50 text-teal-700 font-medium rounded-xl transition-colors border-2 border-teal-200"
                         >
                           <MapPin size={18} />
-                          ดูใน Google Maps
+                          {t('workOrders.viewInMaps')}
                         </a>
                       </div>
                     </div>
@@ -1121,14 +1118,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.OPEN && (
                 <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
                   <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <UserPlus size={16} className="text-purple-600" /> Assign Technician
+                    <UserPlus size={16} className="text-purple-600" /> {t('workOrders.assign')}
                   </h3>
 
                   {!selectedWO.assignedTo ? (
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-purple-700 mb-2">
-                          Select Technician
+                          {t('workOrders.selectTechnicianLabel')}
                         </label>
                         <select
                           value={selectedTechnician}
@@ -1137,7 +1134,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                           className="w-full px-4 py-3 bg-white border-2 border-purple-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
                           disabled={isAssigning}
                         >
-                          <option value="">-- Select a technician --</option>
+                          <option value="">{t('workOrders.selectTechnicianPlaceholder')}</option>
                           {technicians.map(tech => (
                             <option key={tech.id} value={tech.name}>
                               {tech.name}
@@ -1152,14 +1149,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         className="w-full px-5 py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:shadow-xl hover:shadow-purple-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                       >
                         <UserPlus size={18} />
-                        {isAssigning ? 'Assigning...' : 'Assign & Start Work Order'}
+                        {isAssigning ? t('workOrders.assigning') : t('workOrders.assignStartBtn')}
                       </button>
 
                       <div className="bg-purple-100/50 border border-purple-200 p-3 rounded-xl">
                         <p className="text-xs text-purple-700 flex items-start gap-2">
                           <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
                           <span>
-                            Assigning a technician will change the work order status to <strong>"In Progress"</strong> and notify the technician.
+                            {t('workOrders.assignNote')}
                           </span>
                         </p>
                       </div>
@@ -1174,12 +1171,12 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                           <p className="text-sm font-semibold text-purple-900">
                             {selectedWO.assignedTo}
                           </p>
-                          <p className="text-xs text-purple-600">Assigned Technician</p>
+                          <p className="text-xs text-purple-600">{t('workOrders.assignedTechnician')}</p>
                         </div>
                       </div>
                       <p className="text-xs text-purple-700 mt-3 flex items-center gap-1">
                         <CheckSquare size={12} />
-                        Work order is now in progress
+                        {t('workOrders.workInProgress')}
                       </p>
                     </div>
                   )}
@@ -1191,18 +1188,18 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               {currentUser?.userRole === 'Head Technician' && selectedWO?.status === Status.PENDING && (
                 <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
                   <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <CheckSquare size={16} className="text-purple-600" /> Review Work Completion
+                    <CheckSquare size={16} className="text-purple-600" /> {t('workOrders.reviewWorkCompletion')}
                   </h3>
 
                   {/* Display Technician's Work */}
                   <div className="bg-white p-4 rounded-xl border border-purple-200 mb-4">
                     <h4 className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-2">
-                      Technician's Work Summary
+                      {t('workOrders.workSummary')}
                     </h4>
                     
                     {selectedWO.technicianNotes && (
                       <div className="mb-3">
-                        <p className="text-xs font-medium text-purple-700 mb-1">Work Notes:</p>
+                        <p className="text-xs font-medium text-purple-700 mb-1">{t('workOrders.workNotes')}:</p>
                         <p className="text-sm text-stone-700 bg-stone-50 p-3 rounded-lg border border-stone-200">
                           {selectedWO.technicianNotes}
                         </p>
@@ -1212,7 +1209,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                     {selectedWO.technicianImages && selectedWO.technicianImages.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-purple-700 mb-2">
-                          Work Photos ({selectedWO.technicianImages.length}):
+                          {t('workOrders.workPhotos')} ({selectedWO.technicianImages.length}):
                         </p>
                         <div className="grid grid-cols-3 gap-2">
                           {selectedWO.technicianImages.map((imgId, idx) => (
@@ -1229,7 +1226,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                     )}
 
                     {!selectedWO.technicianNotes && (!selectedWO.technicianImages || selectedWO.technicianImages.length === 0) && (
-                      <p className="text-sm text-stone-500 italic">No work summary provided by technician</p>
+                      <p className="text-sm text-stone-500 italic">{t('workOrders.noWorkSummary')}</p>
                     )}
                   </div>
 
@@ -1242,18 +1239,18 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       className="w-full px-5 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                     >
                       <CheckSquare size={18} />
-                      {isApproving ? 'Approving...' : 'Approve Work Order'}
+                      {isApproving ? t('workOrders.approving') : t('workOrders.approveBtn')}
                     </button>
 
                     {/* Rejection Section */}
                     <div className="border-t border-purple-200 pt-4">
                       <label className="block text-sm font-medium text-purple-700 mb-2">
-                        Or Reject with Reason
+                        {t('workOrders.rejectWithReason')}
                       </label>
                       <textarea
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
-                        placeholder="Explain why this work needs to be redone..."
+                        placeholder={t('workOrders.rejectPlaceholder')}
                         className="w-full px-4 py-3 bg-white border-2 border-purple-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none"
                         rows={3}
                         disabled={isApproving || isRejecting}
@@ -1264,7 +1261,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         className="w-full mt-2 px-5 py-3 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 shadow-lg shadow-red-600/20 hover:shadow-xl hover:shadow-red-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                       >
                         <X size={18} />
-                        {isRejecting ? 'Rejecting...' : 'Reject & Send Back'}
+                        {isRejecting ? t('workOrders.rejecting') : t('workOrders.rejectBtn')}
                       </button>
                     </div>
 
@@ -1274,7 +1271,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         <p className="text-xs text-emerald-700 flex items-start gap-2">
                           <CheckSquare size={14} className="mt-0.5 flex-shrink-0" />
                           <span>
-                            <strong>Approve:</strong> Changes status to <strong>"Completed"</strong> and notifies the Requestor and Technician.
+                            {t('workOrders.approveNote')}
                           </span>
                         </p>
                       </div>
@@ -1282,7 +1279,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         <p className="text-xs text-red-700 flex items-start gap-2">
                           <X size={14} className="mt-0.5 flex-shrink-0" />
                           <span>
-                            <strong>Reject:</strong> Changes status back to <strong>"In Progress"</strong> and notifies the Technician to redo the work.
+                            {t('workOrders.rejectNote')}
                           </span>
                         </p>
                       </div>
@@ -1295,7 +1292,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED && (
                 <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
                   <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <CheckSquare size={16} className="text-purple-600" /> Close Work Order
+                    <CheckSquare size={16} className="text-purple-600" /> {t('workOrders.closeWorkOrderTitle')}
                   </h3>
 
                   <div className="bg-white p-4 rounded-xl border border-purple-200 mb-4">
@@ -1304,15 +1301,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         <CheckSquare size={24} className="text-emerald-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-emerald-700">Work Completed & Approved</p>
-                        <p className="text-xs text-stone-600">Ready to be closed</p>
+                        <p className="text-sm font-bold text-emerald-700">{t('workOrders.workCompletedApproved')}</p>
+                        <p className="text-xs text-stone-600">{t('workOrders.readyToBeClosed')}</p>
                       </div>
                     </div>
                     
                     <div className="bg-stone-50 p-3 rounded-lg border border-stone-200">
                       <p className="text-xs text-stone-700 leading-relaxed">
-                        This work order has been successfully completed and approved. 
-                        Closing will finalize the work order and notify the requestor.
+                        {t('workOrders.closingNote')}
                       </p>
                     </div>
                   </div>
@@ -1324,7 +1320,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                     className="w-full px-5 py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:shadow-xl hover:shadow-purple-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                   >
                     <CheckSquare size={18} />
-                    {isClosing ? 'Closing...' : 'Close Work Order'}
+                    {isClosing ? t('workOrders.closing') : t('workOrders.closingBtn')}
                   </button>
 
                   {/* Info Message */}
@@ -1332,8 +1328,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                     <p className="text-xs text-purple-700 flex items-start gap-2">
                       <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
                       <span>
-                        Closing will change status to <strong>"Closed"</strong> and notify the Requestor. 
-                        Closed work orders cannot be edited.
+                        {t('workOrders.closeNote')}
                       </span>
                     </p>
                   </div>
@@ -1344,27 +1339,27 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               {selectedWOPermissions?.canEdit && currentUser?.userRole === 'Technician' && selectedWO?.status === Status.IN_PROGRESS && (
                 <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-5">
                   <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-blue-600" /> Complete Work & Submit
+                    <ImageIcon size={16} className="text-blue-600" /> {t('workOrders.completeAndSubmit')}
                   </h3>
 
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-blue-700 mb-1.5">Work Notes</label>
+                    <label className="block text-sm font-medium text-blue-700 mb-1.5">{t('workOrders.workNotesLabel')}</label>
                     <textarea 
                       value={technicianNotes} 
                       onChange={(e) => setTechnicianNotes(e.target.value)} 
                       rows={5} 
                       className="w-full border-2 border-blue-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white" 
-                      placeholder="Describe the work performed, parts replaced, observations, etc."
+                      placeholder={t('workOrders.workNotesPlaceholder')}
                       disabled={!selectedWOPermissions?.canEdit}
                     />
                   </div>
 
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-blue-700 mb-2">Work Photos (Optional)</label>
+                    <label className="block text-sm font-medium text-blue-700 mb-2">{t('workOrders.workPhotosOptional')}</label>
                     <div className="flex items-center gap-3 mb-3">
                       <label className={`inline-flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-blue-200 rounded-xl text-sm transition-colors duration-200 ${selectedWOPermissions?.canEdit ? 'cursor-pointer hover:bg-blue-50' : 'opacity-50 cursor-not-allowed'}`}>
                         <Upload size={16} className="text-blue-600" />
-                        <span>{isUploading ? 'Uploading...' : 'Add photos'}</span>
+                        <span>{isUploading ? t('workOrders.uploading') : t('workOrders.addPhotos')}</span>
                         <input 
                           type="file" 
                           accept="image/*" 
@@ -1374,14 +1369,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                           disabled={!selectedWOPermissions?.canEdit || isUploading}
                         />
                       </label>
-                      {isUploading && <span className="text-sm text-blue-600">Uploading...</span>}
+                      {isUploading && <span className="text-sm text-blue-600">{t('workOrders.uploading')}</span>}
                       {technicianImages.length > 0 && (
                         <button 
                           onClick={() => { setTechnicianImages([]); }} 
                           className="text-sm text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           disabled={!selectedWOPermissions?.canEdit}
                         >
-                          Clear all
+                          {t('workOrders.clearAll')}
                         </button>
                       )}
                     </div>
@@ -1412,7 +1407,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                     className="w-full px-5 py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                   >
                     <CheckSquare size={18} />
-                    {isSubmitting ? 'Submitting...' : 'Mark as Done & Submit for Review'}
+                    {isSubmitting ? t('workOrders.submitting') : t('workOrders.markDoneBtn')}
                   </button>
 
                   {/* Info Message */}
@@ -1420,9 +1415,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                     <p className="text-xs text-blue-700 flex items-start gap-2">
                       <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
                       <span>
-                        Submitting will change status to <strong>"Pending"</strong> and notify the Admin for review. 
+                        {t('workOrders.submitNote')}
                         {!technicianNotes.trim() && technicianImages.length === 0 && (
-                          <strong className="block mt-1 text-amber-700">Please add notes or photos before submitting.</strong>
+                          <strong className="block mt-1 text-amber-700">{t('workOrders.addNotesOrPhotos')}</strong>
                         )}
                       </span>
                     </p>
@@ -1434,7 +1429,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               {currentUser?.userRole === 'Admin' && (
                 <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
                   <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <UserPlus size={16} className="text-purple-600" /> Assign Technician
+                    <UserPlus size={16} className="text-purple-600" /> {t('workOrders.assign')}
                   </h3>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <select
@@ -1444,17 +1439,17 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       title="Select technician"
                       aria-label="Select technician"
                     >
-                      <option value="">Select technician...</option>
+                      <option value="">{t('workOrders.selectTechnicianPlaceholder')}</option>
                       {TECHNICIANS.map(t => (
                         <option key={t} value={t}>{t}</option>
                       ))}
                     </select>
                   </div>
                   {selectedWO.status === Status.OPEN && (
-                    <p className="mt-2 text-xs text-stone-500">Saving will move status from Open to In Progress.</p>
+                    <p className="mt-2 text-xs text-stone-500">{t('workOrders.savingWillMove')}</p>
                   )}
                   {selectedWO.status === Status.IN_PROGRESS && (
-                    <p className="mt-2 text-xs text-stone-500">Saving will keep status as In Progress and reassign technician.</p>
+                    <p className="mt-2 text-xs text-stone-500">{t('workOrders.savingWillKeep')}</p>
                   )}
                 </div>
               )}
@@ -1463,7 +1458,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               {selectedWOImages.length > 0 && (
                 <div>
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-teal-600" /> Original Request Images ({selectedWOImages.length})
+                    <ImageIcon size={16} className="text-teal-600" /> {t('workOrders.originalRequestImages')} ({selectedWOImages.length})
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {selectedWOImages.map((imgUrl, idx) => (
@@ -1494,7 +1489,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               {selectedTechImages.length > 0 && (
                 <div>
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-violet-600" /> Technician Work Images ({selectedTechImages.length})
+                    <ImageIcon size={16} className="text-violet-600" /> {t('workOrders.technicianWorkImages')} ({selectedTechImages.length})
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {selectedTechImages.map((imgUrl, idx) => (
@@ -1530,13 +1525,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 <div className="relative z-10">
                   <div className="flex items-center gap-2 mb-4">
                     <BrainCircuit className="text-teal-600" size={24} />
-                    <h3 className="font-serif text-lg text-teal-900">Eureka AI Assistant</h3>
+                    <h3 className="font-serif text-lg text-teal-900">{t('workOrders.aiAssistant')}</h3>
                   </div>
 
                   {!analysis ? (
                     <div>
                       <p className="text-teal-700 mb-4 text-sm">
-                        Use Gemini 2.5 AI to analyze the failure description, predict root causes, and generate a safety checklist.
+                        {t('workOrders.aiDescription')}
                       </p>
                       <button
                         onClick={handleAnalyze}
@@ -1546,12 +1541,12 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         {isAnalyzing ? (
                           <>
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            <span>Analyzing...</span>
+                            <span>{t('workOrders.analyzing')}</span>
                           </>
                         ) : (
                           <>
                             <Zap size={18} />
-                            <span>Analyze Issue</span>
+                            <span>{t('workOrders.analyzeIssue')}</span>
                           </>
                         )}
                       </button>
@@ -1562,7 +1557,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       <div className="grid grid-cols-2 gap-4">
                          <div className="bg-white/80 p-4 rounded-xl border border-teal-100">
                             <h4 className="text-xs font-bold text-teal-600 uppercase mb-2 flex items-center gap-1">
-                               <AlertTriangle size={14} /> Potential Root Causes
+                               <AlertTriangle size={14} /> {t('workOrders.potentialRootCauses')}
                             </h4>
                             <ul className="list-disc list-inside text-sm text-stone-700 space-y-1">
                               {analysis.rootCauses.map((cause, idx) => <li key={idx}>{cause}</li>)}
@@ -1570,16 +1565,16 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                          </div>
                          <div className="bg-white/80 p-4 rounded-xl border border-teal-100">
                             <h4 className="text-xs font-bold text-teal-600 uppercase mb-2 flex items-center gap-1">
-                               <Clock size={14} /> Est. Repair Time
+                               <Clock size={14} /> {t('workOrders.estRepairTime')}
                             </h4>
-                            <div className="text-2xl font-bold text-stone-800">{analysis.estimatedTimeHours} Hours</div>
-                            <p className="text-xs text-stone-500 mt-1">Based on historical data for {selectedWO.assetName}</p>
+                            <div className="text-2xl font-bold text-stone-800">{analysis.estimatedTimeHours} {t('workOrders.hours')}</div>
+                            <p className="text-xs text-stone-500 mt-1">{t('workOrders.basedOnHistorical')} {selectedWO.assetName}</p>
                          </div>
                       </div>
 
                       <div className="bg-white/80 p-4 rounded-xl border border-teal-100">
                         <h4 className="text-xs font-bold text-teal-600 uppercase mb-2 flex items-center gap-1">
-                            <CheckSquare size={14} /> Recommended Actions
+                            <CheckSquare size={14} /> {t('workOrders.recommendedActions')}
                         </h4>
                         <div className="space-y-2">
                            {analysis.recommendedActions.map((action, idx) => (
@@ -1592,7 +1587,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       </div>
 
                       <button onClick={handleAnalyze} className="text-xs text-teal-600 hover:text-teal-800 underline">
-                        Re-analyze
+                        {t('workOrders.reAnalyze')}
                       </button>
                     </div>
                   )}
@@ -1602,7 +1597,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               {/* Spare Parts Usage Section */}
               <div>
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <Package size={16} className="text-teal-600" /> Spare Parts & Materials
+                      <Package size={16} className="text-teal-600" /> {t('workOrders.spareParts')}
                   </h3>
                   <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-4">
                       {/* List Used Parts */}
@@ -1628,14 +1623,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                   </div>
                               ))}
                               <div className="flex justify-between items-center pt-2 border-t border-stone-200 px-2">
-                                  <span className="text-sm font-medium text-stone-600">Total Cost</span>
+                                  <span className="text-sm font-medium text-stone-600">{t('workOrders.totalCostLabel')}</span>
                                   <span className="text-lg font-bold text-stone-900">
                                       ${selectedWO.partsUsed.reduce((acc, p) => acc + (p.cost * p.quantity), 0).toFixed(2)}
                                   </span>
                               </div>
                           </div>
                       ) : (
-                          <div className="text-center py-4 text-stone-400 text-sm mb-4">No parts consumed yet</div>
+                          <div className="text-center py-4 text-stone-400 text-sm mb-4">{t('workOrders.noPartsConsumed')}</div>
                       )}
 
                       {/* Add Part Dropdown */}
@@ -1649,7 +1644,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                 e.target.value = ''; // Reset
                             }}
                           >
-                              <option value="">+ Add Part from Inventory...</option>
+                              <option value="">{t('workOrders.addPartPlaceholder')}</option>
                               {AVAILABLE_PARTS.map(p => (
                                   <option key={p.id} value={p.id}>{p.name} (${p.cost})</option>
                               ))}
@@ -1662,7 +1657,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               {checklist.length > 0 && (
                  <div>
                     <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <CheckSquare size={16} className="text-teal-600" /> Maintenance Checklist
+                      <CheckSquare size={16} className="text-teal-600" /> {t('workOrders.maintenanceChecklist')}
                     </h3>
                     <div className="bg-white border border-stone-200/60 rounded-2xl divide-y divide-stone-100 overflow-hidden">
                         {checklist.map((item, idx) => (
@@ -1686,14 +1681,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                    title="Cancel this work order"
                    aria-label="Cancel work order"
                  >
-                   Cancel
+                   {t('workOrders.cancelBtn')}
                  </button>
                ) : (
                  <button
                    onClick={() => setSelectedWO(null)}
                    className="px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-stone-700 text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200"
                  >
-                   Close
+                   {t('workOrders.closeBtn')}
                  </button>
                )}
                {(() => {
@@ -1717,7 +1712,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                          onClick={handleAdminAssign}
                          className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
                        >
-                         <span>Save & Update</span>
+                         <span>{t('workOrders.saveAndUpdate')}</span>
                          <ArrowRight size={16} />
                        </button>
                      );
@@ -1728,7 +1723,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                          onClick={handleAdminAssign}
                          className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
                        >
-                         <span>Save & Update</span>
+                         <span>{t('workOrders.saveAndUpdate')}</span>
                          <ArrowRight size={16} />
                        </button>
                      );
@@ -1739,7 +1734,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                          onClick={handleAdminApprove}
                          className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
                        >
-                         <span>Save & Update</span>
+                         <span>{t('workOrders.saveAndUpdate')}</span>
                          <ArrowRight size={16} />
                        </button>
                      );
@@ -1758,25 +1753,25 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowTechnicianModal(false)}></div>
           <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-auto p-6 z-20">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="font-serif text-lg text-stone-900">Update Work Order — Technician</h3>
+              <h3 className="font-serif text-lg text-stone-900">{t('workOrders.updateTechnicianModal')}</h3>
               <button onClick={() => setShowTechnicianModal(false)} title="Close modal" aria-label="Close modal" className="p-2 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors duration-200">
                 <X size={20} />
               </button>
             </div>
 
             <div className="space-y-4">
-              <label className="block text-sm font-medium text-stone-700">Notes</label>
-              <textarea value={technicianNotes} onChange={(e) => setTechnicianNotes(e.target.value)} rows={5} placeholder="Enter notes here..." className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-stone-50 transition-all duration-200" />
+              <label className="block text-sm font-medium text-stone-700">{t('workOrders.notesLabel')}</label>
+              <textarea value={technicianNotes} onChange={(e) => setTechnicianNotes(e.target.value)} rows={5} placeholder={t('workOrders.notesPlaceholder')} className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-stone-50 transition-all duration-200" />
 
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">Add Images</label>
+                <label className="block text-sm font-medium text-stone-700 mb-2">{t('workOrders.addImages')}</label>
                 <div className="flex items-center gap-3">
                   <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm hover:bg-stone-100 transition-colors duration-200">
                     <Upload size={16} />
-                    <span>{isUploading ? 'Uploading...' : 'Select images'}</span>
+                    <span>{isUploading ? t('workOrders.uploading') : t('workOrders.selectImages')}</span>
                     <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
                   </label>
-                  {isUploading && <span className="text-sm text-stone-500">Uploading...</span>}
+                  {isUploading && <span className="text-sm text-stone-500">{t('workOrders.uploading')}</span>}
                 </div>
 
                 {technicianImages.length > 0 && (
@@ -1795,9 +1790,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setShowTechnicianModal(false)} className="px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200">Cancel</button>
+              <button onClick={() => setShowTechnicianModal(false)} className="px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200">{t('common.cancel')}</button>
               <button onClick={submitTechnicianUpdate} disabled={isSubmitting} className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:-translate-y-0.5 transition-all duration-200">
-                {isSubmitting ? 'Saving...' : 'Save & Update'}
+                {isSubmitting ? t('workOrders.saving') : t('workOrders.saveAndUpdate')}
                 <Save size={14} />
               </button>
             </div>
@@ -1826,7 +1821,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             onClick={(e) => e.stopPropagation()}
           />
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm bg-black/50 px-4 py-2 rounded-full">
-            Click outside to close
+            {t('workOrders.clickOutsideToClose')}
           </div>
         </div>
       )}
