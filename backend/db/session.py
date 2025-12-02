@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
+
+from db.base import Base
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
 # Load .env file from project root
 project_root = Path(__file__).parent.parent
@@ -11,13 +12,10 @@ env_path = project_root / ".env"
 load_dotenv(dotenv_path=env_path)
 
 
-class Base(DeclarativeBase):
-    pass
-
-
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set")
+
 
 engine = create_engine(
     DATABASE_URL,
@@ -29,6 +27,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def get_db():
+    """Yield a database session for FastAPI dependencies."""
     db = SessionLocal()
     try:
         yield db
@@ -37,7 +36,15 @@ def get_db():
 
 
 def init_db():
-    from db_models import Request, WorkOrder, Image, Notification
+    """
+    Initialize database tables.
+
+    In production you should prefer Alembic migrations, but this helper
+    keeps compatibility with the existing startup flow.
+    """
+    # Import models so they are registered with Base.metadata
+    from db import models as _models  # noqa: F401
+
     Base.metadata.create_all(bind=engine)
     print("[Database] Tables created successfully")
 
@@ -45,14 +52,16 @@ def init_db():
     try:
         with engine.connect() as conn:
             # Check column existence in PostgreSQL
-            result = conn.execute(text(
-                """
+            result = conn.execute(
+                text(
+                    """
                 SELECT EXISTS (
                   SELECT 1 FROM information_schema.columns 
                   WHERE table_name='images' AND column_name='base64_data'
                 )
                 """
-            ))
+                )
+            )
             exists = result.scalar()
             if not exists:
                 conn.execute(text("ALTER TABLE images ADD COLUMN base64_data TEXT"))

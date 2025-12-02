@@ -1,19 +1,33 @@
+import os
+from contextlib import asynccontextmanager
+from datetime import datetime
+
+from db import init_db
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from datetime import datetime
-from contextlib import asynccontextmanager
+from routes import (
+    images_router,
+    notifications_router,
+    requests_router,
+    workorders_router,
+)
 
-from routes import images_router, requests_router, workorders_router, notifications_router
 from utils import PICTURES_DIR
-from database import init_db
+
+SHOULD_INIT_DB = os.getenv("INIT_DB_WITH_METADATA") == "1"
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("[Startup] Initializing database...")
-    init_db()
-    print("[Startup] Database initialized successfully")
+    if SHOULD_INIT_DB:
+        print("[Startup] Initializing database...")
+        init_db()
+        print("[Startup] Database initialized successfully")
+    else:
+        print(
+            "[Startup] Skipping database initialization. Using Alembic migrations instead."
+        )
     yield
     print("[Shutdown] Application shutting down...")
 
@@ -22,7 +36,7 @@ app = FastAPI(
     title="Eureka CMMS API",
     version="1.0.0",
     description="Backend API for Eureka CMMS - Computerized Maintenance Management System",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -52,7 +66,7 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "version": "1.0.0"
+        "version": "1.0.0",
     }
 
 
@@ -63,7 +77,7 @@ async def root():
         "name": "Eureka CMMS API",
         "version": "1.0.0",
         "docs": "/docs",
-        "health": "/api/health"
+        "health": "/api/health",
     }
 
 
@@ -72,4 +86,5 @@ app.mount("/storage/pictures", StaticFiles(directory=PICTURES_DIR), name="pictur
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -5,38 +5,14 @@ Handles notification CRUD operations and workflow notifications
 
 from fastapi import APIRouter, HTTPException, Header, Depends
 from typing import List, Optional
-from pydantic import BaseModel
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
-from database import get_db
-from db_models import Notification as NotificationModel, WorkOrder as WorkOrderModel
+from db import get_db
+from db.models import Notification as NotificationModel, WorkOrder as WorkOrderModel
+from schemas import NotificationCreate, Notification
 
 router = APIRouter(prefix="/api", tags=["Notifications"])
-
-
-class NotificationCreate(BaseModel):
-    type: str
-    workOrderId: str
-    workOrderTitle: str
-    message: str
-    recipientRole: str
-    recipientName: Optional[str] = None
-    isRead: bool = False
-    triggeredBy: str
-
-
-class Notification(BaseModel):
-    id: str
-    type: str
-    workOrderId: str
-    workOrderTitle: str
-    message: str
-    recipientRole: str
-    recipientName: Optional[str] = None
-    isRead: bool
-    createdAt: str
-    triggeredBy: str
 
 
 @router.get("/notifications", response_model=List[Notification])
@@ -47,7 +23,7 @@ async def get_notifications(
 ):
     """Get all notifications"""
     notifications = db.query(NotificationModel).order_by(NotificationModel.created_at.desc()).all()
-    return [n.to_dict() for n in notifications]
+    return [Notification.model_validate(n) for n in notifications]
 
 
 @router.post("/notifications", response_model=Notification)
@@ -75,8 +51,8 @@ async def create_notification(
     db.add(new_notification)
     db.commit()
     db.refresh(new_notification)
-    
-    return new_notification.to_dict()
+
+    return Notification.model_validate(new_notification)
 
 
 @router.patch("/notifications/{notification_id}/read", response_model=Notification)
@@ -91,12 +67,12 @@ async def mark_notification_as_read(
     
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
-    
+
     notification.is_read = True
     db.commit()
     db.refresh(notification)
-    
-    return notification.to_dict()
+
+    return Notification.model_validate(notification)
 
 
 def is_notification_for_user(notification: NotificationModel, user_role: str, user_name: str) -> bool:
