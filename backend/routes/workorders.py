@@ -1,18 +1,19 @@
-from fastapi import APIRouter, HTTPException, Query, Header, Depends
-from typing import List, Optional
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from datetime import datetime
+from typing import List, Optional
 
-from schemas import WorkOrderCreate, WorkOrder, WorkOrderUpdate, TechnicianUpdate
 from db import get_db
 from db.models import WorkOrder as WorkOrderModel
-from utils import generate_id, get_current_date
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from pydantic import BaseModel
+from schemas import TechnicianUpdate, WorkOrder, WorkOrderCreate, WorkOrderUpdate
+from sqlalchemy.orm import Session
 from utils.workflow_rules import (
-    validate_status_transition,
     get_work_order_permissions,
     is_transition_allowed,
+    validate_status_transition,
 )
+
+from utils import generate_id, get_current_date
 
 
 class AdminRejectData(BaseModel):
@@ -362,4 +363,4 @@ async def admin_close_workorder(
     db.commit()
     db.refresh(wo)
 
-    return wo.to_dict()
+    return WorkOrder.model_validate(wo)
