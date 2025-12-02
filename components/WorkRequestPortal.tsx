@@ -89,6 +89,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
   // Check if current user can assign technicians
   const canAssign = currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Technician';
   const isRequester = currentUser?.userRole === 'Requester';
+  const canSetPreferredDate = currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician';
 
   // Load requests from API on mount - filter by current user
   useEffect(() => {
@@ -214,7 +215,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
         imageIds: savedImageIds,
         assignedTo: assignedToValue,
         locationData: selectedLocation || undefined,
-        preferredDate: preferredDate || undefined,
+        preferredDate: canSetPreferredDate ? (preferredDate || undefined) : undefined,
       });
 
       const now = new Date();
@@ -338,8 +339,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                         </div>
                     </div>
 
-                    {/* Preferred Maintenance Date - Hidden for Requester role */}
-                    {!isRequester && (
+                    {/* Preferred Maintenance Date - Only Admin or Head Technician */}
+                    {canSetPreferredDate && (
                       <div>
                         <label className="block text-sm font-medium text-stone-700 mb-2">
                           📅 Preferred Maintenance Date <span className="text-stone-400 font-normal">(Optional)</span>
@@ -550,7 +551,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                         </div>
                         <p className="text-sm font-medium text-stone-800 mb-1">{req.desc}</p>
                         <p className="text-xs text-stone-500 mb-2">📍 {req.location} • Priority: {req.priority}</p>
-                        {req.preferredDate && !isRequester && (
+                        {req.preferredDate && canSetPreferredDate && (
                           <div className="flex items-center gap-1 text-xs text-violet-600 mb-2">
                             <Calendar size={12} />
                             <span>นัดหมาย: {formatDateDDMMYYYY(req.preferredDate)}</span>
@@ -643,8 +644,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                  </span>
                </div>
 
-               {/* Preferred Maintenance Date - Hidden for Requester */}
-               {selectedRequest.preferredDate && !isRequester && (
+               {/* Preferred Maintenance Date - Only Admin or Head Technician */}
+               {selectedRequest.preferredDate && canSetPreferredDate && (
                  <div>
                    <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">📅 วันที่นัดหมาย</label>
                    <div className="flex items-center gap-2 bg-violet-50 p-3 rounded-xl border border-violet-100">
