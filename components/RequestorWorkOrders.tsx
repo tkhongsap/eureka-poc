@@ -3,6 +3,7 @@ import { WorkOrder, Status, Priority } from '../types';
 import { Clock, CheckCircle, AlertCircle, XCircle, Package, Calendar, X, Image as ImageIcon, FileText, Wrench, Eye, Edit2, Save, Lock } from 'lucide-react';
 import { getImageUrl, updateWorkOrder } from '../services/apiService';
 import { getWorkOrderPermissions } from '../utils/workflowRules';
+import { useLanguage } from '../lib/i18n';
 
 // Helper function to format date as DD/MM/YYYY
 const formatDateDDMMYYYY = (dateString: string): string => {
@@ -67,6 +68,7 @@ const priorityColors = {
 };
 
 const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, requestorName }) => {
+  const { t } = useLanguage();
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
   const [selectedWOImages, setSelectedWOImages] = useState<string[]>([]);
   const [technicianImages, setTechnicianImages] = useState<string[]>([]);
@@ -149,9 +151,9 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
     return (
       <div className="bg-white rounded-2xl border border-stone-200/60 shadow-sm p-8 text-center">
         <Package className="mx-auto text-stone-300 mb-3" size={48} />
-        <h3 className="font-semibold text-stone-700 mb-1">No Work Orders Yet</h3>
+        <h3 className="font-semibold text-stone-700 mb-1">{t('workOrders.noOrders')}</h3>
         <p className="text-sm text-stone-500">
-          Work orders created from your requests will appear here
+          {t('requestor.noWorkOrdersHint')}
         </p>
       </div>
     );
@@ -162,7 +164,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-stone-800 flex items-center gap-2">
           <Package size={20} className="text-stone-400" /> 
-          My Work Orders
+          {t('requestor.myWorkOrders')}
           <span className="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full ml-1">
             {myWorkOrders.length}
           </span>
@@ -225,7 +227,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                 </div>
                 <div className="flex items-center gap-1 text-[10px] text-stone-400">
                   <Calendar size={12} />
-                  <span>กำหนดเสร็จ {formatDateShort(wo.dueDate)}</span>
+                  <span>{t('workOrders.dueDateLabel')} {formatDateShort(wo.dueDate)}</span>
                 </div>
               </div>
 
@@ -233,7 +235,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
               {wo.requestId && (
                 <div className="mt-2 pt-2 border-t border-stone-100">
                   <span className="text-[10px] text-stone-400">
-                    Created from request: <span className="font-mono">{wo.requestId}</span>
+                    {t('requestor.createdFromRequest')}: <span className="font-mono">{wo.requestId}</span>
                   </span>
                 </div>
               )}
@@ -242,7 +244,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
               <div className="mt-2 pt-2 border-t border-stone-100 opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="flex items-center justify-center gap-1 text-xs text-teal-600 font-medium">
                   <Eye size={14} />
-                  <span>Click to view details</span>
+                  <span>{t('requestor.clickToView')}</span>
                 </div>
               </div>
             </div>
@@ -268,33 +270,33 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                   {permissions?.canEdit ? (
                     <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-green-50 text-green-700 border-green-200 flex items-center gap-1">
                       <Edit2 size={12} />
-                      Editable
+                      {t('workOrders.editable')}
                     </span>
                   ) : (
                     <span className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-stone-100 text-stone-600 border-stone-200 flex items-center gap-1">
                       <Lock size={12} />
-                      Read-only
+                      {t('workOrders.readOnly')}
                     </span>
                   )}
                 </div>
-                <p className="text-stone-500 text-sm">Created on {selectedWO.createdAt} • Due {selectedWO.dueDate}</p>
+                <p className="text-stone-500 text-sm">{t('workOrders.createdOn')} {formatDateDDMMYYYY(selectedWO.createdAt)} • {t('workOrders.dueDateLabel')} {formatDateDDMMYYYY(selectedWO.dueDate)}</p>
                 {selectedWO.assignedTo && (
                   <p className="text-stone-600 text-sm mt-1">
-                    Assigned to: <span className="font-medium">{selectedWO.assignedTo}</span>
+                    {t('workOrders.assignee')}: <span className="font-medium">{selectedWO.assignedTo}</span>
                   </p>
                 )}
                 {/* Permission explanation when locked */}
                 {!permissions?.canEdit && selectedWO.status !== Status.OPEN && (
                   <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
                     <AlertCircle size={12} />
-                    You can only edit work orders when status is "Open"
+                    {t('requestor.editHint')}
                   </p>
                 )}
               </div>
               <button
                 onClick={() => setSelectedWO(null)}
-                title="Close panel"
-                aria-label="Close panel"
+                title={t('common.close')}
+                aria-label={t('common.close')}
                 className="p-2 hover:bg-stone-100 rounded-xl text-stone-400 hover:text-stone-600 transition-colors duration-200"
               >
                 <X size={24} />
@@ -306,7 +308,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
               {/* Description */}
               <div>
                 <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
-                  <FileText size={16} className="text-teal-600" /> Description
+                  <FileText size={16} className="text-teal-600" /> {t('workOrders.description')}
                 </h3>
                 {isEditMode && permissions?.canEdit ? (
                   <textarea
@@ -325,18 +327,18 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
 
               {/* Asset Information */}
               <div>
-                <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2">Asset & Location</h3>
+                <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2">{t('workOrders.asset')} & {t('workOrders.location')}</h3>
                 <div className="bg-stone-50 p-4 rounded-xl border border-stone-100 space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-stone-500">Asset:</span>
+                    <span className="text-sm text-stone-500">{t('workOrders.asset')}:</span>
                     <span className="text-sm font-medium text-stone-800">{selectedWO.assetName}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-stone-500">Location:</span>
+                    <span className="text-sm text-stone-500">{t('workOrders.location')}:</span>
                     <span className="text-sm font-medium text-stone-800">{selectedWO.location}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-stone-500">Priority:</span>
+                    <span className="text-sm text-stone-500">{t('workOrders.priority')}:</span>
                     {isEditMode && permissions?.canEdit ? (
                       <select
                         value={editPriority}
@@ -362,7 +364,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
               {selectedWOImages.length > 0 && (
                 <div>
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-teal-600" /> Original Request Images ({selectedWOImages.length})
+                    <ImageIcon size={16} className="text-teal-600" /> {t('requestor.originalImages')} ({selectedWOImages.length})
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {selectedWOImages.map((imgUrl, idx) => (
@@ -391,7 +393,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
               {selectedWO.technicianNotes && (
                 <div>
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
-                    <Wrench size={16} className="text-violet-600" /> Technician Notes
+                    <Wrench size={16} className="text-violet-600" /> {t('tech.notes')}
                   </h3>
                   <div className="bg-violet-50 p-4 rounded-xl border border-violet-100">
                     <p className="text-stone-700 text-sm leading-relaxed whitespace-pre-wrap">
@@ -405,7 +407,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
               {technicianImages.length > 0 && (
                 <div>
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-violet-600" /> Technician Work Images ({technicianImages.length})
+                    <ImageIcon size={16} className="text-violet-600" /> {t('requestor.technicianImages')} ({technicianImages.length})
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {technicianImages.map((imgUrl, idx) => (
@@ -434,7 +436,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
               {selectedWO.partsUsed && selectedWO.partsUsed.length > 0 && (
                 <div>
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <Package size={16} className="text-teal-600" /> Parts & Materials Used
+                    <Package size={16} className="text-teal-600" /> {t('requestor.partsUsed')}
                   </h3>
                   <div className="bg-stone-50 border border-stone-200/60 rounded-2xl overflow-hidden">
                     <div className="divide-y divide-stone-100">
@@ -449,7 +451,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                       ))}
                     </div>
                     <div className="flex justify-between items-center p-3 bg-stone-100 border-t border-stone-200">
-                      <span className="text-sm font-medium text-stone-600">Total Cost</span>
+                      <span className="text-sm font-medium text-stone-600">{t('requestor.totalCost')}</span>
                       <span className="text-lg font-bold text-stone-900">
                         ${selectedWO.partsUsed.reduce((acc, p) => acc + (p.cost * p.quantity), 0).toFixed(2)}
                       </span>
@@ -464,9 +466,9 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                   <div className="flex items-start gap-2">
                     <AlertCircle className="text-teal-600 mt-0.5 flex-shrink-0" size={16} />
                     <div>
-                      <h4 className="font-semibold text-teal-900 text-sm mb-1">Original Request</h4>
+                      <h4 className="font-semibold text-teal-900 text-sm mb-1">{t('requestor.originalRequest')}</h4>
                       <p className="text-xs text-teal-700">
-                        This work order was created from your request{' '}
+                        {t('requestor.originalRequestHint')}{' '}
                         <span className="font-mono font-bold">{selectedWO.requestId}</span>
                       </p>
                     </div>
@@ -485,7 +487,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                     className="flex-1 px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700 transition-all duration-200 flex items-center justify-center gap-2"
                   >
                     <Edit2 size={16} />
-                    Edit Work Order
+                    {t('common.edit')}
                   </button>
                 )}
                 {isEditMode && permissions?.canEdit && (
@@ -496,14 +498,14 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                       className="flex-1 px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Save size={16} />
-                      {isSaving ? 'Saving...' : 'Save Changes'}
+                      {isSaving ? t('common.loading') : t('common.save')}
                     </button>
                     <button
                       onClick={handleCancelEdit}
                       disabled={isSaving}
                       className="flex-1 px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-stone-700 text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                   </>
                 )}
@@ -512,7 +514,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                     onClick={() => setSelectedWO(null)}
                     className="flex-1 px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-stone-700 text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200"
                   >
-                    Close
+                    {t('common.close')}
                   </button>
                 )}
               </div>
@@ -531,8 +533,8 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
           <button
             onClick={() => setFullscreenImage(null)}
             className="absolute top-4 right-4 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
-            title="Close"
-            aria-label="Close image"
+            title={t('common.close')}
+            aria-label={t('common.close')}
           >
             <X size={28} />
           </button>
@@ -543,7 +545,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
             onClick={(e) => e.stopPropagation()}
           />
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm bg-black/50 px-4 py-2 rounded-full">
-            Click outside to close
+            {t('requestor.clickOutsideToClose')}
           </div>
         </div>
       )}

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { UserRole, User } from '../types';
 import { setUserContext } from '../services/apiService';
+import { useLanguage } from '../lib/i18n';
 
 interface SidebarProps {
   currentView: string;
@@ -31,17 +32,15 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, currentUser, onSwitchUser, allUsers, onLogout }) => {
   const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false);
+  const { t } = useLanguage();
   
-  // Define all possible items
+  // Define all possible items with translation keys
   const allMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Admin'] },
-    { id: 'work-orders', label: 'Work Orders', icon: Wrench, roles: ['Admin', 'Head Technician', 'Technician'] },
-    { id: 'requests', label: 'Requests', icon: FileText, roles: ['Admin', 'Head Technician', 'Technician'] },
-    // { id: 'assets', label: 'Assets & Hierarchy', icon: Factory, roles: ['Admin', 'Technician'] },
-    { id: 'inventory', label: 'Inventory & Parts', icon: Package, roles: ['Admin', 'Head Technician', 'Technician'] },
-    // { id: 'analytics', label: 'Analytics & OEE', icon: BarChart3, roles: ['Admin'] },
-    { id: 'team', label: 'Team & Shifts', icon: Users, roles: ['Admin', 'Head Technician'] },
-    // { id: 'settings', label: 'Settings', icon: Settings, roles: ['Admin'] },
+    { id: 'dashboard', labelKey: 'nav.dashboard' as const, icon: LayoutDashboard, roles: ['Admin'] },
+    { id: 'work-orders', labelKey: 'nav.workOrders' as const, icon: Wrench, roles: ['Admin', 'Head Technician', 'Technician'] },
+    { id: 'requests', labelKey: 'nav.requests' as const, icon: FileText, roles: ['Admin', 'Head Technician', 'Technician'] },
+    { id: 'inventory', labelKey: 'inventory.title' as const, icon: Package, roles: ['Admin', 'Head Technician', 'Technician'] },
+    { id: 'team', labelKey: 'team.title' as const, icon: Users, roles: ['Admin', 'Head Technician'] },
   ];
 
   const filteredItems = allMenuItems.filter(item => item.roles.includes(userRole));
@@ -70,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
               }`}
             >
               <Icon size={20} />
-              <span className="font-medium text-sm">{item.label}</span>
+              <span className="font-medium text-sm">{t(item.labelKey)}</span>
             </button>
           );
         })}
@@ -123,7 +122,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
         {/* Sign Out Button */}
         <button onClick={onLogout} className="flex items-center space-x-3 text-stone-400 hover:text-red-400 hover:bg-stone-800 w-full px-4 py-3 rounded-xl transition-all duration-200">
           <LogOut size={20} />
-          <span className="font-medium text-sm">Sign Out</span>
+          <span className="font-medium text-sm">{t('nav.logout')}</span>
         </button>
         <div className="mt-4 px-4 text-xs text-stone-500 text-center">
           v2.5.0 • Tenant: Acme Corp

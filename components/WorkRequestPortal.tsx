@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Send, MapPin, AlertCircle, History, Clock, CheckCircle, X, Image as ImageIcon, UserCheck, Navigation, Calendar } from 'lucide-react';
+import DateInput from './DateInput';
+import { useLanguage } from '../lib/i18n';
 
 // Helper function to format date as DD/MM/YYYY
 const formatDateDDMMYYYY = (dateString: string): string => {
@@ -70,6 +72,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
   technicians = [], 
   workOrders = [] 
 }) => {
+  const { t } = useLanguage();
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [location, setLocation] = useState('');
   const [priority, setPriority] = useState('Low - Cosmetic issue');
@@ -292,8 +295,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
            <div className="bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
              <CheckCircle size={24} className="flex-shrink-0" />
              <div>
-               <p className="font-semibold">Request Submitted!</p>
-               <p className="text-sm text-emerald-50">Your request is being processed</p>
+               <p className="font-semibold">{t('request.submitted')}</p>
+               <p className="text-sm text-emerald-50">{t('request.beingProcessed')}</p>
              </div>
            </div>
          </div>
@@ -302,28 +305,28 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
        {/* Left Column: Form */}
        <div className="md:col-span-2 space-y-8">
             <div className="mb-6">
-                <h2 className="font-serif text-3xl text-stone-900">Submit a Request</h2>
-                <p className="text-stone-500 mt-2">Describe the issue and we'll assign a technician.</p>
+                <h2 className="font-serif text-3xl text-stone-900">{t('request.title')}</h2>
+                <p className="text-stone-500 mt-2">{t('request.subtitle')}</p>
             </div>
 
             <div className="bg-white p-8 rounded-2xl shadow-lg border border-stone-200/60">
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-2">Location / Asset</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">{t('request.location')}</label>
                         <div className="relative">
                             <MapPin className="absolute left-3.5 top-3.5 text-stone-400" size={18} />
                             <input
                               type="text"
                               value={location}
                               onChange={(e) => setLocation(e.target.value)}
-                              placeholder="e.g. Line 1 Conveyor"
+                              placeholder={t('request.locationPlaceholder')}
                               className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                             />
                         </div>
                         </div>
                         <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-2">Priority</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">{t('request.priority')}</label>
                         <select
                           value={priority}
                           onChange={(e) => setPriority(e.target.value)}
@@ -331,10 +334,10 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                           aria-label="Priority"
                           className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                         >
-                            <option>Low - Cosmetic issue</option>
-                            <option>Medium - Affects performance</option>
-                            <option>High - Production Stopped</option>
-                            <option>Critical - Safety Hazard</option>
+                            <option>{t('request.priorityLow')}</option>
+                            <option>{t('request.priorityMedium')}</option>
+                            <option>{t('request.priorityHigh')}</option>
+                            <option>{t('request.priorityCritical')}</option>
                         </select>
                         </div>
                     </div>
@@ -343,28 +346,24 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                     {canSetPreferredDate && (
                       <div>
                         <label className="block text-sm font-medium text-stone-700 mb-2">
-                          📅 Preferred Maintenance Date <span className="text-stone-400 font-normal">(Optional)</span>
+                          📅 {t('request.preferredDate')} <span className="text-stone-400 font-normal">({t('common.optional')})</span>
                         </label>
-                        <div className="relative">
-                          <Calendar className="absolute left-3.5 top-3.5 text-stone-400" size={18} />
-                          <input
-                            type="date"
-                            value={preferredDate}
-                            onChange={(e) => setPreferredDate(e.target.value)}
-                            min={new Date().toISOString().split('T')[0]}
-                            title="Select preferred maintenance date"
-                            aria-label="Preferred maintenance date"
-                            className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
-                          />
-                        </div>
-                        <p className="text-xs text-stone-400 mt-1">Select the date you'd like the technician to visit</p>
+                        <DateInput
+                          value={preferredDate}
+                          onChange={(value) => setPreferredDate(value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          title={t('request.preferredDate')}
+                          className="bg-stone-50"
+                          size="lg"
+                        />
+                        <p className="text-xs text-stone-400 mt-1">{t('request.preferredDateHint')}</p>
                       </div>
                     )}
 
                     {/* GPS Location Picker - Inline Map */}
                     <div>
                       <label className="block text-sm font-medium text-stone-700 mb-2">
-                        📍 GPS Location <span className="text-stone-400 font-normal">(Optional - Click map to pin)</span>
+                        📍 {t('request.gpsLocation')} <span className="text-stone-400 font-normal">({t('common.optional')} - {t('gps.clickMapToPin')})</span>
                       </label>
                       <InlineLocationPicker
                         selectedLocation={selectedLocation}
@@ -376,9 +375,9 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                     {canAssign && (
                       <div>
                         <label className="block text-sm font-medium text-stone-700 mb-2">
-                          Assign Technician
+                          {t('request.assignTechnician')}
                           {currentUser?.userRole === 'Technician' && (
-                            <span className="text-xs text-stone-400 ml-2">(Auto-assigned to you)</span>
+                            <span className="text-xs text-stone-400 ml-2">({t('request.autoAssignedToYou')})</span>
                           )}
                         </label>
                         <div className="relative">
@@ -387,11 +386,11 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                             <select
                               value={assignedTo}
                               onChange={(e) => setAssignedTo(e.target.value)}
-                              title="Assign technician"
-                              aria-label="Assign technician"
+                              title={t('request.assignTechnician')}
+                              aria-label={t('request.assignTechnician')}
                               className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                             >
-                              <option value="">-- Select Technician --</option>
+                              <option value="">-- {t('request.selectTechnician')} --</option>
                               {technicians.map(tech => (
                                 <option key={tech.id} value={tech.name}>{tech.name}</option>
                               ))}
@@ -401,8 +400,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                               type="text"
                               value={assignedTo}
                               readOnly
-                              title="Assigned technician"
-                              aria-label="Assigned technician"
+                              title={t('request.assignedTo')}
+                              aria-label={t('request.assignedTo')}
                               className="w-full pl-10 pr-4 py-3 bg-stone-100 border border-stone-200 rounded-xl text-stone-600 cursor-not-allowed"
                             />
                           )}
@@ -411,18 +410,18 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-2">Issue Description</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">{t('request.issueDescription')}</label>
                         <textarea
                           rows={4}
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
-                          placeholder="Describe what happened, any strange noises, etc."
+                          placeholder={t('request.descriptionPlaceholder')}
                           className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200 resize-none"
                         ></textarea>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-2">Photos / Videos</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">{t('request.photosVideos')}</label>
                         <input
                           type="file"
                           ref={fileInputRef}
@@ -447,8 +446,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                               <div className="w-12 h-12 bg-stone-100 text-stone-400 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-50 group-hover:text-teal-500 transition-colors duration-200">
                                 <Camera size={24} />
                               </div>
-                              <p className="text-sm text-stone-600 font-medium">Click to upload or drag & drop</p>
-                              <p className="text-xs text-stone-400 mt-1">JPG, PNG, MP4 up to 50MB</p>
+                              <p className="text-sm text-stone-600 font-medium">{t('request.uploadPrompt')}</p>
+                              <p className="text-xs text-stone-400 mt-1">{t('request.uploadHint')}</p>
                             </>
                           ) : (
                             <>
@@ -488,7 +487,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                                 className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg shadow-sm"
                               >
                                 <Camera size={16} />
-                                Add more
+                                {t('request.addMore')}
                               </button>
                             </div>
                           )}
@@ -501,7 +500,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                           className="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-teal-600/25 hover:shadow-xl hover:shadow-teal-600/30 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
                         >
                           <Send size={20} />
-                          {isLoading ? 'Submitting...' : 'Submit Request'}
+                          {isLoading ? t('request.submitting') : t('request.submitButton')}
                         </button>
                     </div>
                 </form>
@@ -510,15 +509,15 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
             <div className="bg-teal-50 border border-teal-100 p-4 rounded-2xl flex items-start gap-3">
                 <AlertCircle className="text-teal-600 mt-0.5" size={20} />
                 <div>
-                    <h4 className="font-semibold text-teal-900 text-sm">Need immediate assistance?</h4>
-                    <p className="text-sm text-teal-700 mt-1">For safety emergencies, please call the EOC hotline at <span className="font-mono font-bold">555-0199</span> immediately.</p>
+                    <h4 className="font-semibold text-teal-900 text-sm">{t('request.emergencyTitle')}</h4>
+                    <p className="text-sm text-teal-700 mt-1">{t('request.emergencyHint')} <span className="font-mono font-bold">555-0199</span></p>
                 </div>
             </div>
 
             {/* Work Orders Section - Show work orders created from requests */}
             {currentUser && workOrders.length > 0 && (
               <div>
-                <h3 className="font-serif text-2xl text-stone-900 mb-4">My Work Orders</h3>
+                <h3 className="font-serif text-2xl text-stone-900 mb-4">{t('request.myWorkOrders')}</h3>
                 <RequestorWorkOrders 
                   workOrders={workOrders} 
                   requestorName={currentUser.name}
@@ -530,7 +529,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
        {/* Right Column: History */}
        <div className="md:col-span-1">
             <h3 className="font-semibold text-stone-800 mb-4 flex items-center gap-2">
-                <History size={20} className="text-stone-400" /> My Recent Requests
+                <History size={20} className="text-stone-400" /> {t('request.myHistory')}
             </h3>
             <div className="space-y-4">
                 {requests.map(req => (
@@ -550,11 +549,11 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                             </span>
                         </div>
                         <p className="text-sm font-medium text-stone-800 mb-1">{req.desc}</p>
-                        <p className="text-xs text-stone-500 mb-2">📍 {req.location} • Priority: {req.priority}</p>
+                        <p className="text-xs text-stone-500 mb-2">📍 {req.location} • {t('workOrders.priority')}: {req.priority}</p>
                         {req.preferredDate && canSetPreferredDate && (
                           <div className="flex items-center gap-1 text-xs text-violet-600 mb-2">
                             <Calendar size={12} />
-                            <span>นัดหมาย: {formatDateDDMMYYYY(req.preferredDate)}</span>
+                            <span>{t('workOrders.appointment')}: {formatDateDDMMYYYY(req.preferredDate)}</span>
                           </div>
                         )}
                         {req.assignedTo && (
@@ -574,14 +573,14 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                               className="hover:text-teal-600 hover:underline truncate max-w-[180px]"
                               title={req.locationData.address}
                             >
-                              GPS Location
+                              {t('request.gpsLocation')}
                             </a>
                           </div>
                         )}
                         {req.imageIds.length > 0 && (
                           <div className="flex items-center gap-1 text-xs text-stone-400 mb-2">
                             <ImageIcon size={12} />
-                            <span>{req.imageIds.length} image(s)</span>
+                            <span>{req.imageIds.length} {t('request.images')}</span>
                           </div>
                         )}
                         <div className="flex items-center gap-2 text-xs text-stone-500 pt-2 border-t border-stone-100">
@@ -592,7 +591,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                 ))}
 
                 <button className="w-full py-2.5 text-sm text-stone-500 hover:text-teal-600 hover:bg-stone-50 rounded-xl border border-transparent hover:border-stone-200 transition-all duration-200">
-                    View All History
+                    {t('request.viewHistory')}
                 </button>
             </div>
        </div>
@@ -618,8 +617,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                </div>
                <button
                  onClick={() => setSelectedRequest(null)}
-                 title="Close dialog"
-                 aria-label="Close dialog"
+                 title={t('common.close')}
+                 aria-label={t('common.close')}
                  className="p-2 hover:bg-stone-100 rounded-xl text-stone-400 hover:text-stone-600 transition-colors duration-200"
                >
                  <X size={20} />
@@ -628,12 +627,12 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
 
              <div className="p-6 space-y-4">
                <div>
-                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Location</label>
+                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">{t('workOrders.location')}</label>
                  <p className="text-stone-800">{selectedRequest.location}</p>
                </div>
 
                <div>
-                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Priority</label>
+                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">{t('workOrders.priority')}</label>
                  <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
                    selectedRequest.priority === 'Critical' ? 'bg-red-50 text-red-700' :
                    selectedRequest.priority === 'High' ? 'bg-orange-50 text-orange-700' :
@@ -647,7 +646,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                {/* Preferred Maintenance Date - Only Admin or Head Technician */}
                {selectedRequest.preferredDate && canSetPreferredDate && (
                  <div>
-                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">📅 Preferred Maintenance Date</label>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">📅 {t('request.preferredDate')}</label>
                    <div className="flex items-center gap-2 bg-violet-50 p-3 rounded-xl border border-violet-100">
                      <Calendar size={18} className="text-violet-500" />
                      <span className="text-violet-800 font-medium">
@@ -658,13 +657,13 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                )}
 
                <div>
-                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Description</label>
+                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">{t('request.description')}</label>
                  <p className="text-stone-800 bg-stone-50 p-4 rounded-xl">{selectedRequest.desc}</p>
                </div>
 
                {selectedRequest.assignedTo && (
                  <div>
-                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Assigned To</label>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">{t('request.assignedTo')}</label>
                    <div className="flex items-center gap-2">
                      <UserCheck size={16} className="text-teal-500" />
                      <span className="text-stone-800 font-medium">{selectedRequest.assignedTo}</span>
@@ -675,7 +674,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                {/* GPS Location with Navigate Button */}
                {selectedRequest.locationData && (
                  <div>
-                   <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">📍 GPS Location</label>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">📍 {t('request.gpsLocation')}</label>
                    <div className="bg-stone-50 p-4 rounded-xl border border-stone-200">
                      <div className="flex items-start gap-3">
                        <div className="p-2 bg-teal-100 text-teal-600 rounded-lg flex-shrink-0">
@@ -692,10 +691,10 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                          target="_blank"
                          rel="noopener noreferrer"
                          className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors flex-shrink-0"
-                         title="Navigate with Google Maps"
+                         title={t('gps.navigate')}
                        >
                          <Navigation size={16} />
-                         Navigate
+                         {t('gps.navigate')}
                        </a>
                      </div>
                    </div>
@@ -704,7 +703,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
 
                {selectedRequestImages.length > 0 && (
                  <div>
-                   <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">Attached Images</label>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">{t('request.attachedImages')}</label>
                    <div className="grid grid-cols-2 gap-3">
                      {selectedRequestImages.map((imgUrl, idx) => (
                        <img
@@ -724,7 +723,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                  onClick={() => setSelectedRequest(null)}
                  className="w-full py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-700 font-medium rounded-xl transition-colors duration-200"
                >
-                 Close
+                 {t('common.close')}
                </button>
              </div>
            </div>

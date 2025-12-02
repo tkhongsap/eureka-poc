@@ -9,11 +9,13 @@ import AssetHierarchy from './components/AssetHierarchy';
 import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
 import NotificationCenter from './components/NotificationCenter';
+import LanguageSwitcher from './components/LanguageSwitcher';
 import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
 import { UserCircle2, ShieldCheck, HardHat, ClipboardList, Crown } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
 import { listWorkOrders, createWorkOrder, WorkOrderItem, setUserContext, getNotifications, checkAndCreateReminders } from './services/apiService';
 import { filterNotificationsForUser } from './services/notificationService';
+import { useLanguage } from './lib/i18n';
 
 // --- MOCK DATA ---
 
@@ -142,6 +144,7 @@ const MOCK_WOS: WorkOrder[] = [
 
 const App: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(MOCK_WOS);
@@ -405,7 +408,7 @@ const App: React.FC = () => {
         <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shadow-sm flex-shrink-0">
            <div className="flex items-center gap-2">
              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
-             <span className="font-bold text-slate-800">Eureka Request Portal</span>
+             <span className="font-bold text-slate-800">Eureka <span className="text-brand-600">{t('requestor.requestPortal')}</span></span>
            </div>
            <div className="flex items-center gap-4">
              {/* Notification Center for Requester */}
@@ -413,11 +416,12 @@ const App: React.FC = () => {
                notifications={notifications}
                onNotificationsUpdate={loadNotifications}
              />
+             <LanguageSwitcher variant="minimal" />
              <button
                onClick={handleLogout}
-               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-stone-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+               className="min-w-[100px] flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-stone-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
              >
-               Sign Out
+               {t('nav.logout')}
              </button>
              <PersonaSwitcher currentUser={currentUser} onSwitch={setCurrentUser} dropdownPosition="bottom" />
            </div>
