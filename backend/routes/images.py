@@ -80,7 +80,10 @@ async def get_image(image_id: str, db: Session = Depends(get_db)):
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
-    return JSONResponse(content=image.to_dict())
+    image_info = ImageInfo.model_validate(image).model_dump()
+    image_info["createdAt"] = image_info["createdAt"].isoformat()
+
+    return JSONResponse(content=image_info)
 
 
 @router.get("", response_model=List[ImageInfo])

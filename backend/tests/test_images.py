@@ -1,8 +1,8 @@
+import base64
+from datetime import datetime
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-
-from db import Image
 
 
 def test_upload_image(client: TestClient, tmp_path: Path):
@@ -26,7 +26,8 @@ def test_upload_image(client: TestClient, tmp_path: Path):
 def test_get_image(client: TestClient, tmp_path: Path):
     # First upload an image
     image_path = tmp_path / "test_get.jpg"
-    image_path.write_bytes(b"content-for-get")
+    test_image_content = b"content-for-get"
+    image_path.write_bytes(test_image_content)
 
     with image_path.open("rb") as f:
         upload_resp = client.post(
@@ -40,7 +41,21 @@ def test_get_image(client: TestClient, tmp_path: Path):
     # Then retrieve it
     get_resp = client.get(f"/api/images/{image_id}")
     assert get_resp.status_code == 200
-    assert get_resp.content == b"content-for-get"
+    data = get_resp.json()
+
+    # Verify all fields
+    assert data["id"] == image_id
+    assert data["originalName"] == "test_get.jpg"
+    assert data["filename"].endswith(".jpg")
+    assert data["base64Data"] == base64.b64encode(test_image_content).decode("utf-8")
+
+    # Verify createdAt is present and is a valid ISO format datetime string
+    assert "createdAt" in data
+    assert isinstance(data["createdAt"], str)
+    # Parse the ISO string to verify it's valid
+    created_at_str = data["createdAt"]
+    parsed_datetime = datetime.fromisoformat(created_at_str)
+    assert isinstance(parsed_datetime, datetime)
 
 
 def test_list_images(client: TestClient, tmp_path: Path):
@@ -84,5 +99,3 @@ def test_delete_image(client: TestClient, tmp_path: Path):
     # Subsequent get should 404
     get_resp = client.get(f"/api/images/{image_id}")
     assert get_resp.status_code == 404
-
-
