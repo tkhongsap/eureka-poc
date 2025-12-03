@@ -23,8 +23,10 @@ Use this checklist for rapid manual testing of core workflows.
 **2️⃣ ASSIGN (Admin)**
 - [ ] Login as Admin (Alex Sterling)
 - [ ] See WO_CREATED notification
+- [ ] Set preferredDate (วันนัดหมาย) - Optional
 - [ ] Assign technician
 - [ ] Verify status = "In Progress"
+- [ ] Verify dueDate = preferredDate + 7 days (auto-calculated)
 - [ ] Verify Technician gets WO_ASSIGNED notification
 
 **3️⃣ COMPLETE (Technician)**
@@ -100,13 +102,22 @@ Follow steps 1-3 from Complete Workflow to get WO to "Pending"
 
 ## 🔔 Notification Tests
 
-### Notification Events
+### Status Change Notifications
 - [ ] WO_CREATED → Admin (Teal)
 - [ ] WO_ASSIGNED → Technician (Purple)
 - [ ] WO_COMPLETED → Admin (Blue)
 - [ ] WO_APPROVED → Requester + Technician (Emerald)
 - [ ] WO_REJECTED → Technician (Red) - includes reason
 - [ ] WO_CLOSED → Requester (Stone)
+
+### Reminder Notifications - Preferred Date (นัดหมายล่วงหน้า)
+- [ ] WO_REMINDER_7_DAYS → Technician (Sky) - 7 วันก่อน preferredDate
+- [ ] WO_REMINDER_3_DAYS → Technician (Sky) - 3 วันก่อน preferredDate
+
+### Due Date Reminder Notifications (กำหนดส่งงาน)
+- [ ] WO_DUE_7_DAYS → Technician (Sky) - 7 วันก่อน dueDate
+- [ ] WO_DUE_3_DAYS → Technician (Amber) - 3 วันก่อน dueDate
+- [ ] WO_DUE_1_DAY → Technician (Red) - 1 วันก่อน dueDate (พรุ่งนี้!)
 
 ### Notification Interactions
 - [ ] Unread count badge shows correct number
@@ -121,6 +132,38 @@ Follow steps 1-3 from Complete Workflow to get WO to "Pending"
 - [ ] Technician sees only notifications for assigned WOs
 - [ ] Admin sees notifications for all WOs
 - [ ] Notifications show correct user names and WO titles
+
+---
+
+## 📅 Advance Scheduling (นัดหมายล่วงหน้า) Tests
+
+### Setup preferredDate
+1. [ ] Login as Admin or Head Technician
+2. [ ] Select work order in "Open" status
+3. [ ] Set preferredDate (วันนัดหมาย)
+4. [ ] Verify dueDate auto-calculates to preferredDate + 7 days
+5. [ ] Assign technician
+
+### Reminder Notification Tests
+
+**To test reminders manually:**
+1. Create work order with preferredDate = today + 7 days
+2. Login any user → triggers `/api/notifications/check-reminders`
+3. Verify WO_REMINDER_7_DAYS notification created for Technician
+
+**Test Matrix:**
+
+| Days Until Date | Preferred Date Notification | Due Date Notification |
+|-----------------|---------------------------|----------------------|
+| 7 days | WO_REMINDER_7_DAYS | WO_DUE_7_DAYS |
+| 3 days | WO_REMINDER_3_DAYS | WO_DUE_3_DAYS |
+| 1 day | - | WO_DUE_1_DAY |
+
+**Permission Check:**
+- [ ] Only Admin can see/set preferredDate field
+- [ ] Only Head Technician can see/set preferredDate field
+- [ ] Technician CANNOT see preferredDate field
+- [ ] Requester CANNOT see preferredDate field
 
 ---
 

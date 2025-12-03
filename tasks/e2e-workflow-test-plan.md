@@ -52,11 +52,13 @@ Verify the complete work order lifecycle from creation to closure with all workf
 4. Click on the newly created work order
 5. In the purple "Assign Technician" section:
    - Select a technician from dropdown (e.g., "John Doe")
+   - Set preferred date (วันนัดหมาย) - optional, for advance scheduling
    - Click "Assign & Start Work Order"
 
 **Expected Results:**
 - ✅ Status changes to "In Progress"
 - ✅ Work order shows assigned technician
+- ✅ If preferredDate set: dueDate = preferredDate + 7 days (auto-calculated)
 - ✅ Purple section shows "Work order is now in progress"
 - ✅ Notification created for assigned Technician (WO_ASSIGNED)
 - ✅ Technician sees notification: "You have been assigned to work order"
@@ -64,6 +66,7 @@ Verify the complete work order lifecycle from creation to closure with all workf
 **Validation:**
 - Work order status = "In Progress"
 - assignedTo field = selected technician name
+- preferredDate and dueDate fields saved (if set)
 - Notification in storage for Technician
 - Technician bell icon shows unread count +1
 
@@ -309,29 +312,64 @@ Verify all notification events are triggered and delivered correctly.
 - **Color:** Stone
 - **Validation:** Check Requester's notification center
 
-### Notification Interaction Tests
+### Reminder Notification Tests (Auto-Generated)
 
-#### NI 4.7: Mark as Read
+#### NE 4.7: Preferred Date Reminder - 7 Days
+- **Trigger:** System check on login, 7 days before preferredDate
+- **Recipient:** Assigned Technician
+- **Message:** 'งาน "[Title]" มีกำหนดนัดหมายในอีก 7 วัน ([date])'
+- **Color:** Sky
+- **Validation:** Auto-created by backend, check Technician notification
+
+#### NE 4.8: Preferred Date Reminder - 3 Days
+- **Trigger:** System check on login, 3 days before preferredDate
+- **Recipient:** Assigned Technician
+- **Message:** '⚠️ งาน "[Title]" มีกำหนดนัดหมายในอีก 3 วัน ([date])'
+- **Color:** Sky
+- **Validation:** Auto-created by backend, check Technician notification
+
+#### NE 4.9: Due Date Reminder - 7 Days
+- **Trigger:** System check on login, 7 days before dueDate
+- **Recipient:** Assigned Technician
+- **Message:** '📅 งาน "[Title]" จะถึงกำหนดส่งในอีก 7 วัน ([date])'
+- **Color:** Sky
+- **Validation:** Auto-created by backend, check Technician notification
+
+#### NE 4.10: Due Date Reminder - 3 Days
+- **Trigger:** System check on login, 3 days before dueDate
+- **Recipient:** Assigned Technician
+- **Message:** '⚠️ งาน "[Title]" จะถึงกำหนดส่งในอีก 3 วัน ([date])'
+- **Color:** Amber
+- **Validation:** Auto-created by backend, check Technician notification
+
+#### NE 4.11: Due Date Reminder - 1 Day
+- **Trigger:** System check on login, 1 day before dueDate
+- **Recipient:** Assigned Technician
+- **Message:** '🚨 งาน "[Title]" จะถึงกำหนดส่งพรุ่งนี้ ([date])'
+- **Color:** Red
+- **Validation:** Auto-created by backend, check Technician notification
+
+#### NI 4.12: Mark as Read
 1. Click on individual notification's checkmark button
    - ✅ Notification background changes from blue tint to white
    - ✅ Blue dot indicator disappears
    - ✅ Unread count decreases
    - ✅ Backend updates (check notifications.json)
 
-#### NI 4.8: Mark All as Read
+#### NI 4.13: Mark All as Read
 1. Click "Mark all read" button in header
    - ✅ All notifications lose blue tint
    - ✅ All blue dots disappear
    - ✅ Unread count goes to 0
    - ✅ Backend updates all notifications
 
-#### NI 4.9: Delete Notification
+#### NI 4.14: Delete Notification
 1. Click X button on notification
    - ✅ Notification removed from list
    - ✅ Count updates if it was unread
    - ✅ Notification removed from backend storage
 
-#### NI 4.10: Auto-Refresh
+#### NI 4.15: Auto-Refresh
 1. Perform action that creates notification
 2. Wait (notifications poll every 30 seconds)
    - ✅ New notification appears without page refresh
@@ -430,6 +468,68 @@ Verify system handles multiple users working simultaneously.
 
 ---
 
+## Test Scenario 8: Advance Scheduling (นัดหมายล่วงหน้า)
+
+### Objective
+Verify the advance scheduling feature with preferredDate, dueDate calculation, and reminder notifications.
+
+### Prerequisites
+- Work order in "Open" status
+- Admin or Head Technician login
+
+### Test Steps
+
+#### Step 1: Set Preferred Date
+**Actor:** Admin (Alex Sterling)
+
+1. Login as Admin
+2. Navigate to Work Orders
+3. Click on an "Open" work order
+4. In the "Assign Technician" section:
+   - Set preferredDate to a future date (e.g., 7 days from now)
+   - Select technician
+   - Click "Assign & Start Work Order"
+
+**Expected Results:**
+- ✅ preferredDate saved correctly
+- ✅ dueDate auto-calculated to preferredDate + 7 days
+- ✅ Status changes to "In Progress"
+
+#### Step 2: Verify Reminder Notifications
+**Test Setup:** Create work orders with preferredDate/dueDate matching reminder intervals
+
+| Test Case | preferredDate | Expected Notification |
+|-----------|---------------|----------------------|
+| 7-day reminder | today + 7 | WO_REMINDER_7_DAYS |
+| 3-day reminder | today + 3 | WO_REMINDER_3_DAYS |
+| 7-day due | dueDate = today + 7 | WO_DUE_7_DAYS |
+| 3-day due | dueDate = today + 3 | WO_DUE_3_DAYS |
+| 1-day due | dueDate = today + 1 | WO_DUE_1_DAY |
+
+**Trigger:** Login any user → calls `/api/notifications/check-reminders`
+
+**Validation:**
+- ✅ Reminder notifications created for assigned technician
+- ✅ Notifications not duplicated (system checks existing)
+- ✅ Only work orders not in Completed/Closed/Canceled get reminders
+
+#### Step 3: Verify Permission Restriction
+1. Login as Technician (John Doe)
+   - ✅ Should NOT see preferredDate field
+   
+2. Login as Requester (Sarah Line)
+   - ✅ Should NOT see preferredDate field
+   
+3. Login as Admin (Alex Sterling)
+   - ✅ Should see preferredDate field
+   
+4. Login as Head Technician
+   - ✅ Should see preferredDate field
+
+**Validation:** Only Admin and Head Technician can view/set preferredDate
+
+---
+
 ## Performance Testing
 
 ### Load Test
@@ -505,13 +605,20 @@ When a test fails, report using this template:
   - [ ] TC 3.2: Technician Editing Permissions
   - [ ] TC 3.3: Admin Full Control
 - [ ] Scenario 4: Notification System
-  - [ ] NE 4.1-4.6: All notification events
-  - [ ] NI 4.7-4.10: Notification interactions
+  - [ ] NE 4.1-4.6: Status change notifications
+  - [ ] NE 4.7-4.11: Reminder notifications (preferredDate & dueDate)
+  - [ ] NI 4.12-4.15: Notification interactions
 - [ ] Scenario 5: Drag-and-Drop Status Change
   - [ ] DD 5.1: Valid transitions
   - [ ] DD 5.2: Invalid transitions
 - [ ] Scenario 6: Data Persistence
 - [ ] Scenario 7: Multi-User Concurrent Actions
+- [ ] Scenario 8: Advance Scheduling (นัดหมายล่วงหน้า)
+  - [ ] Preferred date setting
+  - [ ] Due date auto-calculation (+7 days)
+  - [ ] Reminder notifications (7, 3 days before preferredDate)
+  - [ ] Due date notifications (7, 3, 1 day before dueDate)
+  - [ ] Permission restriction (Admin/Head Tech only)
 - [ ] Performance Testing
 - [ ] Browser Compatibility
 

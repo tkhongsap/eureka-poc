@@ -605,11 +605,26 @@ Requester Creates WO
        ↓
     → Admin (Teal)
        ↓
-Admin Assigns Tech
+Admin Assigns Tech (ตั้ง preferredDate และ dueDate = preferredDate + 7)
        ↓
    [WO_ASSIGNED]
        ↓
     → Technician (Purple)
+       ↓
+    ┌────────────────────────────────────────────┐
+    │  REMINDER SYSTEM (Auto-check on login)     │
+    │                                            │
+    │  Preferred Date Reminders:                 │
+    │  - 7 days before → [WO_REMINDER_7_DAYS]   │
+    │  - 3 days before → [WO_REMINDER_3_DAYS]   │
+    │                                            │
+    │  Due Date Reminders:                       │
+    │  - 7 days before → [WO_DUE_7_DAYS] (Sky)  │
+    │  - 3 days before → [WO_DUE_3_DAYS] (Amber)│
+    │  - 1 day before  → [WO_DUE_1_DAY] (Red)   │
+    │                                            │
+    │  All reminders → Technician assigned       │
+    └────────────────────────────────────────────┘
        ↓
 Technician Completes
        ↓
@@ -660,13 +675,22 @@ Admin Closes
 
 ## ✅ Success Criteria
 
-All 6 notification types work:
+### Status Change Notifications (6 types):
 - [x] WO_CREATED
 - [x] WO_ASSIGNED
 - [x] WO_COMPLETED
 - [x] WO_APPROVED (2 recipients)
 - [x] WO_REJECTED (with reason)
 - [x] WO_CLOSED
+
+### Reminder Notifications - Preferred Date (2 types):
+- [x] WO_REMINDER_7_DAYS - 7 วันก่อนวันนัดหมาย (preferredDate)
+- [x] WO_REMINDER_3_DAYS - 3 วันก่อนวันนัดหมาย (preferredDate)
+
+### Due Date Reminders (3 types):
+- [x] WO_DUE_7_DAYS - 7 วันก่อนกำหนดส่ง (dueDate)
+- [x] WO_DUE_3_DAYS - 3 วันก่อนกำหนดส่ง (dueDate)
+- [x] WO_DUE_1_DAY - 1 วันก่อนกำหนดส่ง (dueDate)
 
 All interactions work:
 - [x] Badge shows unread count
