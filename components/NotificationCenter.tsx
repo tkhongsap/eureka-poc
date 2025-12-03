@@ -10,6 +10,84 @@ interface NotificationCenterProps {
   onNotificationsUpdate: () => void;
 }
 
+/**
+ * Helper function to infer messageKey from notification type and extract title
+ * This handles legacy notifications without messageKey
+ */
+const inferMessageKeyFromType = (notification: Notification): { messageKey: string; messageParams: Record<string, string> } | null => {
+  // Try to extract title from message using regex patterns
+  const titleMatch = notification.message.match(/"([^"]+)"/);
+  const title = titleMatch ? titleMatch[1] : '';
+  
+  // Try to extract date from message
+  const dateMatch = notification.message.match(/\(([^)]+)\)/);
+  const date = dateMatch ? dateMatch[1] : '';
+  
+  // Try to extract reason from message
+  const reasonMatch = notification.message.match(/Reason:\s*(.+)$|เหตุผล:\s*(.+)$/);
+  const reason = reasonMatch ? (reasonMatch[1] || reasonMatch[2] || '') : '';
+
+  switch (notification.type) {
+    case NotificationType.WO_CREATED:
+      return { messageKey: 'notif.woCreated', messageParams: { title } };
+    case NotificationType.WO_ASSIGNED:
+      return { messageKey: 'notif.woAssigned', messageParams: { title } };
+    case NotificationType.WO_COMPLETED:
+      return { messageKey: 'notif.woCompleted', messageParams: { title } };
+    case NotificationType.WO_APPROVED:
+      // Check if message is for requestor or tech
+      if (notification.message.includes('Your work order') || notification.message.includes('ใบงานของคุณ')) {
+        return { messageKey: 'notif.woApprovedRequestor', messageParams: { title } };
+      }
+      if (notification.recipientRole === 'Technician') {
+        return { messageKey: 'notif.woApprovedTech', messageParams: { title } };
+      }
+      return { messageKey: 'notif.woApproved', messageParams: { title } };
+    case NotificationType.WO_REJECTED:
+      if (reason) {
+        return { messageKey: 'notif.woRejectedWithReason', messageParams: { title, reason } };
+      }
+      return { messageKey: 'notif.woRejected', messageParams: { title } };
+    case NotificationType.WO_CLOSED:
+      return { messageKey: 'notif.woClosed', messageParams: { title } };
+    case NotificationType.WO_REMINDER_7_DAYS:
+      return { messageKey: 'notif.reminder7Days', messageParams: { title, date } };
+    case NotificationType.WO_REMINDER_3_DAYS:
+      return { messageKey: 'notif.reminder3Days', messageParams: { title, date } };
+    case NotificationType.WO_DUE_7_DAYS:
+      return { messageKey: 'notif.due7Days', messageParams: { title, date } };
+    case NotificationType.WO_DUE_3_DAYS:
+      return { messageKey: 'notif.due3Days', messageParams: { title, date } };
+    case NotificationType.WO_DUE_1_DAY:
+      return { messageKey: 'notif.due1Day', messageParams: { title, date } };
+    default:
+      return null;
+  }
+};
+
+/**
+ * Helper function to get translated notification message
+ * Uses messageKey if available, otherwise infers from notification type
+ */
+const getTranslatedMessage = (
+  notification: Notification, 
+  t: (key: string, params?: Record<string, string>) => string
+): string => {
+  // If messageKey exists, use it directly
+  if (notification.messageKey) {
+    return t(notification.messageKey, notification.messageParams);
+  }
+  
+  // Try to infer messageKey from notification type
+  const inferred = inferMessageKeyFromType(notification);
+  if (inferred) {
+    return t(inferred.messageKey, inferred.messageParams);
+  }
+  
+  // Fallback to original message
+  return notification.message;
+};
+
 const NotificationCenter: React.FC<NotificationCenterProps> = ({ 
   notifications, 
   onNotificationsUpdate 
@@ -208,7 +286,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                     disabled={isProcessing}
                     className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors disabled:opacity-50 px-2 py-1.5 hover:bg-red-50 rounded-lg"
                   >
-                    Delete read
+                    {t('notif.deleteRead')}
                   </button>
                 )}
               </div>
@@ -243,7 +321,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-stone-900 leading-relaxed font-medium">
-                            {notification.message}
+                            {getTranslatedMessage(notification, t)}
                           </p>
                           <div className="flex items-center gap-2 mt-1.5">
                             <p className="text-xs text-stone-500 font-medium">
