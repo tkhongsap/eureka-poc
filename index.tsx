@@ -5,6 +5,7 @@ import App from './App';
 import LandingPage from './components/LandingPage';
 import RequestPortalPage from './pages/RequestPortalPage';
 import LoginPage from './pages/LoginPage';
+import AuthSuccessPage from './pages/AuthSuccessPage';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -20,6 +21,7 @@ root.render(
         <Route path="/login" element={<LoginPage />} />
         <Route path="/dashboard" element={<App />} />
         <Route path="/request" element={<RequestPortalPage />} />
+        <Route path="/auth-success" element={<AuthSuccessPage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

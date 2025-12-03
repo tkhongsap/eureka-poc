@@ -3,7 +3,7 @@ from db.models.request import Request
 from db.models.workorder import WorkOrder
 from db.models.image import Image
 from db.models.notification import Notification
-from db.models.user import User
+from db.models.user import User, OAuth
 
 __all__ = [
     "Base",
@@ -12,6 +12,7 @@ __all__ = [
     "Image",
     "Notification",
     "User",
+    "OAuth",
 ]
 
 

@@ -14,6 +14,7 @@ from routes import (
     requests_router,
     workorders_router,
     users_router,
+    auth_router,
 )
 
 from utils import PICTURES_DIR
@@ -65,6 +66,7 @@ app.include_router(requests_router)
 app.include_router(workorders_router)
 app.include_router(notifications_router)
 app.include_router(users_router)
+app.include_router(auth_router)
 
 
 @app.get("/api/health", tags=["Health"])
