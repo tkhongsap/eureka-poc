@@ -14,6 +14,12 @@ export default defineConfig(({ mode }) => {
         protocol: "wss",
         clientPort: 443,
       },
+      proxy: {
+        "/api": {
+          target: "http://localhost:8000",
+          changeOrigin: true,
+        },
+      },
     },
     build: {
       outDir: "dist",
@@ -27,16 +33,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "."),
-      },
-      plugins: [react(), tailwindcss()],
-      define: {
-        "process.env.API_KEY": JSON.stringify(env.GEMINI_API_KEY),
-        "process.env.GEMINI_API_KEY": JSON.stringify(env.GEMINI_API_KEY),
-      },
-      resolve: {
-        alias: {
-          "@": path.resolve(__dirname, "."),
-        },
+        "@assets": path.resolve(__dirname, "attached_assets"),
       },
     },
   };

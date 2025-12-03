@@ -154,16 +154,39 @@ const App: React.FC = () => {
   // Check for logged in user from LoginPage on mount
   useEffect(() => {
     const storedUser = sessionStorage.getItem('loggedInUser');
-    if (storedUser) {
+    const authUser = sessionStorage.getItem('authUser');
+    
+    if (authUser) {
       try {
-        const { role } = JSON.parse(storedUser);
-        console.log('Loading user from sessionStorage:', role); // Debug log
+        const userData = JSON.parse(authUser);
+        console.log('Loading Replit Auth user:', userData);
+        
+        const user: User = {
+          id: userData.id,
+          name: userData.name || userData.email || 'User',
+          role: userData.role || userData.user_role || 'Requester',
+          userRole: (userData.user_role || 'Requester') as UserRole,
+          avatarUrl: userData.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.id}`,
+        };
+        
+        console.log('Replit Auth user loaded:', user);
+        setCurrentUser(user);
+        setIsLoggedIn(true);
+        setUserContext(user.userRole, user.name);
+      } catch (e) {
+        console.error('Failed to parse auth user:', e);
+      }
+    } else if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        const role = parsed.role;
+        console.log('Loading user from sessionStorage:', role);
+        
         if (role && USERS[role as UserRole]) {
           const user = USERS[role as UserRole];
-          console.log('User loaded:', user); // Debug log
+          console.log('User loaded:', user);
           setCurrentUser(user);
           setIsLoggedIn(true);
-          // Set user context for API calls
           setUserContext(user.userRole, user.name);
         }
       } catch (e) {
@@ -173,11 +196,27 @@ const App: React.FC = () => {
   }, []);
 
   // Handle logout
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const authUser = sessionStorage.getItem('authUser');
+    
     sessionStorage.removeItem('loggedInUser');
+    sessionStorage.removeItem('authUser');
     setIsLoggedIn(false);
     setCurrentView('dashboard');
-    // Navigate to landing page
+    
+    if (authUser) {
+      try {
+        const response = await fetch('/api/auth/logout', { method: 'POST' });
+        const data = await response.json();
+        if (data.redirect_url) {
+          window.location.href = data.redirect_url;
+          return;
+        }
+      } catch (e) {
+        console.error('Logout error:', e);
+      }
+    }
+    
     window.location.href = '/';
   };
 

@@ -10,8 +10,8 @@ class UserSettings(BaseModel):
 
 
 class UserCreate(BaseModel):
-    email: str
-    password_hash: str
+    email: Optional[str] = None
+    password_hash: Optional[str] = None
     name: str
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
@@ -19,6 +19,9 @@ class UserCreate(BaseModel):
     job_title: Optional[str] = None
     role: Optional[str] = None  # Display role for show
     userRole: str  # System role for permissions
+    replit_user_id: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 
 class UserUpdate(BaseModel):
@@ -39,7 +42,7 @@ class User(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    email: str
+    email: Optional[str] = None
     password_hash: Optional[str] = None
     name: str
     phone: Optional[str] = None
@@ -53,3 +56,6 @@ class User(BaseModel):
     last_login_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    replit_user_id: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
