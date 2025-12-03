@@ -25,7 +25,7 @@ const formatDateShort = (dateString: string): string => {
 };
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, AdminRejectData, adminCloseWorkOrder, createNotification } from '../services/apiService';
+import { getImageDataUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, adminCloseWorkOrder, createNotification } from '../services/apiService';
 import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules';
 import { 
   createWOAssignedNotification, 
@@ -91,6 +91,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [showTechnicianModal, setShowTechnicianModal] = useState(false);
   const [technicianNotes, setTechnicianNotes] = useState('');
   const [technicianImages, setTechnicianImages] = useState<string[]>([]);
+  const [technicianPreviewUrls, setTechnicianPreviewUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Admin assignment state
@@ -140,21 +141,24 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
   // Load images when selecting a work order
   useEffect(() => {
-    // Load original request images
-    if (selectedWO && selectedWO.imageIds && selectedWO.imageIds.length > 0) {
-      const imageUrls = selectedWO.imageIds.map(id => getImageUrl(id));
-      setSelectedWOImages(imageUrls);
-    } else {
-      setSelectedWOImages([]);
-    }
-    
-    // Load technician work images for display (separate from upload state)
-    if (selectedWO && selectedWO.technicianImages && selectedWO.technicianImages.length > 0) {
-      const techImageUrls = selectedWO.technicianImages.map(id => getImageUrl(id));
-      setSelectedTechImages(techImageUrls);
-    } else {
-      setSelectedTechImages([]);
-    }
+    const loadImages = async () => {
+      // Load original request images
+      if (selectedWO && selectedWO.imageIds && selectedWO.imageIds.length > 0) {
+        const imageUrls = await Promise.all(selectedWO.imageIds.map(id => getImageDataUrl(id)));
+        setSelectedWOImages(imageUrls);
+      } else {
+        setSelectedWOImages([]);
+      }
+      
+      // Load technician work images for display (separate from upload state)
+      if (selectedWO && selectedWO.technicianImages && selectedWO.technicianImages.length > 0) {
+        const techImageUrls = await Promise.all(selectedWO.technicianImages.map(id => getImageDataUrl(id)));
+        setSelectedTechImages(techImageUrls);
+      } else {
+        setSelectedTechImages([]);
+      }
+    };
+    loadImages();
     
     // Initialize technician fields when selecting a work order so technician can edit inline
     if (selectedWO) {
@@ -171,6 +175,19 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     // Clear admin review fields
     setRejectionReason('');
   }, [selectedWO]);
+
+  // Build preview URLs for technicianImages (avoid async in render)
+  useEffect(() => {
+    const buildPreviews = async () => {
+      if (technicianImages.length > 0) {
+        const urls = await Promise.all(technicianImages.map(id => getImageDataUrl(id)));
+        setTechnicianPreviewUrls(urls);
+      } else {
+        setTechnicianPreviewUrls([]);
+      }
+    };
+    buildPreviews();
+  }, [technicianImages]);
 
   // Base technician scoping: technicians only ever see their own jobs
   const scopedWorkOrders = currentUser?.userRole === 'Technician'
@@ -1114,74 +1131,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 </div>
               )}
 
-              {/* Admin Assignment Section (visible to Admin when status is Open and not yet assigned) */}
-              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.OPEN && (
-                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
-                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <UserPlus size={16} className="text-purple-600" /> {t('workOrders.assign')}
-                  </h3>
-
-                  {!selectedWO.assignedTo ? (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-purple-700 mb-2">
-                          {t('workOrders.selectTechnicianLabel')}
-                        </label>
-                        <select
-                          value={selectedTechnician}
-                          onChange={(e) => setSelectedTechnician(e.target.value)}
-                          title="Select technician to assign"
-                          className="w-full px-4 py-3 bg-white border-2 border-purple-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                          disabled={isAssigning}
-                        >
-                          <option value="">{t('workOrders.selectTechnicianPlaceholder')}</option>
-                          {technicians.map(tech => (
-                            <option key={tech.id} value={tech.name}>
-                              {tech.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <button
-                        onClick={handleAssign}
-                        disabled={!selectedTechnician || isAssigning}
-                        className="w-full px-5 py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:shadow-xl hover:shadow-purple-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                      >
-                        <UserPlus size={18} />
-                        {isAssigning ? t('workOrders.assigning') : t('workOrders.assignStartBtn')}
-                      </button>
-
-                      <div className="bg-purple-100/50 border border-purple-200 p-3 rounded-xl">
-                        <p className="text-xs text-purple-700 flex items-start gap-2">
-                          <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
-                          <span>
-                            {t('workOrders.assignNote')}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-white p-4 rounded-xl border border-purple-200">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold">
-                          {selectedWO.assignedTo.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-purple-900">
-                            {selectedWO.assignedTo}
-                          </p>
-                          <p className="text-xs text-purple-600">{t('workOrders.assignedTechnician')}</p>
-                        </div>
-                      </div>
-                      <p className="text-xs text-purple-700 mt-3 flex items-center gap-1">
-                        <CheckSquare size={12} />
-                        {t('workOrders.workInProgress')}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Admin Assignment Section removed per request */}
 
              
               {/* Head Technician Review Section (visible only to Head Technician when status is Pending) */}
@@ -1212,13 +1162,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                           {t('workOrders.workPhotos')} ({selectedWO.technicianImages.length}):
                         </p>
                         <div className="grid grid-cols-3 gap-2">
-                          {selectedWO.technicianImages.map((imgId, idx) => (
+                          {selectedTechImages.map((imgUrl, idx) => (
                             <img
                               key={idx}
-                              src={getImageUrl(imgId)}
+                              src={imgUrl}
                               alt={`Work photo ${idx + 1}`}
                               className="w-full h-20 object-cover rounded-lg border border-stone-200 cursor-pointer hover:opacity-80 transition-opacity"
-                              onClick={() => setFullscreenImage(getImageUrl(imgId))}
+                              onClick={() => setFullscreenImage(imgUrl)}
                             />
                           ))}
                         </div>
@@ -1381,11 +1331,11 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       )}
                     </div>
 
-                    {technicianImages.length > 0 && (
+                    {technicianPreviewUrls.length > 0 && (
                       <div className="grid grid-cols-3 gap-3 mb-4">
-                        {technicianImages.map((id, idx) => (
+                        {technicianPreviewUrls.map((imgUrl, idx) => (
                           <div key={idx} className="relative rounded-xl overflow-hidden border-2 border-blue-200">
-                            <img src={getImageUrl(id)} alt={`work-photo-${idx}`} className="w-full h-28 object-cover" />
+                            <img src={imgUrl} alt={`work-photo-${idx}`} className="w-full h-28 object-cover" />
                             <button 
                               onClick={() => removeTechnicianImage(idx)} 
                               title="Remove image"
@@ -1773,12 +1723,11 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                   </label>
                   {isUploading && <span className="text-sm text-stone-500">{t('workOrders.uploading')}</span>}
                 </div>
-
-                {technicianImages.length > 0 && (
-                  <div className="grid grid-cols-3 gap-3 mt-3">
-                    {technicianImages.map((id, idx) => (
+                {technicianPreviewUrls.length > 0 && (
+                  <div className="grid grid-cols-3 gap-3 mt-4">
+                    {technicianPreviewUrls.map((imgUrl, idx) => (
                       <div key={idx} className="relative rounded-xl overflow-hidden border border-stone-200">
-                        <img src={getImageUrl(id)} alt={`img-${idx}`} className="w-full h-28 object-cover" />
+                        <img src={imgUrl} alt={`img-${idx}`} className="w-full h-28 object-cover" />
                         <button onClick={() => removeTechnicianImage(idx)} title="Remove image" aria-label="Remove image" className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
                           <Trash2 size={14} />
                         </button>

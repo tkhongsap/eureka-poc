@@ -15,7 +15,7 @@ import {
   uploadImage, 
   createRequest, 
   listRequests, 
-  getImageUrl,
+  getImageDataUrl,
   RequestItem as ApiRequestItem,
   ImageInfo,
   createNotification,
@@ -132,12 +132,15 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
 
   // Load image URLs when selecting a request
   useEffect(() => {
-    if (selectedRequest && selectedRequest.imageIds.length > 0) {
-      const imageUrls = selectedRequest.imageIds.map(id => getImageUrl(id));
-      setSelectedRequestImages(imageUrls);
-    } else {
-      setSelectedRequestImages([]);
-    }
+    const loadImages = async () => {
+      if (selectedRequest && selectedRequest.imageIds.length > 0) {
+        const imageUrls = await Promise.all(selectedRequest.imageIds.map(id => getImageDataUrl(id)));
+        setSelectedRequestImages(imageUrls);
+      } else {
+        setSelectedRequestImages([]);
+      }
+    };
+    loadImages();
   }, [selectedRequest]);
 
   // Auto-hide success toast after 2.5 seconds

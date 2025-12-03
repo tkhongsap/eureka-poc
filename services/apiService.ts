@@ -53,17 +53,29 @@ const getAuthHeaders = (): Record<string, string> => {
 export interface ImageInfo {
   id: string;
   originalName: string;
-  filename: string;
+  filename?: string;
+  base64Data: string;
   createdAt: string;
 }
 
 export const uploadImage = async (file: File): Promise<ImageInfo> => {
-  const formData = new FormData();
-  formData.append('file', file);
+  const toBase64 = (f: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const commaIdx = result.indexOf(',');
+      resolve(commaIdx > -1 ? result.substring(commaIdx + 1) : result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(f);
+  });
 
-  const response = await fetch(`${API_BASE_URL}/images/upload`, {
+  const base64 = await toBase64(file);
+
+  const response = await fetch(`${API_BASE_URL}/images/upload-base64`, {
     method: 'POST',
-    body: formData,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ originalName: file.name, base64Data: base64 }),
   });
 
   if (!response.ok) {
@@ -73,8 +85,14 @@ export const uploadImage = async (file: File): Promise<ImageInfo> => {
   return response.json();
 };
 
-export const getImageUrl = (imageId: string): string => {
-  return `${API_BASE_URL}/images/${imageId}`;
+export const getImageDataUrl = async (imageId: string): Promise<string> => {
+  const response = await fetch(`${API_BASE_URL}/images/${imageId}`);
+  if (!response.ok) {
+    throw new Error('Failed to get image');
+  }
+  const data: ImageInfo = await response.json();
+  const ext = (data.filename && data.filename.split('.').pop()) || 'jpg';
+  return `data:image/${ext};base64,${data.base64Data}`;
 };
 
 export const listImages = async (): Promise<ImageInfo[]> => {
