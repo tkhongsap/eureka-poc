@@ -1,4 +1,11 @@
+"""
+OAuth Authentication Routes
+Supports both Google OAuth (for local dev) and Replit OAuth (for deployment)
+Switch between providers by setting OAUTH_PROVIDER env var to "google" or "replit"
+"""
 import secrets
+import hashlib
+import base64
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 from typing import Optional
@@ -12,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from config import (
     SESSION_SECRET, SESSION_COOKIE_NAME, SESSION_MAX_AGE,
-    ISSUER_URL, REPL_ID, IS_PRODUCTION
+    IS_PRODUCTION, get_oauth_config
 )
 from db import get_db
 from db.models import User as UserModel, OAuth as OAuthModel
@@ -20,8 +27,8 @@ from utils import generate_id
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
-PKCE_VERIFIERS = {}
-JWKS_CACHE = {"keys": None, "fetched_at": None}
+# Store for PKCE verifiers and OAuth state (in production, use Redis)
+OAUTH_STATES = {}
 
 session_serializer = URLSafeTimedSerializer(SESSION_SECRET)
 
@@ -29,80 +36,10 @@ session_serializer = URLSafeTimedSerializer(SESSION_SECRET)
 def generate_pkce_pair():
     """Generate PKCE code verifier and challenge"""
     code_verifier = secrets.token_urlsafe(64)
-    import hashlib
-    import base64
     code_challenge = base64.urlsafe_b64encode(
         hashlib.sha256(code_verifier.encode()).digest()
     ).rstrip(b'=').decode()
     return code_verifier, code_challenge
-
-
-async def get_jwks():
-    """Fetch and cache JWKS from Replit OIDC provider"""
-    global JWKS_CACHE
-    
-    if JWKS_CACHE["keys"] and JWKS_CACHE["fetched_at"]:
-        age = (datetime.now() - JWKS_CACHE["fetched_at"]).seconds
-        if age < 3600:
-            return JWKS_CACHE["keys"]
-    
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(f"{ISSUER_URL}/.well-known/jwks.json")
-            if response.status_code == 200:
-                JWKS_CACHE["keys"] = response.json().get("keys", [])
-                JWKS_CACHE["fetched_at"] = datetime.now()
-                return JWKS_CACHE["keys"]
-        except Exception:
-            pass
-    
-    return JWKS_CACHE.get("keys", [])
-
-
-async def verify_id_token(id_token: str, expected_nonce: str = None) -> dict:
-    """Verify ID token signature and claims"""
-    try:
-        unverified_header = jwt.get_unverified_header(id_token)
-        kid = unverified_header.get("kid")
-        
-        jwks = await get_jwks()
-        public_key = None
-        
-        for key in jwks:
-            if key.get("kid") == kid:
-                from jwt.algorithms import RSAAlgorithm
-                public_key = RSAAlgorithm.from_jwk(key)
-                break
-        
-        if not public_key:
-            raise ValueError("Unable to find matching key in JWKS")
-        
-        claims = jwt.decode(
-            id_token,
-            public_key,
-            algorithms=["RS256"],
-            audience=REPL_ID,
-            issuer=ISSUER_URL,
-            options={
-                "verify_signature": True,
-                "verify_aud": True,
-                "verify_iss": True,
-                "verify_exp": True,
-            }
-        )
-        
-        if expected_nonce and claims.get("nonce") != expected_nonce:
-            raise ValueError("Nonce mismatch")
-        
-        return claims
-    except jwt.ExpiredSignatureError:
-        raise ValueError("Token has expired")
-    except jwt.InvalidAudienceError:
-        raise ValueError("Invalid audience")
-    except jwt.InvalidIssuerError:
-        raise ValueError("Invalid issuer")
-    except Exception as e:
-        raise ValueError(f"Token verification failed: {str(e)}")
 
 
 def create_session_token(user_id: str, user_data: dict) -> str:
@@ -124,43 +61,92 @@ def verify_session_token(token: str) -> Optional[dict]:
         return None
 
 
+def cleanup_old_states():
+    """Clean up expired OAuth states (older than 10 minutes)"""
+    now = datetime.now()
+    expired = [
+        state for state, data in OAUTH_STATES.items()
+        if (now - data["created_at"]).seconds > 600
+    ]
+    for state in expired:
+        del OAUTH_STATES[state]
+
+
+def get_redirect_uri(request: Request) -> str:
+    """Build the OAuth callback URI based on request"""
+    host = request.headers.get("host", "localhost:8000")
+    forwarded_proto = request.headers.get("x-forwarded-proto")
+    
+    if forwarded_proto:
+        protocol = forwarded_proto
+    elif "replit" in host or "localhost" not in host:
+        protocol = "https"
+    else:
+        protocol = "http"
+    
+    # For local development, use frontend port for callback
+    # so the SPA can handle the /auth-success route
+    if "localhost:8000" in host:
+        host = "localhost:5000"
+    
+    return f"{protocol}://{host}/api/auth/callback"
+
+
 @router.get("/login")
 async def login(request: Request):
-    """Initiate Replit OAuth login flow"""
-    if not REPL_ID:
-        raise HTTPException(status_code=500, detail="REPL_ID environment variable not set")
+    """Initiate OAuth login flow (Google or Replit based on config)"""
+    oauth_config = get_oauth_config()
     
+    if not oauth_config["client_id"]:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"{oauth_config['provider'].upper()}_CLIENT_ID not configured. "
+                   f"Please set the environment variable."
+        )
+    
+    # Generate state and nonce for security
     state = secrets.token_urlsafe(32)
     nonce = secrets.token_urlsafe(32)
-    code_verifier, code_challenge = generate_pkce_pair()
     
-    PKCE_VERIFIERS[state] = {
-        "verifier": code_verifier,
+    state_data = {
         "nonce": nonce,
-        "created_at": datetime.now()
+        "created_at": datetime.now(),
+        "provider": oauth_config["provider"],
     }
     
-    for old_state in list(PKCE_VERIFIERS.keys()):
-        if (datetime.now() - PKCE_VERIFIERS[old_state]["created_at"]).seconds > 600:
-            del PKCE_VERIFIERS[old_state]
+    # Generate PKCE if required (Replit uses PKCE)
+    if oauth_config["use_pkce"]:
+        code_verifier, code_challenge = generate_pkce_pair()
+        state_data["verifier"] = code_verifier
     
-    host = request.headers.get("host", "")
-    protocol = "https" if "replit" in host or request.headers.get("x-forwarded-proto") == "https" else "http"
-    redirect_uri = f"{protocol}://{host}/api/auth/callback"
+    OAUTH_STATES[state] = state_data
+    cleanup_old_states()
     
+    redirect_uri = get_redirect_uri(request)
+    
+    # Build authorization URL
     params = {
-        "client_id": REPL_ID,
+        "client_id": oauth_config["client_id"],
         "redirect_uri": redirect_uri,
         "response_type": "code",
-        "scope": "openid profile email offline_access",
+        "scope": oauth_config["scopes"],
         "state": state,
         "nonce": nonce,
-        "code_challenge": code_challenge,
-        "code_challenge_method": "S256",
-        "prompt": "login consent",
     }
     
-    auth_url = f"{ISSUER_URL}/auth?{urlencode(params)}"
+    # Add PKCE challenge if required
+    if oauth_config["use_pkce"]:
+        params["code_challenge"] = code_challenge
+        params["code_challenge_method"] = "S256"
+    
+    # Provider-specific parameters
+    if oauth_config["provider"] == "google":
+        params["access_type"] = "offline"  # Get refresh token
+        params["prompt"] = "consent"
+    else:
+        params["prompt"] = "login consent"
+    
+    auth_url = f"{oauth_config['auth_endpoint']}?{urlencode(params)}"
     return RedirectResponse(url=auth_url)
 
 
@@ -172,102 +158,149 @@ async def callback(
     error: str = None,
     db: Session = Depends(get_db)
 ):
-    """Handle OAuth callback from Replit"""
+    """Handle OAuth callback from provider"""
     if error:
+        print(f"OAuth error: {error}")
         return RedirectResponse(url=f"/login?error={error}")
     
     if not code or not state:
         return RedirectResponse(url="/login?error=missing_params")
     
-    if state not in PKCE_VERIFIERS:
+    if state not in OAUTH_STATES:
         return RedirectResponse(url="/login?error=invalid_state")
     
-    pkce_data = PKCE_VERIFIERS.pop(state)
-    code_verifier = pkce_data["verifier"]
-    expected_nonce = pkce_data["nonce"]
+    state_data = OAUTH_STATES.pop(state)
+    oauth_config = get_oauth_config()
     
-    host = request.headers.get("host", "")
-    protocol = "https" if "replit" in host or request.headers.get("x-forwarded-proto") == "https" else "http"
-    redirect_uri = f"{protocol}://{host}/api/auth/callback"
+    redirect_uri = get_redirect_uri(request)
     
+    # Exchange code for tokens
     token_data = {
         "grant_type": "authorization_code",
         "code": code,
         "redirect_uri": redirect_uri,
-        "client_id": REPL_ID,
-        "code_verifier": code_verifier,
+        "client_id": oauth_config["client_id"],
     }
+    
+    # Add client secret for Google (Replit uses PKCE instead)
+    if oauth_config["client_secret"]:
+        token_data["client_secret"] = oauth_config["client_secret"]
+    
+    # Add PKCE verifier if used
+    if oauth_config["use_pkce"] and "verifier" in state_data:
+        token_data["code_verifier"] = state_data["verifier"]
     
     async with httpx.AsyncClient() as client:
         try:
             token_response = await client.post(
-                f"{ISSUER_URL}/token",
+                oauth_config["token_endpoint"],
                 data=token_data,
                 headers={"Content-Type": "application/x-www-form-urlencoded"}
             )
             
             if token_response.status_code != 200:
-                return RedirectResponse(url=f"/login?error=token_exchange_failed")
+                print(f"Token exchange failed: {token_response.text}")
+                return RedirectResponse(url="/login?error=token_exchange_failed")
             
             tokens = token_response.json()
         except Exception as e:
-            return RedirectResponse(url=f"/login?error=token_error")
+            print(f"Token request error: {e}")
+            return RedirectResponse(url="/login?error=token_error")
     
-    try:
-        id_token = tokens.get("id_token")
-        if not id_token:
-            return RedirectResponse(url="/login?error=no_id_token")
-        
-        claims = await verify_id_token(id_token, expected_nonce)
+    # Get user info
+    access_token = tokens.get("access_token")
+    if not access_token:
+        return RedirectResponse(url="/login?error=no_access_token")
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            userinfo_response = await client.get(
+                oauth_config["userinfo_endpoint"],
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
             
-    except ValueError as e:
-        print(f"Token verification failed: {e}")
-        return RedirectResponse(url=f"/login?error=invalid_token")
+            if userinfo_response.status_code != 200:
+                print(f"Userinfo failed: {userinfo_response.text}")
+                return RedirectResponse(url="/login?error=userinfo_failed")
+            
+            userinfo = userinfo_response.json()
+        except Exception as e:
+            print(f"Userinfo request error: {e}")
+            return RedirectResponse(url="/login?error=userinfo_error")
     
-    replit_user_id = claims.get("sub")
-    email = claims.get("email")
-    first_name = claims.get("first_name")
-    last_name = claims.get("last_name")
-    profile_image_url = claims.get("profile_image_url")
+    # Extract user data (handle differences between Google and Replit)
+    provider = oauth_config["provider"]
     
-    name = f"{first_name or ''} {last_name or ''}".strip() or email or f"User {replit_user_id}"
+    if provider == "google":
+        oauth_user_id = userinfo.get("sub")
+        email = userinfo.get("email")
+        first_name = userinfo.get("given_name")
+        last_name = userinfo.get("family_name")
+        profile_image_url = userinfo.get("picture")
+        name = userinfo.get("name") or f"{first_name or ''} {last_name or ''}".strip()
+    else:  # replit
+        oauth_user_id = userinfo.get("sub")
+        email = userinfo.get("email")
+        first_name = userinfo.get("first_name")
+        last_name = userinfo.get("last_name")
+        profile_image_url = userinfo.get("profile_image_url")
+        name = f"{first_name or ''} {last_name or ''}".strip()
     
-    user = db.query(UserModel).filter(UserModel.replit_user_id == replit_user_id).first()
+    if not name:
+        name = email or f"User {oauth_user_id}"
+    
+    # Find or create user
+    # First try to find by OAuth provider ID
+    if provider == "google":
+        user = db.query(UserModel).filter(UserModel.google_user_id == oauth_user_id).first()
+    else:
+        user = db.query(UserModel).filter(UserModel.replit_user_id == oauth_user_id).first()
     
     if not user:
+        # Try to find by email
         user = db.query(UserModel).filter(UserModel.email == email).first()
         if user:
-            user.replit_user_id = replit_user_id
+            # Link OAuth provider to existing user
+            if provider == "google":
+                user.google_user_id = oauth_user_id
+            else:
+                user.replit_user_id = oauth_user_id
             user.first_name = first_name
             user.last_name = last_name
             if profile_image_url:
                 user.avatar_url = profile_image_url
         else:
+            # Create new user
             user = UserModel(
                 id=generate_id("USR"),
-                replit_user_id=replit_user_id,
                 email=email,
                 name=name,
                 first_name=first_name,
                 last_name=last_name,
                 avatar_url=profile_image_url,
-                user_role="Requester",
+                user_role="Requester",  # Default role for new users
                 status="active",
                 settings={},
             )
+            if provider == "google":
+                user.google_user_id = oauth_user_id
+            else:
+                user.replit_user_id = oauth_user_id
             db.add(user)
     
+    # Update last login
     user.last_login_at = datetime.now()
     if profile_image_url and not user.avatar_url:
         user.avatar_url = profile_image_url
     
+    # Store OAuth tokens
     expires_at = None
     if tokens.get("expires_in"):
         expires_at = datetime.now() + timedelta(seconds=tokens["expires_in"])
     
     oauth = db.query(OAuthModel).filter(
         OAuthModel.user_id == user.id,
-        OAuthModel.provider == "replit"
+        OAuthModel.provider == provider
     ).first()
     
     if oauth:
@@ -280,7 +313,7 @@ async def callback(
         oauth = OAuthModel(
             id=generate_id("OA"),
             user_id=user.id,
-            provider="replit",
+            provider=provider,
             access_token=tokens.get("access_token"),
             refresh_token=tokens.get("refresh_token"),
             token_type=tokens.get("token_type"),
@@ -291,6 +324,7 @@ async def callback(
     db.commit()
     db.refresh(user)
     
+    # Create session
     user_data = {
         "id": user.id,
         "email": user.email,
@@ -347,35 +381,49 @@ async def get_current_user(
 
 @router.post("/logout")
 async def logout(request: Request, db: Session = Depends(get_db)):
-    """Logout user, clear session, and revoke tokens"""
+    """Logout user and clear session"""
     session_token = request.cookies.get(SESSION_COOKIE_NAME)
+    oauth_config = get_oauth_config()
     
     if session_token:
         session_data = verify_session_token(session_token)
         if session_data:
             user_id = session_data["user_id"]
+            # Delete OAuth tokens for this provider
             oauth = db.query(OAuthModel).filter(
                 OAuthModel.user_id == user_id,
-                OAuthModel.provider == "replit"
+                OAuthModel.provider == oauth_config["provider"]
             ).first()
             if oauth:
                 db.delete(oauth)
                 db.commit()
     
-    end_session_url = f"{ISSUER_URL}/session/end"
-    params = {
-        "client_id": REPL_ID,
-        "post_logout_redirect_uri": "/login",
-    }
+    # Build logout response
+    response_data = {"message": "Logged out successfully"}
     
-    response = JSONResponse({
-        "message": "Logged out successfully",
-        "redirect_url": f"{end_session_url}?{urlencode(params)}"
-    })
+    # Provider-specific logout
+    if oauth_config["provider"] == "replit":
+        end_session_url = f"{oauth_config['issuer_url']}/session/end"
+        params = {
+            "client_id": oauth_config["client_id"],
+            "post_logout_redirect_uri": "/login",
+        }
+        response_data["redirect_url"] = f"{end_session_url}?{urlencode(params)}"
+    else:
+        # Google doesn't have a standard logout endpoint
+        response_data["redirect_url"] = "/login"
     
-    response.delete_cookie(
-        key=SESSION_COOKIE_NAME,
-        path="/",
-    )
+    response = JSONResponse(response_data)
+    response.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
     
     return response
+
+
+@router.get("/provider")
+async def get_provider():
+    """Get current OAuth provider configuration"""
+    oauth_config = get_oauth_config()
+    return {
+        "provider": oauth_config["provider"],
+        "configured": bool(oauth_config["client_id"]),
+    }
