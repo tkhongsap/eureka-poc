@@ -118,7 +118,10 @@ class Image(Base):
     
     id = Column(String(50), primary_key=True)
     original_name = Column(String(255), nullable=False)
-    filename = Column(String(255), nullable=False)
+    # Base64-encoded image data stored in DB
+    base64_data = Column(Text, nullable=False)
+    # Optional original filename kept for reference
+    filename = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     def to_dict(self):
@@ -128,6 +131,7 @@ class Image(Base):
             "id": self.id,
             "originalName": self.original_name,
             "filename": self.filename,
+            "base64Data": self.base64_data,
             "createdAt": created_at_str
         }
 
