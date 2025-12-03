@@ -686,14 +686,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             <div className="bg-stone-100 p-0.5 rounded-lg flex border border-stone-200">
               <button
                 onClick={() => setViewMode('list')}
-                title="List view"
+                title={t('workOrders.listView')}
                 className={`p-1.5 rounded transition-all duration-200 ${viewMode === 'list' ? 'bg-white text-teal-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
               >
                 <List size={16} />
               </button>
               <button
                 onClick={() => setViewMode('board')}
-                title="Board view"
+                title={t('workOrders.boardView')}
                 className={`p-1.5 rounded transition-all duration-200 ${viewMode === 'board' ? 'bg-white text-teal-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
               >
                 <LayoutGrid size={16} />
@@ -735,14 +735,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                   setEndDate('');
                 }
               }}
-              title="Start date filter"
+              title={t('workOrders.startDateFilter')}
             />
             <span className="text-stone-300">→</span>
             <DateInputSmall
               value={endDate}
               onChange={(value) => setEndDate(value)}
               min={startDate || undefined}
-              title="End date filter"
+              title={t('workOrders.endDateFilter')}
             />
           </div>
 
@@ -752,7 +752,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             <select
               value={selectedPriority}
               onChange={(e) => setSelectedPriority(e.target.value as Priority | 'ALL')}
-              title="Filter by priority"
+              title={t('workOrders.filterByPriority')}
               className="text-[11px] px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none cursor-pointer"
             >
               <option value="ALL">{t('common.all')}</option>
@@ -770,7 +770,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               <select
                 value={selectedAssignedTo}
                 onChange={(e) => setSelectedAssignedTo(e.target.value)}
-                title="Filter by technician"
+                title={t('workOrders.filterByTechnician')}
                 className="text-[11px] px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none min-w-[80px] cursor-pointer"
               >
                 <option value="">{t('common.all')}</option>
@@ -785,7 +785,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           <button
             type="button"
             onClick={() => { setStartDate(''); setEndDate(''); setSelectedMonth(''); setSelectedPriority('ALL'); setSearchText(''); setSelectedAssignedTo(''); }}
-            title="Clear all filters"
+            title={t('workOrders.clearAllFilters')}
             className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 border border-stone-200 hover:border-red-200 transition-all ml-auto"
           >
             <X size={12} />
@@ -913,8 +913,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                                 <span className="text-[10px] font-mono text-stone-400 truncate max-w-[120px]">{wo.id}</span>
                                                 {isDraggable && (
                                                   <button
-                                                      title="Drag to change status"
-                                                      aria-label="Drag to change status"
+                                                      title={t('workOrders.dragToChange')}
+                                                      aria-label={t('workOrders.dragToChange')}
                                                       className="text-stone-300 hover:text-stone-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                                   >
                                                       <GripVertical size={12} />
@@ -1025,8 +1025,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               </div>
               <button
                 onClick={() => setSelectedWO(null)}
-                title="Close panel"
-                aria-label="Close panel"
+                title={t('workOrders.closePanel')}
+                aria-label={t('workOrders.closePanel')}
                 className="p-2 hover:bg-stone-100 rounded-xl text-stone-400 hover:text-stone-600 transition-colors duration-200"
               >
                 <X size={24} />
@@ -1068,7 +1068,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                     {/* Embedded Map using OpenStreetMap */}
                     <div className="h-[200px] w-full">
                       <iframe
-                        title="Location Map"
+                        title={t('workOrders.locationMap')}
                         width="100%"
                         height="100%"
                         className="border-0"
@@ -1130,7 +1130,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         <select
                           value={selectedTechnician}
                           onChange={(e) => setSelectedTechnician(e.target.value)}
-                          title="Select technician to assign"
+                          title={t('workOrders.selectTechnicianToAssign')}
                           className="w-full px-4 py-3 bg-white border-2 border-purple-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
                           disabled={isAssigning}
                         >
@@ -1388,8 +1388,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                             <img src={getImageUrl(id)} alt={`work-photo-${idx}`} className="w-full h-28 object-cover" />
                             <button 
                               onClick={() => removeTechnicianImage(idx)} 
-                              title="Remove image"
-                              aria-label="Remove image"
+                              title={t('workOrders.removeImage')}
+                              aria-label={t('workOrders.removeImage')}
                               className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-md"
                             >
                               <Trash2 size={14} />
@@ -1436,8 +1436,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       value={adminAssignedTo}
                       onChange={(e) => setAdminAssignedTo(e.target.value)}
                       className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-stone-50"
-                      title="Select technician"
-                      aria-label="Select technician"
+                      title={t('workOrders.selectTechnicianToAssign')}
+                      aria-label={t('workOrders.selectTechnicianToAssign')}
                     >
                       <option value="">{t('workOrders.selectTechnicianPlaceholder')}</option>
                       {TECHNICIANS.map(t => (
@@ -1613,8 +1613,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                           <span className="font-bold text-stone-700">${part.cost * part.quantity}</span>
                                           <button
                                             onClick={() => removePartFromWo(idx)}
-                                            title="Remove part"
-                                            aria-label="Remove part"
+                                            title={t('workOrders.removePart')}
+                                            aria-label={t('workOrders.removePart')}
                                             className="text-red-400 hover:text-red-600 p-1 transition-colors"
                                           >
                                               <Trash2 size={16} />
@@ -1636,8 +1636,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       {/* Add Part Dropdown */}
                       <div className="flex gap-2">
                           <select
-                            title="Add part from inventory"
-                            aria-label="Add part from inventory"
+                            title={t('workOrders.addPartFromInventory')}
+                            aria-label={t('workOrders.addPartFromInventory')}
                             className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white transition-all duration-200"
                             onChange={(e) => {
                                 addPartToWo(e.target.value);
@@ -1678,8 +1678,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                  <button
                    onClick={handleAdminCancel}
                    className="px-5 py-2.5 bg-rose-600 text-white rounded-xl text-sm font-semibold hover:bg-rose-700 shadow-lg shadow-rose-600/20 hover:shadow-xl hover:shadow-rose-600/25 hover:-translate-y-0.5 transition-all duration-200"
-                   title="Cancel this work order"
-                   aria-label="Cancel work order"
+                   title={t('workOrders.cancelWO')}
+                   aria-label={t('workOrders.cancelWO')}
                  >
                    {t('workOrders.cancelBtn')}
                  </button>
@@ -1754,7 +1754,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-auto p-6 z-20">
             <div className="flex justify-between items-start mb-4">
               <h3 className="font-serif text-lg text-stone-900">{t('workOrders.updateTechnicianModal')}</h3>
-              <button onClick={() => setShowTechnicianModal(false)} title="Close modal" aria-label="Close modal" className="p-2 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors duration-200">
+              <button onClick={() => setShowTechnicianModal(false)} title={t('workOrders.closeModal')} aria-label={t('workOrders.closeModal')} className="p-2 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors duration-200">
                 <X size={20} />
               </button>
             </div>
@@ -1779,7 +1779,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                     {technicianImages.map((id, idx) => (
                       <div key={idx} className="relative rounded-xl overflow-hidden border border-stone-200">
                         <img src={getImageUrl(id)} alt={`img-${idx}`} className="w-full h-28 object-cover" />
-                        <button onClick={() => removeTechnicianImage(idx)} title="Remove image" aria-label="Remove image" className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
+                        <button onClick={() => removeTechnicianImage(idx)} title={t('workOrders.removeImage')} aria-label={t('workOrders.removeImage')} className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -1809,8 +1809,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           <button
             onClick={() => setFullscreenImage(null)}
             className="absolute top-4 right-4 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
-            title="Close"
-            aria-label="Close image"
+            title={t('common.close')}
+            aria-label={t('common.close')}
           >
             <X size={28} />
           </button>
