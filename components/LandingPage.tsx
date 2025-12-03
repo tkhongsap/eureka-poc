@@ -45,13 +45,6 @@ const LandingPage: React.FC = () => {
                 {t('landing.navFeatures')}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-teal-500 group-hover:w-full transition-all duration-300" />
               </a>
-              <Link
-                to="/request"
-                className="relative text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors group"
-              >
-                {t('landing.navSubmitRequest')}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-teal-500 group-hover:w-full transition-all duration-300" />
-              </Link>
             </div>
 
             {/* Language Switcher & CTA */}
@@ -96,20 +89,14 @@ const LandingPage: React.FC = () => {
             {t('landing.heroSubtitle')}
           </p>
 
-          {/* Two Clear CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* CTA */}
+          <div className="flex justify-center">
             <Link
-              to="/dashboard"
+              to="/login"
               className="group inline-flex items-center justify-center gap-2 min-w-[160px] px-8 py-4 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 hover:-translate-y-0.5 transition-all duration-200 shadow-lg shadow-teal-600/25 hover:shadow-xl hover:shadow-teal-600/30"
             >
               {t('landing.getStarted')}
               <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-            <Link
-              to="/request"
-              className="inline-flex items-center justify-center gap-2 min-w-[160px] px-8 py-4 bg-white border-2 border-stone-200 text-stone-700 font-semibold rounded-xl hover:border-stone-300 hover:bg-stone-50 hover:-translate-y-0.5 transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              {t('landing.submitRequest')}
             </Link>
           </div>
         </div>
