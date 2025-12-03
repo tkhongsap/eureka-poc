@@ -12,4 +12,4 @@ class Image(Base):
     base64_data = Column(Text, nullable=False)
     # Optional original filename kept for reference
     filename = Column(String(255), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
