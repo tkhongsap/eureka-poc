@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   LayoutDashboard, 
   Wrench, 
@@ -9,15 +9,12 @@ import {
   BarChart3,
   LogOut,
   Package,
-  UserCircle2,
   ShieldCheck,
   HardHat,
   ClipboardList,
-  ChevronUp,
   Crown
 } from 'lucide-react';
 import { UserRole, User } from '../types';
-import { setUserContext } from '../services/apiService';
 import { useLanguage } from '../lib/i18n';
 
 interface SidebarProps {
@@ -25,13 +22,10 @@ interface SidebarProps {
   onChangeView: (view: string) => void;
   userRole: UserRole;
   currentUser: User;
-  onSwitchUser: (user: User) => void;
-  allUsers: User[];
   onLogout: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, currentUser, onSwitchUser, allUsers, onLogout }) => {
-  const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false);
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, currentUser, onLogout }) => {
   const { t } = useLanguage();
   
   // Define all possible items with translation keys
@@ -76,57 +70,22 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
       </nav>
 
       <div className="p-4 border-t border-stone-700">
-        {/* Role Switcher */}
-        <div className="relative mb-2">
-          <button
-            onClick={() => setIsRoleSwitcherOpen(!isRoleSwitcherOpen)}
-            className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-stone-300 hover:bg-stone-800 transition-all duration-200"
-          >
-            <div className="flex items-center space-x-3">
-              <UserCircle2 size={20} />
-              <span className="font-medium text-sm">{t('sidebar.role')}: {
+        {/* Role Display */}
+        <div className="mb-2 px-4 py-3 rounded-xl bg-stone-800/50">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-full ${currentUser.userRole === 'Admin' ? 'bg-purple-500/20 text-purple-400' : currentUser.userRole === 'Head Technician' ? 'bg-amber-500/20 text-amber-400' : currentUser.userRole === 'Technician' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
+              {currentUser.userRole === 'Admin' ? <ShieldCheck size={16} /> : currentUser.userRole === 'Head Technician' ? <Crown size={16} /> : currentUser.userRole === 'Technician' ? <HardHat size={16} /> : <ClipboardList size={16} />}
+            </div>
+            <div>
+              <div className="text-xs text-stone-500">{t('sidebar.role')}</div>
+              <div className="font-medium text-sm text-stone-200">{
                 currentUser.userRole === 'Admin' ? t('login.admin') :
                 currentUser.userRole === 'Head Technician' ? t('login.headTechnician') :
                 currentUser.userRole === 'Technician' ? t('login.technician') :
                 t('login.requester')
-              }</span>
+              }</div>
             </div>
-            <ChevronUp size={16} className={`transition-transform ${isRoleSwitcherOpen ? 'rotate-180' : ''}`} />
-          </button>
-          
-          {isRoleSwitcherOpen && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 bg-stone-800 rounded-xl border border-stone-700 overflow-hidden shadow-xl">
-              <div className="p-2 bg-stone-800/80 border-b border-stone-700 text-xs font-bold text-stone-400 uppercase px-3">
-                {t('sidebar.switchRole')}
-              </div>
-              <div className="p-1">
-                {allUsers.map((u) => (
-                  <button
-                    key={u.userRole}
-                    onClick={() => { 
-                      onSwitchUser(u); 
-                      setUserContext(u.userRole, u.name);
-                      setIsRoleSwitcherOpen(false); 
-                    }}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 ${currentUser.userRole === u.userRole ? 'bg-teal-600 text-white' : 'hover:bg-stone-700 text-stone-300'}`}
-                  >
-                    <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-500/20 text-purple-400' : u.userRole === 'Head Technician' ? 'bg-amber-500/20 text-amber-400' : u.userRole === 'Technician' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                      {u.userRole === 'Admin' ? <ShieldCheck size={14} /> : u.userRole === 'Head Technician' ? <Crown size={14} /> : u.userRole === 'Technician' ? <HardHat size={14} /> : <ClipboardList size={14} />}
-                    </div>
-                    <div>
-                      <div className="font-medium text-sm">{
-                        u.userRole === 'Admin' ? t('login.admin') :
-                        u.userRole === 'Head Technician' ? t('login.headTechnician') :
-                        u.userRole === 'Technician' ? t('login.technician') :
-                        t('login.requester')
-                      }</div>
-                      <div className="text-xs opacity-70">{u.name}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Sign Out Button */}

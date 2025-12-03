@@ -498,8 +498,6 @@ const App: React.FC = () => {
         onChangeView={setCurrentView} 
         userRole={currentUser.userRole}
         currentUser={currentUser}
-        onSwitchUser={setCurrentUser}
-        allUsers={Object.values(USERS)}
         onLogout={handleLogout}
       />
       
