@@ -74,6 +74,13 @@ eureka-cmms/
 
 ## Recent Changes
 
+### December 3, 2025 - Production Deployment Configuration
+- Configured Tailwind CSS with @tailwindcss/postcss for proper production builds
+- Updated backend main.py to serve static frontend files from dist/ folder
+- Updated apiService.ts to automatically detect development vs production environment
+- Configured autoscale deployment with build and run commands
+- Removed CDN Tailwind CSS, now using proper npm package
+
 ### November 30, 2025 - PostgreSQL Database Integration
 - Added SQLAlchemy 2.0 with PostgreSQL support
 - Created database models for Requests, WorkOrders, Images, and Notifications
@@ -163,9 +170,18 @@ Access the FastAPI documentation at:
 ## Deployment
 
 The app is configured for Replit autoscale deployment:
-- **Build**: `npm run build` (builds Vite frontend)
-- **Run**: Starts both backend and frontend servers
+- **Build**: `npm run build` (builds Vite frontend to `dist/` folder)
+- **Run**: `cd backend && python -m uvicorn main:app --host 0.0.0.0 --port 5000`
 - **Type**: Autoscale (scales based on traffic)
+
+### Production Architecture
+In production, the FastAPI backend serves both:
+1. API endpoints at `/api/*`
+2. Static frontend files from the `dist/` folder
+
+The frontend apiService.ts automatically detects the environment:
+- **Development**: Uses port 5000 for frontend, port 8000 for backend API
+- **Production**: Uses same origin (port 5000) for both frontend and API
 
 To publish: Click the "Deploy" button in Replit
 

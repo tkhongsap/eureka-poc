@@ -10,9 +10,17 @@ const getBackendUrl = () => {
       const protocol = window.location.protocol;
       const parts = hostname.split('.');
       const slugWithPort = parts[0];
-      const baseSlug = slugWithPort.replace(/-5000$/, '');
-      const restOfDomain = parts.slice(1).join('.');
-      return `${protocol}//${baseSlug}-8000.${restOfDomain}/api`;
+      
+      // Check if we're on port 5000 (development) or production
+      if (slugWithPort.endsWith('-5000')) {
+        // Development mode - use port 8000 backend
+        const baseSlug = slugWithPort.replace(/-5000$/, '');
+        const restOfDomain = parts.slice(1).join('.');
+        return `${protocol}//${baseSlug}-8000.${restOfDomain}/api`;
+      } else {
+        // Production mode - same origin, just use /api
+        return '/api';
+      }
     }
   }
   return 'http://localhost:8000/api';

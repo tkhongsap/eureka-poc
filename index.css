@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Eureka CMMS - Custom Styles and Animations */
 
 /* Leaflet Map Fixes */

@@ -1,10 +1,12 @@
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 
 from db import init_db
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from routes import (
     images_router,
@@ -16,6 +18,8 @@ from routes import (
 from utils import PICTURES_DIR
 
 SHOULD_INIT_DB = os.getenv("INIT_DB_WITH_METADATA", "1") == "1"
+
+DIST_DIR = Path(__file__).parent.parent / "dist"
 
 
 @asynccontextmanager
@@ -71,18 +75,28 @@ async def health_check():
     }
 
 
-@app.get("/", tags=["Root"])
-async def root():
-    """Root endpoint with API info"""
-    return {
-        "name": "Eureka CMMS API",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "health": "/api/health",
-    }
-
-
 app.mount("/storage/pictures", StaticFiles(directory=PICTURES_DIR), name="pictures")
+
+if DIST_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=DIST_DIR / "assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(request: Request, full_path: str):
+        """Serve the SPA frontend"""
+        file_path = DIST_DIR / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(DIST_DIR / "index.html")
+else:
+    @app.get("/", tags=["Root"])
+    async def root():
+        """Root endpoint with API info"""
+        return {
+            "name": "Eureka CMMS API",
+            "version": "1.0.0",
+            "docs": "/docs",
+            "health": "/api/health",
+        }
 
 
 if __name__ == "__main__":
