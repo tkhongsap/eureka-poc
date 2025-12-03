@@ -158,6 +158,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
     if (files) {
       const maxImages = 10;
       const maxVideoSize = 10 * 1024 * 1024; // 10 MB in bytes
+      const maxImageSize = 5 * 1024 * 1024; // 5 MB for images
       
       // Check if adding these files would exceed the limit
       if (tempImages.length + files.length > maxImages) {
@@ -171,6 +172,21 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
         // Check video file size
         if (file.type.startsWith('video/') && file.size > maxVideoSize) {
           alert(`Video "${file.name}" is too large. Maximum video size is 10 MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+          continue;
+        }
+        
+        // Check image file size
+        if (file.type.startsWith('image/') && file.size > maxImageSize) {
+          // Try to compress image for mobile
+          compressImage(file).then(compressedFile => {
+            const preview = URL.createObjectURL(compressedFile);
+            setTempImages(prev => {
+              if (prev.length >= maxImages) return prev;
+              return [...prev, { file: compressedFile, preview, name: file.name }];
+            });
+          }).catch(() => {
+            alert(`Image "${file.name}" is too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Please use a smaller image.`);
+          });
           continue;
         }
         
@@ -189,6 +205,50 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
         });
       }
     }
+    // Reset input to allow selecting same file again
+    e.target.value = '';
+  };
+
+  // Compress image for mobile uploads
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxWidth = 1920;
+        const maxHeight = 1080;
+        let { width, height } = img;
+
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width *= ratio;
+          height *= ratio;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Cannot get canvas context'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+            } else {
+              reject(new Error('Compression failed'));
+            }
+          },
+          'image/jpeg',
+          0.8
+        );
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
   };
 
   const removeImage = (index: number) => {
@@ -204,8 +264,13 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
       // Upload images to backend and get IDs
       const savedImageIds: string[] = [];
       for (const img of tempImages) {
-        const uploadedImage = await uploadImage(img.file);
-        savedImageIds.push(uploadedImage.id);
+        try {
+          const uploadedImage = await uploadImage(img.file);
+          savedImageIds.push(uploadedImage.id);
+        } catch (uploadError) {
+          console.error('Failed to upload image:', img.name, uploadError);
+          // Continue with other images instead of failing completely
+        }
       }
 
       const priorityValue = priority.split(' - ')[0];
@@ -424,36 +489,36 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-2">{t('request.photosVideos')}</label>
+                        <span className="block text-sm font-medium text-stone-700 mb-2">{t('request.photosVideos')}</span>
                         <input
                           type="file"
+                          id="file-upload-input"
                           ref={fileInputRef}
                           onChange={handleImageUpload}
                           accept="image/*,video/*"
                           multiple
                           title={t('request.uploadPhotos')}
                           aria-label={t('request.uploadPhotos')}
-                          className="hidden"
+                          className="sr-only"
                         />
                         {/* Combined Dropzone + Preview Area */}
-                        <div
-                          onClick={!tempImages.length ? () => fileInputRef.current?.click() : undefined}
-                          className={`relative border-2 border-dashed border-stone-300 rounded-2xl p-4 md:p-6 transition-colors duration-200 ${
-                            tempImages.length ? 'cursor-default' : 'cursor-pointer hover:bg-stone-50 text-center group'
-                          }`}
-                          title={tempImages.length ? undefined : 'Click to upload or drag & drop'}
-                          aria-label={tempImages.length ? 'Uploaded files area' : 'Click to upload or drag & drop'}
-                        >
-                          {tempImages.length === 0 ? (
-                            <>
+                        {tempImages.length === 0 ? (
+                          <label
+                            htmlFor="file-upload-input"
+                            className="relative block border-2 border-dashed border-stone-300 rounded-2xl p-4 md:p-6 transition-colors duration-200 cursor-pointer hover:bg-stone-50 active:bg-stone-100 text-center group touch-manipulation"
+                            style={{ WebkitTapHighlightColor: 'transparent' }}
+                          >
                               <div className="w-12 h-12 bg-stone-100 text-stone-400 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-50 group-hover:text-teal-500 transition-colors duration-200">
                                 <Camera size={24} />
                               </div>
                               <p className="text-sm text-stone-600 font-medium">{t('request.uploadPrompt')}</p>
                               <p className="text-xs text-stone-400 mt-1">{t('request.uploadHint')}</p>
-                            </>
-                          ) : (
-                            <>
+                          </label>
+                        ) : (
+                        <div
+                          className="relative border-2 border-dashed border-stone-300 rounded-2xl p-4 md:p-6 transition-colors duration-200 cursor-default"
+                          aria-label="Uploaded files area"
+                        >
                               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-64 overflow-auto pr-2">
                                 {tempImages.map((img, idx) => (
                                   <div key={idx} className="relative group">
@@ -467,31 +532,25 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                                       onClick={() => removeImage(idx)}
                                       title={t('request.removeImage')}
                                       aria-label={t('request.removeImage')}
-                                      className="absolute top-1 right-1 z-10 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md ring-2 ring-white"
+                                      className="absolute top-1 right-1 z-10 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-md ring-2 ring-white"
                                     >
                                       <X size={12} />
                                     </button>
                                   </div>
                                 ))}
                               </div>
-
-                              {/* Bottom-right Upload Button when images exist */}
-                                {/* Removed the absolute button */}
-                            </>
-                          )}
                         </div>
+                        )}
                           {tempImages.length > 0 && (
                             <div className="flex justify-end mt-2">
-                              <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                title={t('request.addMoreFiles')}
-                                aria-label={t('request.addMoreFiles')}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg shadow-sm"
+                              <label
+                                htmlFor="file-upload-input"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-sm font-medium rounded-lg shadow-sm cursor-pointer touch-manipulation"
+                                style={{ WebkitTapHighlightColor: 'transparent' }}
                               >
                                 <Camera size={16} />
                                 {t('request.addMore')}
-                              </button>
+                              </label>
                             </div>
                           )}
                     </div>
