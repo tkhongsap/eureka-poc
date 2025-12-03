@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Navigation, X, Search, Crosshair, Check, Loader2 } from 'lucide-react';
+import { useLanguage } from '../lib/i18n';
 
 // Leaflet imports
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
@@ -60,6 +61,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { t } = useLanguage();
   // Default to Bangkok, Thailand
   const defaultLat = 13.7563;
   const defaultLng = 100.5018;
@@ -219,7 +221,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="Search location..."
+                placeholder={t('gps.searchLocation')}
                 className="w-full pl-10 pr-4 py-2.5 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-base"
               />
             </div>
@@ -228,12 +230,12 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
               disabled={isSearching}
               className="px-3 sm:px-4 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:bg-stone-300 text-white font-medium rounded-xl transition-colors"
             >
-              {isSearching ? '...' : 'Search'}
+              {isSearching ? '...' : t('gps.search')}
             </button>
             <button
               onClick={handleGetCurrentLocation}
               className="px-3 py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl transition-colors"
-              title="Use current location"
+              title={t('gps.useCurrentLocation')}
             >
               <Crosshair size={20} />
             </button>
@@ -335,6 +337,7 @@ export const InlineLocationPicker: React.FC<{
   onLocationSelect: (location: LocationData | null) => void;
   selectedLocation: LocationData | null;
 }> = ({ onLocationSelect, selectedLocation }) => {
+  const { t } = useLanguage();
   // Default to Bangkok, Thailand
   const defaultLat = 13.7563;
   const defaultLng = 100.5018;
@@ -525,7 +528,7 @@ export const InlineLocationPicker: React.FC<{
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Search location..."
+              placeholder={t('gps.searchLocation')}
               className="w-full pl-9 pr-3 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"
             />
           </div>
@@ -535,14 +538,14 @@ export const InlineLocationPicker: React.FC<{
             disabled={isSearching}
             className="px-3 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-stone-300 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            {isSearching ? '...' : 'Search'}
+            {isSearching ? '...' : t('gps.search')}
           </button>
           <button
             type="button"
             onClick={handleGetCurrentLocation}
             disabled={isGettingLocation}
             className="px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white rounded-lg transition-colors flex items-center gap-1"
-            title="Use current location (GPS)"
+            title={t('gps.useCurrentLocation')}
           >
             {isGettingLocation ? (
               <Loader2 size={18} className="animate-spin" />
@@ -572,7 +575,7 @@ export const InlineLocationPicker: React.FC<{
         {/* Loading overlay */}
         {isLoadingAddress && (
           <div className="absolute bottom-2 left-2 bg-white px-2 py-1 rounded text-xs text-stone-600 z-10 shadow">
-            Loading...
+            {t('gps.loading')}
           </div>
         )}
 
@@ -581,7 +584,7 @@ export const InlineLocationPicker: React.FC<{
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-10">
             <div className="bg-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2">
               <Loader2 size={20} className="animate-spin text-blue-500" />
-              <span className="text-sm text-stone-700">Getting GPS location...</span>
+              <span className="text-sm text-stone-700">{t('gps.gettingGps')}</span>
             </div>
           </div>
         )}
@@ -590,7 +593,7 @@ export const InlineLocationPicker: React.FC<{
         {!hasSelected && !isGettingLocation && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/10 z-10 pointer-events-none">
             <div className="bg-white/95 px-4 py-2 rounded-lg shadow text-sm text-stone-600">
-              👆 Click on the map or use GPS button
+              👆 {t('gps.clickMapOrGps')}
             </div>
           </div>
         )}
@@ -609,7 +612,7 @@ export const InlineLocationPicker: React.FC<{
                 {selectedLat.toFixed(6)}, {selectedLng.toFixed(6)}
               </p>
               <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
-                <Check size={12} /> ตำแหน่งถูกบันทึกแล้ว (Auto-saved)
+                <Check size={12} /> {t('gps.locationSaved')}
               </p>
             </div>
             <div className="flex gap-2 flex-shrink-0">
@@ -618,7 +621,7 @@ export const InlineLocationPicker: React.FC<{
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-1.5 bg-teal-100 hover:bg-teal-200 text-teal-600 rounded-lg transition-colors"
-                title="Navigate in Google Maps"
+                title={t('gps.viewInMaps')}
               >
                 <Navigation size={16} />
               </a>
