@@ -200,7 +200,7 @@ const LoginPage: React.FC = () => {
               </button>
             </form>
 
-            {/* Demo Credentials */}
+            {/* Demo Credentials - Hidden but kept for reference
             <div className="mt-6 pt-6 border-t border-stone-100">
               <p className="text-xs text-stone-500 text-center mb-3 font-semibold uppercase tracking-wide">{t('login.demoCredentials')}</p>
               <div className="space-y-2 text-xs text-stone-600">
@@ -222,6 +222,7 @@ const LoginPage: React.FC = () => {
                 </div>
               </div>
             </div>
+            */}
           </div>
 
           {/* Footer */}
