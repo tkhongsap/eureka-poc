@@ -11,7 +11,7 @@ import TeamSchedule from './components/TeamSchedule';
 import NotificationCenter from './components/NotificationCenter';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
-import { UserCircle2, ShieldCheck, HardHat, ClipboardList, Crown } from 'lucide-react';
+import { UserCircle2 } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
 import { listWorkOrders, createWorkOrder, WorkOrderItem, setUserContext, getNotifications, checkAndCreateReminders } from './services/apiService';
 import { filterNotificationsForUser } from './services/notificationService';
@@ -476,7 +476,10 @@ const App: React.FC = () => {
              >
                {t('nav.logout')}
              </button>
-             <PersonaSwitcher currentUser={currentUser} onSwitch={setCurrentUser} dropdownPosition="bottom" />
+             <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full">
+               <UserCircle2 size={20} />
+               <span className="text-sm font-medium">{currentUser.name}</span>
+             </div>
            </div>
         </header>
         <main className="flex-1 overflow-y-auto">
@@ -516,51 +519,5 @@ const App: React.FC = () => {
   );
 };
 
-const PersonaSwitcher: React.FC<{ currentUser: User, onSwitch: (u: User) => void, dropdownPosition?: 'top' | 'bottom' }> = ({ currentUser, onSwitch, dropdownPosition = 'top' }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const handleUserSwitch = (user: User) => {
-    onSwitch(user);
-    setUserContext(user.userRole, user.name);
-    setIsOpen(false);
-  };
-
-  return (
-    <div className="relative">
-      {isOpen && (
-         <div className={`absolute ${dropdownPosition === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'} right-0 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-fade-in-up z-50`}>
-            <div className="p-3 bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase">
-              Switch Role
-            </div>
-            <div className="p-1 max-h-80 overflow-y-auto">
-              {ALL_USERS.map((u) => (
-                <button
-                  key={u.id}
-                  onClick={() => handleUserSwitch(u)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${currentUser.id === u.id ? 'bg-brand-50 text-brand-700' : 'hover:bg-slate-50 text-slate-700'}`}
-                >
-                  <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-100 text-purple-600' : u.userRole === 'Head Technician' ? 'bg-amber-100 text-amber-600' : u.userRole === 'Technician' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
-                    {u.userRole === 'Admin' ? <ShieldCheck size={16} /> : u.userRole === 'Head Technician' ? <Crown size={16} /> : u.userRole === 'Technician' ? <HardHat size={16} /> : <ClipboardList size={16} />}
-                  </div>
-                  <div>
-                    <div className="font-bold text-sm">{u.name}</div>
-                    <div className="text-xs opacity-70">{u.userRole} {u.role !== u.userRole ? `• ${u.role}` : ''}</div>
-                  </div>
-                  {currentUser.id === u.id && <div className="ml-auto w-2 h-2 rounded-full bg-brand-600"></div>}
-                </button>
-              ))}
-            </div>
-         </div>
-      )}
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 bg-slate-900 text-white px-4 py-3 rounded-full shadow-lg hover:bg-slate-800 transition-all hover:scale-105"
-      >
-        <UserCircle2 size={20} />
-        <span className="text-sm font-medium pr-1">{currentUser.name} ({currentUser.userRole})</span>
-      </button>
-    </div>
-  );
-}
 
 export default App;

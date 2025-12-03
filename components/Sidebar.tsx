@@ -8,11 +8,7 @@ import {
   Settings, 
   BarChart3,
   LogOut,
-  Package,
-  ShieldCheck,
-  HardHat,
-  ClipboardList,
-  Crown
+  Package
 } from 'lucide-react';
 import { UserRole, User } from '../types';
 import { useLanguage } from '../lib/i18n';
@@ -70,24 +66,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
       </nav>
 
       <div className="p-4 border-t border-stone-700">
-        {/* Role Display */}
-        <div className="mb-2 px-4 py-3 rounded-xl bg-stone-800/50">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-full ${currentUser.userRole === 'Admin' ? 'bg-purple-500/20 text-purple-400' : currentUser.userRole === 'Head Technician' ? 'bg-amber-500/20 text-amber-400' : currentUser.userRole === 'Technician' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
-              {currentUser.userRole === 'Admin' ? <ShieldCheck size={16} /> : currentUser.userRole === 'Head Technician' ? <Crown size={16} /> : currentUser.userRole === 'Technician' ? <HardHat size={16} /> : <ClipboardList size={16} />}
-            </div>
-            <div>
-              <div className="text-xs text-stone-500">{t('sidebar.role')}</div>
-              <div className="font-medium text-sm text-stone-200">{
-                currentUser.userRole === 'Admin' ? t('login.admin') :
-                currentUser.userRole === 'Head Technician' ? t('login.headTechnician') :
-                currentUser.userRole === 'Technician' ? t('login.technician') :
-                t('login.requester')
-              }</div>
-            </div>
-          </div>
-        </div>
-
         {/* Sign Out Button */}
         <button onClick={onLogout} className="flex items-center space-x-3 text-stone-400 hover:text-red-400 hover:bg-stone-800 w-full px-4 py-3 rounded-xl transition-all duration-200">
           <LogOut size={20} />
