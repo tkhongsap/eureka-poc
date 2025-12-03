@@ -319,7 +319,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                     onChange={(e) => setEditDescription(e.target.value)}
                     rows={6}
                     className="w-full text-stone-600 leading-relaxed bg-white p-4 rounded-xl border-2 border-teal-300 focus:border-teal-500 outline-none transition-all duration-200 resize-none"
-                    placeholder="Describe the issue in detail..."
+                    placeholder={t('request.descriptionPlaceholder')}
                   />
                 ) : (
                   <p className="text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100">
@@ -346,17 +346,17 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                       <select
                         value={editPriority}
                         onChange={(e) => setEditPriority(e.target.value as Priority)}
-                        title="Select priority level"
+                        title={t('workOrders.selectPriority')}
                         className="text-sm font-bold px-3 py-1.5 rounded-lg border-2 border-teal-300 focus:border-teal-500 outline-none bg-white transition-all duration-200"
                       >
-                        <option value={Priority.LOW}>Low</option>
-                        <option value={Priority.MEDIUM}>Medium</option>
-                        <option value={Priority.HIGH}>High</option>
-                        <option value={Priority.CRITICAL}>Critical</option>
+                        <option value={Priority.LOW}>{t('priority.low')}</option>
+                        <option value={Priority.MEDIUM}>{t('priority.medium')}</option>
+                        <option value={Priority.HIGH}>{t('priority.high')}</option>
+                        <option value={Priority.CRITICAL}>{t('priority.critical')}</option>
                       </select>
                     ) : (
                       <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${priorityColors[selectedWO.priority]}`}>
-                        {selectedWO.priority}
+                        {t(`priority.${selectedWO.priority.toLowerCase()}` as any)}
                       </span>
                     )}
                   </div>

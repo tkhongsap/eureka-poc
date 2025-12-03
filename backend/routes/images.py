@@ -1,16 +1,16 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
-from fastapi.responses import JSONResponse
-from typing import List
-from datetime import datetime
-from sqlalchemy.orm import Session
+import base64
 import os
 import uuid
-import aiofiles
-import base64
+from datetime import datetime
+from typing import List
 
-from models import ImageInfo
-from database import get_db
-from db_models import Image as ImageModel
+from db import get_db
+from db.models import Image as ImageModel
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
+from schemas import ImageInfo
+from sqlalchemy.orm import Session
+
 from utils import PICTURES_DIR
 
 router = APIRouter(prefix="/api/images", tags=["Images"])
@@ -25,20 +25,17 @@ async def upload_image(file: UploadFile = File(...), db: Session = Depends(get_d
 
     # Read file content and convert to base64
     content = await file.read()
-    b64 = base64.b64encode(content).decode('utf-8')
-    
+    b64 = base64.b64encode(content).decode("utf-8")
+
     new_image = ImageModel(
-        id=image_id,
-        original_name=file.filename,
-        filename=filename,
-        base64_data=b64
+        id=image_id, original_name=file.filename, filename=filename, base64_data=b64
     )
-    
+
     db.add(new_image)
     db.commit()
     db.refresh(new_image)
-    
-    return new_image.to_dict()
+
+    return ImageInfo.model_validate(new_image)
 
 
 @router.post("/upload-base64", response_model=ImageInfo)
@@ -47,8 +44,10 @@ async def upload_image_base64(payload: dict, db: Session = Depends(get_db)):
     original_name = payload.get("originalName")
     base64_data = payload.get("base64Data")
     if not original_name or not base64_data:
-        raise HTTPException(status_code=400, detail="originalName and base64Data are required")
-    
+        raise HTTPException(
+            status_code=400, detail="originalName and base64Data are required"
+        )
+
     image_id = f"IMG-{int(datetime.now().timestamp() * 1000)}-{uuid.uuid4().hex[:8]}"
     ext = os.path.splitext(original_name)[1] or ".jpg"
     filename = f"{image_id}{ext}"
@@ -63,47 +62,50 @@ async def upload_image_base64(payload: dict, db: Session = Depends(get_db)):
         id=image_id,
         original_name=original_name,
         filename=filename,
-        base64_data=base64_data
+        base64_data=base64_data,
     )
 
     db.add(new_image)
     db.commit()
     db.refresh(new_image)
 
-    return new_image.to_dict()
+    return ImageInfo.model_validate(new_image)
 
 
 @router.get("/{image_id}")
 async def get_image(image_id: str, db: Session = Depends(get_db)):
     """Get image base64 by ID"""
     image = db.query(ImageModel).filter(ImageModel.id == image_id).first()
-    
+
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
-    
-    return JSONResponse(content=image.to_dict())
+
+    image_info = ImageInfo.model_validate(image).model_dump()
+    image_info["createdAt"] = image_info["createdAt"].isoformat()
+
+    return JSONResponse(content=image_info)
 
 
 @router.get("", response_model=List[ImageInfo])
 async def list_images(db: Session = Depends(get_db)):
     """List all images"""
     images = db.query(ImageModel).order_by(ImageModel.created_at.desc()).all()
-    return [img.to_dict() for img in images]
+    return [ImageInfo.model_validate(img) for img in images]
 
 
 @router.delete("/{image_id}")
 async def delete_image(image_id: str, db: Session = Depends(get_db)):
     """Delete an image"""
     image = db.query(ImageModel).filter(ImageModel.id == image_id).first()
-    
+
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
-    
+
     filepath = os.path.join(PICTURES_DIR, image.filename)
     if os.path.exists(filepath):
         os.remove(filepath)
-    
+
     db.delete(image)
     db.commit()
-    
+
     return {"message": "Image deleted"}

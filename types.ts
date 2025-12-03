@@ -139,6 +139,8 @@ export interface Notification {
   workOrderId: string;
   workOrderTitle: string;
   message: string;
+  messageKey?: string; // i18n translation key
+  messageParams?: Record<string, string>; // Parameters for interpolation (title, date, reason, etc.)
   recipientRole: UserRole;
   recipientName?: string; // Specific user if applicable
   isRead: boolean;

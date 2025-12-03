@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar } from 'lucide-react';
+import { useLanguage } from '../lib/i18n';
 
 interface DateInputProps {
   value: string; // Expected format: YYYY-MM-DD
@@ -57,6 +58,7 @@ const DateInput: React.FC<DateInputProps> = ({
   showIcon = true,
   size = 'md',
 }) => {
+  const { t } = useLanguage();
   const [displayValue, setDisplayValue] = useState(formatToDisplay(value));
   const [isEditing, setIsEditing] = useState(false);
   const hiddenInputRef = useRef<HTMLInputElement>(null);
@@ -151,7 +153,7 @@ const DateInput: React.FC<DateInputProps> = ({
             onClick={handleCalendarClick}
             disabled={disabled}
             className="absolute left-3 text-stone-400 hover:text-stone-600 transition-colors cursor-pointer z-10"
-            title="Open calendar"
+            title={t('dateInput.openCalendar')}
           >
             <Calendar size={iconSizes[size]} />
           </button>
@@ -184,7 +186,7 @@ const DateInput: React.FC<DateInputProps> = ({
           onClick={handleCalendarClick}
           disabled={disabled}
           className="absolute right-2 text-stone-400 hover:text-stone-600 transition-colors cursor-pointer"
-          title="Open calendar"
+          title={t('dateInput.openCalendar')}
         >
           <Calendar size={iconSizes[size]} />
         </button>
@@ -195,6 +197,7 @@ const DateInput: React.FC<DateInputProps> = ({
 
 // Simple inline version for filter inputs (smaller)
 export const DateInputSmall: React.FC<Omit<DateInputProps, 'size' | 'showIcon'>> = (props) => {
+  const { t } = useLanguage();
   const [displayValue, setDisplayValue] = useState(formatToDisplay(props.value));
   const hiddenInputRef = useRef<HTMLInputElement>(null);
 
@@ -246,7 +249,7 @@ export const DateInputSmall: React.FC<Omit<DateInputProps, 'size' | 'showIcon'>>
         className="absolute opacity-0 w-0 h-0 pointer-events-none"
         tabIndex={-1}
         aria-hidden="true"
-        title="Date picker"
+        title={t('dateInput.datePicker')}
       />
       <input
         type="text"
@@ -267,7 +270,7 @@ export const DateInputSmall: React.FC<Omit<DateInputProps, 'size' | 'showIcon'>>
         onClick={handleCalendarClick}
         disabled={props.disabled}
         className="ml-0.5 text-stone-400 hover:text-stone-600 cursor-pointer"
-        title="Open calendar"
+        title={t('dateInput.openCalendar')}
       >
         <Calendar size={10} />
       </button>

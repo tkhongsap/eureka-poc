@@ -3,9 +3,15 @@ from typing import List
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 
-from models import RequestCreate, RequestItem, RequestUpdate, WorkOrderCreate, WorkOrder
-from database import get_db
-from db_models import Request as RequestModel
+from schemas import (
+    RequestCreate,
+    RequestItem,
+    RequestUpdate,
+    WorkOrderCreate,
+    WorkOrder,
+)
+from db import get_db
+from db.models import Request as RequestModel
 from utils import generate_id, get_current_datetime
 
 router = APIRouter(prefix="/api/requests", tags=["Requests"])
@@ -15,7 +21,7 @@ router = APIRouter(prefix="/api/requests", tags=["Requests"])
 async def create_request(request: RequestCreate, db: Session = Depends(get_db)):
     """Create a new maintenance request"""
     request_id = generate_id("REQ")
-    
+
     new_request = RequestModel(
         id=request_id,
         location=request.location,
@@ -26,42 +32,44 @@ async def create_request(request: RequestCreate, db: Session = Depends(get_db)):
         assigned_to=request.assignedTo,
         created_by=request.createdBy,
         location_data=request.locationData.dict() if request.locationData else None,
-        preferred_date=request.preferredDate
+        preferred_date=request.preferredDate,
     )
-    
+
     db.add(new_request)
     db.commit()
     db.refresh(new_request)
-    
-    return new_request.to_dict()
+
+    return RequestItem.model_validate(new_request)
 
 
 @router.get("", response_model=List[RequestItem])
 async def list_requests(db: Session = Depends(get_db)):
     """List all requests"""
     requests = db.query(RequestModel).order_by(RequestModel.created_at.desc()).all()
-    return [r.to_dict() for r in requests]
+    return [RequestItem.model_validate(r) for r in requests]
 
 
 @router.get("/{request_id}", response_model=RequestItem)
 async def get_request(request_id: str, db: Session = Depends(get_db)):
     """Get a specific request"""
     request = db.query(RequestModel).filter(RequestModel.id == request_id).first()
-    
+
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
-    
-    return request.to_dict()
+
+    return RequestItem.model_validate(request)
 
 
 @router.put("/{request_id}", response_model=RequestItem)
-async def update_request(request_id: str, updates: RequestUpdate, db: Session = Depends(get_db)):
+async def update_request(
+    request_id: str, updates: RequestUpdate, db: Session = Depends(get_db)
+):
     """Update request"""
     request = db.query(RequestModel).filter(RequestModel.id == request_id).first()
-    
+
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
-    
+
     if updates.status is not None:
         request.status = updates.status
     if updates.priority is not None:
@@ -70,22 +78,22 @@ async def update_request(request_id: str, updates: RequestUpdate, db: Session = 
         request.description = updates.description
     if updates.locationData is not None:
         request.location_data = updates.locationData.dict()
-    
+
     db.commit()
     db.refresh(request)
-    
-    return request.to_dict()
+
+    return RequestItem.model_validate(request)
 
 
 @router.delete("/{request_id}")
 async def delete_request(request_id: str, db: Session = Depends(get_db)):
     """Delete a request"""
     request = db.query(RequestModel).filter(RequestModel.id == request_id).first()
-    
+
     if request:
         db.delete(request)
         db.commit()
-    
+
     return {"message": "Request deleted"}
 
 
@@ -93,12 +101,12 @@ async def delete_request(request_id: str, db: Session = Depends(get_db)):
 async def convert_request_to_workorder(request_id: str, db: Session = Depends(get_db)):
     """Convert a request to a work order"""
     from routes.workorders import create_workorder_internal
-    
+
     request = db.query(RequestModel).filter(RequestModel.id == request_id).first()
-    
+
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
-    
+
     # Calculate dueDate: if preferredDate exists, set dueDate to 7 days after preferredDate
     # Otherwise use current date
     if request.preferred_date:
@@ -106,13 +114,14 @@ async def convert_request_to_workorder(request_id: str, db: Session = Depends(ge
         due_date = (preferred + timedelta(days=7)).strftime("%Y-%m-%d")
     else:
         due_date = get_current_datetime().split("T")[0]
-    
+
     # Parse location_data if it exists
     location_data = None
     if request.location_data:
-        from models.request import LocationData
+        from schemas.request import LocationData
+
         location_data = LocationData(**request.location_data)
-    
+
     wo_data = WorkOrderCreate(
         title=f"{request.description[:50]}{'...' if len(request.description) > 50 else ''}",
         description=request.description,
@@ -123,12 +132,12 @@ async def convert_request_to_workorder(request_id: str, db: Session = Depends(ge
         imageIds=request.image_ids or [],
         requestId=request_id,
         locationData=location_data,
-        preferredDate=request.preferred_date
+        preferredDate=request.preferred_date,
     )
-    
+
     new_wo = await create_workorder_internal(wo_data, db)
-    
+
     request.status = "Converted to WO"
     db.commit()
-    
+
     return new_wo
