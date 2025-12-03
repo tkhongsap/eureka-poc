@@ -1384,8 +1384,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       value={adminAssignedTo}
                       onChange={(e) => setAdminAssignedTo(e.target.value)}
                       className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-stone-50"
-                      title={t('workOrders.selectTechnicianToAssign')}
-                      aria-label={t('workOrders.selectTechnicianToAssign')}
+                      title="Select technician"
+                      aria-label="Select technician"
                     >
                       <option value="">{t('workOrders.selectTechnicianPlaceholder')}</option>
                       {TECHNICIANS.map(t => (
@@ -1544,10 +1544,10 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
               {/* Spare Parts Usage Section */}
               <div>
-                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
                       <Package size={16} className="text-teal-600" /> {t('workOrders.spareParts')}
-                  </h3>
-                  <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-4">
+                    </h3>
+                    <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-4">
                       {/* List Used Parts */}
                       {(selectedWO.partsUsed && selectedWO.partsUsed.length > 0) ? (
                           <div className="space-y-2 mb-4">
@@ -1561,8 +1561,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                           <span className="font-bold text-stone-700">${part.cost * part.quantity}</span>
                                           <button
                                             onClick={() => removePartFromWo(idx)}
-                                            title={t('workOrders.removePart')}
-                                            aria-label={t('workOrders.removePart')}
+                                            title="Remove part"
+                                            aria-label="Remove part"
                                             className="text-red-400 hover:text-red-600 p-1 transition-colors"
                                           >
                                               <Trash2 size={16} />
@@ -1578,14 +1578,15 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                               </div>
                           </div>
                       ) : (
-                          <div className="text-center py-4 text-stone-400 text-sm mb-4">{t('workOrders.noPartsConsumed')}</div>
+                        <div className="text-center py-4 text-stone-400 text-sm mb-4">{t('workOrders.noPartsConsumed')}</div>
                       )}
 
-                      {/* Add Part Dropdown */}
+                      {/* Add Part Dropdown - hide for Admin when status is Completed */}
+                      {!(currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED) && (
                       <div className="flex gap-2">
                           <select
-                            title={t('workOrders.addPartFromInventory')}
-                            aria-label={t('workOrders.addPartFromInventory')}
+                            title="Add part from inventory"
+                            aria-label="Add part from inventory"
                             className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white transition-all duration-200"
                             onChange={(e) => {
                                 addPartToWo(e.target.value);
@@ -1598,7 +1599,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                               ))}
                           </select>
                       </div>
-                  </div>
+                      )}
+                    </div>
               </div>
 
               {/* Checklist Section */}
@@ -1642,18 +1644,15 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                {(() => {
                  // Technician inline submit button is now in the update section
                  // Only show footer buttons for Admin/Requester with edit permissions
-                 
                  if (!selectedWOPermissions?.canEdit) {
                    return null;
                  }
-
                  // Technicians: no footer button needed (submit is in inline section)
                  if (currentUser?.userRole === 'Technician') {
                    return null;
                  }
-
                  // Admin actions
-                 if (currentUser?.userRole === 'Admin') {
+                 if (currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician') {
                    if (selectedWO?.status === Status.OPEN) {
                      return (
                        <button
@@ -1676,17 +1675,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                        </button>
                      );
                    }
-                   if (selectedWO?.status === Status.PENDING) {
-                     return (
-                       <button
-                         onClick={handleAdminApprove}
-                         className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
-                       >
-                         <span>{t('workOrders.saveAndUpdate')}</span>
-                         <ArrowRight size={16} />
-                       </button>
-                     );
-                   }
+                   // Removed Save & Update button for Pending status
                  }
                  return null;
                })()}

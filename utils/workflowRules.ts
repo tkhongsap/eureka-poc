@@ -19,7 +19,7 @@ export const STATUS_TRANSITIONS: WorkOrderStatusTransition[] = [
   { from: Status.OPEN, to: Status.OPEN, allowedRoles: ['Requester', 'Admin'] },
   
   // Admin assigns technician (Open → In Progress)
-  { from: Status.OPEN, to: Status.IN_PROGRESS, allowedRoles: ['Admin'] },
+  { from: Status.OPEN, to: Status.IN_PROGRESS, allowedRoles: ['Admin', 'Head Technician'] },
   
   // Technician completes work (In Progress → Pending)
   // Allow Admin to move as well
@@ -98,11 +98,11 @@ export function getWorkOrderPermissions(
     permissions.canDelete = status === Status.OPEN; // Can only delete Open work orders
   }
 
-  // Head Technician can review (approve/reject) pending work orders
+  // Head Technician can review Pending and assign/edit on Open and In Progress
   if (userRole === 'Head Technician') {
-    permissions.canEdit = status === Status.PENDING;
-    permissions.canChangeStatus = status === Status.PENDING;
-    permissions.canAssign = false;
+    permissions.canEdit = [Status.OPEN, Status.IN_PROGRESS, Status.PENDING].includes(status);
+    permissions.canChangeStatus = [Status.OPEN, Status.PENDING].includes(status);
+    permissions.canAssign = true;
     permissions.canDelete = false;
   }
 
