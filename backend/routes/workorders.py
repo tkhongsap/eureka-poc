@@ -135,10 +135,17 @@ async def update_workorder(
     )
     
     if not permissions.can_edit:
-        raise HTTPException(
-            status_code=403,
-            detail=f"User with role '{user_role}' cannot edit work order with status '{wo.status}'"
+        # Special case: Head Technician can edit any field except status while status is Open
+        special_headtech_edit = (
+            user_role == "Head Technician" and
+            wo.status == "Open" and
+            ("status" not in update_data)
         )
+        if not special_headtech_edit:
+            raise HTTPException(
+                status_code=403,
+                detail=f"User with role '{user_role}' cannot edit work order with status '{wo.status}'"
+            )
     
     field_mapping = {
         "title": "title",

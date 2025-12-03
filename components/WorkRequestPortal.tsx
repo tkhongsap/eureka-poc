@@ -90,7 +90,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
 
   // Check if current user can assign technicians
-  const canAssign = currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Technician';
+  const canAssign = currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Technician' || currentUser?.userRole === 'Head Technician';
   const isRequester = currentUser?.userRole === 'Requester';
   const canSetPreferredDate = currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician';
 
@@ -385,7 +385,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                         </label>
                         <div className="relative">
                           <UserCheck className="absolute left-3.5 top-3.5 text-stone-400" size={18} />
-                          {currentUser?.userRole === 'Admin' ? (
+                          {(currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician') ? (
                             <select
                               value={assignedTo}
                               onChange={(e) => setAssignedTo(e.target.value)}

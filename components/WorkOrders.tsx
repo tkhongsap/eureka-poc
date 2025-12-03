@@ -1376,33 +1376,35 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               )}
 
               {/* Admin Assignment Block (appears before AI Assistant) */}
-              {currentUser?.userRole === 'Admin' && (
-                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
-                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <UserPlus size={16} className="text-purple-600" /> {t('workOrders.assign')}
-                  </h3>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <select
-                      value={adminAssignedTo}
-                      onChange={(e) => setAdminAssignedTo(e.target.value)}
-                      className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-stone-50"
-                      title="Select technician"
-                      aria-label="Select technician"
-                    >
-                      <option value="">{t('workOrders.selectTechnicianPlaceholder')}</option>
-                      {TECHNICIANS.map(t => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
+              {(currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician') && 
+                // Hide Assign Technician section for Admin when status is Completed
+                !(currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED) && (
+                  <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                    <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <UserPlus size={16} className="text-purple-600" /> {t('workOrders.assign')}
+                    </h3>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <select
+                        value={adminAssignedTo}
+                        onChange={(e) => setAdminAssignedTo(e.target.value)}
+                        className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-stone-50"
+                        title="Select technician"
+                        aria-label="Select technician"
+                      >
+                        <option value="">{t('workOrders.selectTechnicianPlaceholder')}</option>
+                        {TECHNICIANS.map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {selectedWO.status === Status.OPEN && (
+                      <p className="mt-2 text-xs text-stone-500">{t('workOrders.savingWillMove')}</p>
+                    )}
+                    {selectedWO.status === Status.IN_PROGRESS && (
+                      <p className="mt-2 text-xs text-stone-500">{t('workOrders.savingWillKeep')}</p>
+                    )}
                   </div>
-                  {selectedWO.status === Status.OPEN && (
-                    <p className="mt-2 text-xs text-stone-500">{t('workOrders.savingWillMove')}</p>
-                  )}
-                  {selectedWO.status === Status.IN_PROGRESS && (
-                    <p className="mt-2 text-xs text-stone-500">{t('workOrders.savingWillKeep')}</p>
-                  )}
-                </div>
-              )}
+                )}
 
               {/* Original Request Images */}
               {selectedWOImages.length > 0 && (
@@ -1546,61 +1548,66 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
               {/* Spare Parts Usage Section */}
               <div>
-                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
                       <Package size={16} className="text-teal-600" /> {t('workOrders.spareParts')}
-                  </h3>
-                  <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-4">
+                    </h3>
+                    <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-4">
                       {/* List Used Parts */}
                       {(selectedWO.partsUsed && selectedWO.partsUsed.length > 0) ? (
-                          <div className="space-y-2 mb-4">
-                              {selectedWO.partsUsed.map((part, idx) => (
-                                  <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-xl border border-stone-200">
-                                      <div>
-                                          <div className="font-medium text-sm text-stone-800">{part.name}</div>
-                                          <div className="text-xs text-stone-500">Qty: {part.quantity} • ${part.cost}/unit</div>
-                                      </div>
-                                      <div className="flex items-center gap-4">
-                                          <span className="font-bold text-stone-700">${part.cost * part.quantity}</span>
-                                          <button
-                                            onClick={() => removePartFromWo(idx)}
-                                            title="Remove part"
-                                            aria-label="Remove part"
-                                            className="text-red-400 hover:text-red-600 p-1 transition-colors"
-                                          >
-                                              <Trash2 size={16} />
-                                          </button>
-                                      </div>
-                                  </div>
-                              ))}
-                              <div className="flex justify-between items-center pt-2 border-t border-stone-200 px-2">
-                                  <span className="text-sm font-medium text-stone-600">{t('workOrders.totalCostLabel')}</span>
-                                  <span className="text-lg font-bold text-stone-900">
-                                      ${selectedWO.partsUsed.reduce((acc, p) => acc + (p.cost * p.quantity), 0).toFixed(2)}
-                                  </span>
+                        <div className="space-y-2 mb-4">
+                          {selectedWO.partsUsed.map((part, idx) => (
+                            <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-xl border border-stone-200">
+                              <div>
+                                <div className="font-medium text-sm text-stone-800">{part.name}</div>
+                                <div className="text-xs text-stone-500">Qty: {part.quantity} • ${part.cost}/unit</div>
                               </div>
+                              <div className="flex items-center gap-4">
+                                <span className="font-bold text-stone-700">${part.cost * part.quantity}</span>
+                                {/* Disable remove button for Admin when status is Completed */}
+                                {!(currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED) && (
+                                <button
+                                  onClick={() => removePartFromWo(idx)}
+                                  title="Remove part"
+                                  aria-label="Remove part"
+                                  className="text-red-400 hover:text-red-600 p-1 transition-colors"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          <div className="flex justify-between items-center pt-2 border-t border-stone-200 px-2">
+                            <span className="text-sm font-medium text-stone-600">{t('workOrders.totalCostLabel')}</span>
+                            <span className="text-lg font-bold text-stone-900">
+                              ${selectedWO.partsUsed.reduce((acc, p) => acc + (p.cost * p.quantity), 0).toFixed(2)}
+                            </span>
                           </div>
+                        </div>
                       ) : (
-                          <div className="text-center py-4 text-stone-400 text-sm mb-4">{t('workOrders.noPartsConsumed')}</div>
+                        <div className="text-center py-4 text-stone-400 text-sm mb-4">{t('workOrders.noPartsConsumed')}</div>
                       )}
 
-                      {/* Add Part Dropdown */}
+                      {/* Add Part Dropdown - hide for Admin when status is Completed */}
+                      {!(currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED) && (
                       <div className="flex gap-2">
-                          <select
-                            title="Add part from inventory"
-                            aria-label="Add part from inventory"
-                            className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white transition-all duration-200"
-                            onChange={(e) => {
-                                addPartToWo(e.target.value);
-                                e.target.value = ''; // Reset
-                            }}
-                          >
-                              <option value="">{t('workOrders.addPartPlaceholder')}</option>
-                              {AVAILABLE_PARTS.map(p => (
-                                  <option key={p.id} value={p.id}>{p.name} (${p.cost})</option>
-                              ))}
-                          </select>
+                        <select
+                          title="Add part from inventory"
+                          aria-label="Add part from inventory"
+                          className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white transition-all duration-200"
+                          onChange={(e) => {
+                            addPartToWo(e.target.value);
+                            e.target.value = ''; // Reset
+                          }}
+                        >
+                          <option value="">{t('workOrders.addPartPlaceholder')}</option>
+                          {AVAILABLE_PARTS.map(p => (
+                            <option key={p.id} value={p.id}>{p.name} (${p.cost})</option>
+                          ))}
+                        </select>
                       </div>
-                  </div>
+                      )}
+                    </div>
               </div>
 
               {/* Checklist Section */}
@@ -1644,18 +1651,15 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                {(() => {
                  // Technician inline submit button is now in the update section
                  // Only show footer buttons for Admin/Requester with edit permissions
-                 
                  if (!selectedWOPermissions?.canEdit) {
                    return null;
                  }
-
                  // Technicians: no footer button needed (submit is in inline section)
                  if (currentUser?.userRole === 'Technician') {
                    return null;
                  }
-
                  // Admin actions
-                 if (currentUser?.userRole === 'Admin') {
+                 if (currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician') {
                    if (selectedWO?.status === Status.OPEN) {
                      return (
                        <button
@@ -1678,17 +1682,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                        </button>
                      );
                    }
-                   if (selectedWO?.status === Status.PENDING) {
-                     return (
-                       <button
-                         onClick={handleAdminApprove}
-                         className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
-                       >
-                         <span>{t('workOrders.saveAndUpdate')}</span>
-                         <ArrowRight size={16} />
-                       </button>
-                     );
-                   }
+                   // Removed Save & Update button for Pending status
                  }
                  return null;
                })()}

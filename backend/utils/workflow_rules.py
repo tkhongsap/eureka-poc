@@ -37,7 +37,7 @@ STATUS_TRANSITIONS: Dict[Tuple[str, str], Set[str]] = {
     (Status.OPEN, Status.OPEN): {UserRole.REQUESTER, UserRole.ADMIN},
     
     # Admin assigns technician (Open → In Progress)
-    (Status.OPEN, Status.IN_PROGRESS): {UserRole.ADMIN},
+    (Status.OPEN, Status.IN_PROGRESS): {UserRole.ADMIN, UserRole.HEAD_TECHNICIAN},
     
     # Technician completes work (In Progress → Pending) — allow Admin to move as well
     (Status.IN_PROGRESS, Status.PENDING): {UserRole.TECHNICIAN, UserRole.ADMIN},
@@ -148,9 +148,10 @@ def get_work_order_permissions(
     
     # Head Technician can review (approve/reject) pending work orders
     elif user_role == UserRole.HEAD_TECHNICIAN.value:
-        permissions.can_edit = status == Status.PENDING
-        permissions.can_change_status = status == Status.PENDING
-        permissions.can_assign = False
+        # Head Technician can review pending and also assign like Admin
+        permissions.can_edit = status in (Status.OPEN, Status.IN_PROGRESS, Status.PENDING)
+        permissions.can_change_status = status in (Status.OPEN, Status.PENDING)
+        permissions.can_assign = True
         permissions.can_delete = False
     
     # Requester can edit only when status is Open
