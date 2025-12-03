@@ -1,0 +1,431 @@
+(index):64 cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation
+(anonymous) @ (index):64
+index-CRZQUvO1.js:635 Not logged in or no user, showing null. isLoggedIn: false currentUser: null
+login:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/workorders' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+eureka-poc-tcctlumpini001-8000.replit.app/api/workorders:1  Failed to load resource: net::ERR_FAILED
+index-CRZQUvO1.js:635 Failed to load work orders from API: TypeError: Failed to fetch
+    at G3 (index-CRZQUvO1.js:410:2175)
+    at index-CRZQUvO1.js:635:198096
+    at index-CRZQUvO1.js:635:198682
+    at qc (index-CRZQUvO1.js:48:93259)
+    at YS (index-CRZQUvO1.js:48:108563)
+    at _i (index-CRZQUvO1.js:48:108447)
+    at YS (index-CRZQUvO1.js:48:109329)
+    at _i (index-CRZQUvO1.js:48:108447)
+    at YS (index-CRZQUvO1.js:48:108543)
+    at _i (index-CRZQUvO1.js:48:108447)
+(anonymous) @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Not logged in or no user, showing null. isLoggedIn: false currentUser: null
+index-CRZQUvO1.js:635 Loading user from sessionStorage: Admin
+index-CRZQUvO1.js:635 User loaded: Object
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: dashboard
+index-CRZQUvO1.js:426 The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+Pm @ index-CRZQUvO1.js:426
+index-CRZQUvO1.js:426 The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+Pm @ index-CRZQUvO1.js:426
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: dashboard
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/workorders' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+eureka-poc-tcctlumpini001-8000.replit.app/api/workorders:1  Failed to load resource: net::ERR_FAILED
+index-CRZQUvO1.js:635 Failed to load work orders from API: TypeError: Failed to fetch
+    at G3 (index-CRZQUvO1.js:410:2175)
+    at index-CRZQUvO1.js:635:198096
+    at index-CRZQUvO1.js:635:198682
+    at qc (index-CRZQUvO1.js:48:93259)
+    at YS (index-CRZQUvO1.js:48:108563)
+    at _i (index-CRZQUvO1.js:48:108447)
+    at YS (index-CRZQUvO1.js:48:109329)
+    at _i (index-CRZQUvO1.js:48:108447)
+    at YS (index-CRZQUvO1.js:48:108543)
+    at _i (index-CRZQUvO1.js:48:108447)
+(anonymous) @ index-CRZQUvO1.js:635
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications/check-reminders' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+eureka-poc-tcctlumpini001-8000.replit.app/api/notifications/check-reminders:1  Failed to load resource: net::ERR_FAILED
+index-CRZQUvO1.js:635 Failed to check reminders: TypeError: Failed to fetch
+    at e4 (index-CRZQUvO1.js:410:4222)
+    at index-CRZQUvO1.js:635:199112
+    at index-CRZQUvO1.js:635:199177
+    at qc (index-CRZQUvO1.js:48:93259)
+    at YS (index-CRZQUvO1.js:48:108563)
+    at _i (index-CRZQUvO1.js:48:108447)
+    at YS (index-CRZQUvO1.js:48:109329)
+    at _i (index-CRZQUvO1.js:48:108447)
+    at YS (index-CRZQUvO1.js:48:108543)
+    at _i (index-CRZQUvO1.js:48:108447)
+(anonymous) @ index-CRZQUvO1.js:635
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/workorders' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+eureka-poc-tcctlumpini001-8000.replit.app/api/workorders:1  Failed to load resource: net::ERR_FAILED
+index-CRZQUvO1.js:635 Failed to load work orders from API: TypeError: Failed to fetch
+    at G3 (index-CRZQUvO1.js:410:2175)
+    at index-CRZQUvO1.js:635:198096
+    at index-CRZQUvO1.js:635:198682
+    at qc (index-CRZQUvO1.js:48:93259)
+    at YS (index-CRZQUvO1.js:48:108563)
+    at _i (index-CRZQUvO1.js:48:108447)
+    at YS (index-CRZQUvO1.js:48:109329)
+    at _i (index-CRZQUvO1.js:48:108447)
+    at YS (index-CRZQUvO1.js:48:108543)
+    at _i (index-CRZQUvO1.js:48:108447)
+(anonymous) @ index-CRZQUvO1.js:635
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+eureka-poc-tcctlumpini001-8000.replit.app/api/notifications:1  Failed to load resource: net::ERR_FAILED
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+    at index-CRZQUvO1.js:635:199172
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: dashboard
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: work-orders
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/requests' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+eureka-poc-tcctlumpini001-8000.replit.app/api/requests:1  Failed to load resource: net::ERR_FAILED
+index-CRZQUvO1.js:635 Failed to load requests from API: TypeError: Failed to fetch
+    at F3 (index-CRZQUvO1.js:410:1544)
+    at index-CRZQUvO1.js:635:160055
+    at index-CRZQUvO1.js:635:160428
+    at qc (index-CRZQUvO1.js:48:93259)
+    at YS (index-CRZQUvO1.js:48:108563)
+    at _i (index-CRZQUvO1.js:48:108447)
+    at YS (index-CRZQUvO1.js:48:109329)
+    at _i (index-CRZQUvO1.js:48:108447)
+    at YS (index-CRZQUvO1.js:48:109329)
+    at _i (index-CRZQUvO1.js:48:108447)
+(anonymous) @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Final accuracy: 1403.461210139764m after 3 attempts
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+eureka-poc-tcctlumpini001-8000.replit.app/api/notifications:1  Failed to load resource: net::ERR_FAILED
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/requests' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+eureka-poc-tcctlumpini001-8000.replit.app/api/requests:1  Failed to load resource: net::ERR_FAILED
+index-CRZQUvO1.js:635 Failed to submit request: TypeError: Failed to fetch
+    at H3 (index-CRZQUvO1.js:410:1340)
+    at me (index-CRZQUvO1.js:635:161509)
+    at E1 (index-CRZQUvO1.js:48:128192)
+    at index-CRZQUvO1.js:48:133471
+    at cc (index-CRZQUvO1.js:48:15145)
+    at Lv (index-CRZQUvO1.js:48:129428)
+    at Zv (index-CRZQUvO1.js:49:28830)
+    at cz (index-CRZQUvO1.js:49:28648)
+me @ index-CRZQUvO1.js:635
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+eureka-poc-tcctlumpini001-8000.replit.app/api/notifications:1  Failed to load resource: net::ERR_FAILED
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/requests' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  POST https://eureka-poc-tcctlumpini001-8000.replit.app/api/requests net::ERR_FAILED
+H3 @ index-CRZQUvO1.js:410
+me @ index-CRZQUvO1.js:635
+E1 @ index-CRZQUvO1.js:48
+(anonymous) @ index-CRZQUvO1.js:48
+cc @ index-CRZQUvO1.js:48
+Lv @ index-CRZQUvO1.js:48
+Zv @ index-CRZQUvO1.js:49
+cz @ index-CRZQUvO1.js:49
+index-CRZQUvO1.js:635 Failed to submit request: TypeError: Failed to fetch
+    at H3 (index-CRZQUvO1.js:410:1340)
+    at me (index-CRZQUvO1.js:635:161509)
+    at E1 (index-CRZQUvO1.js:48:128192)
+    at index-CRZQUvO1.js:48:133471
+    at cc (index-CRZQUvO1.js:48:15145)
+    at Lv (index-CRZQUvO1.js:48:129428)
+    at Zv (index-CRZQUvO1.js:49:28830)
+    at cz (index-CRZQUvO1.js:49:28648)
+me @ index-CRZQUvO1.js:635
+await in me
+E1 @ index-CRZQUvO1.js:48
+(anonymous) @ index-CRZQUvO1.js:48
+cc @ index-CRZQUvO1.js:48
+Lv @ index-CRZQUvO1.js:48
+Zv @ index-CRZQUvO1.js:49
+cz @ index-CRZQUvO1.js:49
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
+dashboard:1 Access to fetch at 'https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications' from origin 'https://eureka-poc-tcctlumpini001.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CRZQUvO1.js:410  GET https://eureka-poc-tcctlumpini001-8000.replit.app/api/notifications net::ERR_FAILED
+K3 @ index-CRZQUvO1.js:410
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Failed to load notifications: TypeError: Failed to fetch
+    at K3 (index-CRZQUvO1.js:410:3267)
+    at E (index-CRZQUvO1.js:635:198733)
+E @ index-CRZQUvO1.js:635
+index-CRZQUvO1.js:635 Rendering main app for user: Alex Sterling Admin currentView: requests
