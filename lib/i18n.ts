@@ -241,6 +241,19 @@ const translations = {
     'assets.title': 'Assets',
     'assets.hierarchy': 'Asset Hierarchy',
     'assets.details': 'Asset Details',
+    'assets.healthScore': 'Health Score',
+    'assets.criticality': 'Criticality',
+    'assets.location': 'Location',
+    'assets.technicalDetails': 'Technical Details',
+    'assets.model': 'Model',
+    'assets.installDate': 'Install Date',
+    'assets.serialNumber': 'Serial Number',
+    'assets.manufacturer': 'Manufacturer',
+    'assets.selectToView': 'Select an asset to view details',
+    'assets.aiAnalysis': 'AI Reliability Analysis',
+    'assets.analyzeDesc': 'Analyze historical data to predict failure probability and maintenance needs.',
+    'assets.runDiagnostic': 'Run Diagnostic',
+    'assets.updateAnalysis': 'Update Analysis',
 
     // ============== Date/Time ==============
     'date.today': 'Today',
@@ -287,6 +300,17 @@ const translations = {
     'gps.confirm': 'Confirm Location',
     'gps.clear': 'Clear',
     'gps.viewInMaps': 'View in Google Maps',
+    'gps.clearLocation': 'Clear location',
+    'gps.navigateWithMaps': 'Navigate with Google Maps',
+    'gps.cannotGetLocation': 'Cannot get location. Please enable GPS and allow location access.',
+
+    // ============== DateInput ==============
+    'dateInput.openCalendar': 'Open calendar',
+    'dateInput.datePicker': 'Date picker',
+
+    // ============== Notifications (UI) ==============
+    'notif.markAsRead': 'Mark as read',
+    'notif.deleteNotification': 'Delete',
 
     // ============== Settings ==============
     'settings.title': 'Settings',
@@ -750,6 +774,19 @@ const translations = {
     'assets.title': 'สินทรัพย์',
     'assets.hierarchy': 'โครงสร้างสินทรัพย์',
     'assets.details': 'รายละเอียดสินทรัพย์',
+    'assets.healthScore': 'คะแนนสุขภาพ',
+    'assets.criticality': 'ระดับความสำคัญ',
+    'assets.location': 'ตำแหน่ง',
+    'assets.technicalDetails': 'รายละเอียดทางเทคนิค',
+    'assets.model': 'รุ่น',
+    'assets.installDate': 'วันที่ติดตั้ง',
+    'assets.serialNumber': 'หมายเลขซีเรียล',
+    'assets.manufacturer': 'ผู้ผลิต',
+    'assets.selectToView': 'เลือกสินทรัพย์เพื่อดูรายละเอียด',
+    'assets.aiAnalysis': 'AI วิเคราะห์ความน่าเชื่อถือ',
+    'assets.analyzeDesc': 'วิเคราะห์ข้อมูลในอดีตเพื่อคาดการณ์ความน่าจะเป็นของความเสียหายและความต้องการบำรุงรักษา',
+    'assets.runDiagnostic': 'เริ่มวินิจฉัย',
+    'assets.updateAnalysis': 'อัปเดตการวิเคราะห์',
 
     // ============== Date/Time ==============
     'date.today': 'วันนี้',
@@ -796,6 +833,17 @@ const translations = {
     'gps.confirm': 'ยืนยันตำแหน่ง',
     'gps.clear': 'ล้าง',
     'gps.viewInMaps': 'ดูใน Google Maps',
+    'gps.clearLocation': 'ล้างตำแหน่ง',
+    'gps.navigateWithMaps': 'นำทางด้วย Google Maps',
+    'gps.cannotGetLocation': 'ไม่สามารถหาตำแหน่งได้ กรุณาเปิด GPS และอนุญาตการเข้าถึงตำแหน่ง',
+
+    // ============== DateInput ==============
+    'dateInput.openCalendar': 'เปิดปฏิทิน',
+    'dateInput.datePicker': 'เลือกวันที่',
+
+    // ============== Notifications (UI) ==============
+    'notif.markAsRead': 'ทำเครื่องหมายว่าอ่านแล้ว',
+    'notif.deleteNotification': 'ลบ',
 
     // ============== Settings ==============
     'settings.title': 'ตั้งค่า',
