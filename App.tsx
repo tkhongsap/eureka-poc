@@ -307,6 +307,7 @@ const App: React.FC = () => {
         dueDate: calculateDueDate(),
         imageIds: request.imageIds,
         requestId: request.id,
+        createdBy: currentUser?.name, // Store who created this WO
         locationData: request.locationData,
         preferredDate: request.preferredDate,
       });
@@ -326,6 +327,7 @@ const App: React.FC = () => {
         partsUsed: [],
         imageIds: createdWO.imageIds || [],
         requestId: createdWO.requestId,
+        createdBy: createdWO.createdBy, // Include createdBy in UI state
         locationData: createdWO.locationData,
         preferredDate: createdWO.preferredDate,
       };

@@ -53,6 +53,7 @@ export interface WorkOrder {
   partsUsed?: PartUsage[];
   imageIds?: string[];  // Reference to attached images
   requestId?: string;   // Original request ID if created from request
+  createdBy?: string;   // Name of the requester who created this WO
   technicianNotes?: string;  // Notes added by technician
   technicianImages?: string[];  // Images added by technician
   adminReview?: string; // Review/approval notes by admin

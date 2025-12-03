@@ -17,6 +17,7 @@ class WorkOrderCreate(BaseModel):
     dueDate: str
     imageIds: List[str] = []
     requestId: Optional[str] = None
+    createdBy: Optional[str] = None  # Name of the requester who created this WO
     locationData: Optional[LocationData] = None
     preferredDate: Optional[str] = None  # Preferred maintenance date from request
 
@@ -36,6 +37,7 @@ class WorkOrder(BaseModel):
     createdAt: Optional[datetime] = Field(default=None, validation_alias="created_at")
     imageIds: List[str] = Field(default_factory=list, validation_alias="image_ids")
     requestId: Optional[str] = Field(default=None, validation_alias="request_id")
+    createdBy: Optional[str] = Field(default=None, validation_alias="created_by")
     technicianNotes: Optional[str] = Field(
         default=None, validation_alias="technician_notes"
     )
