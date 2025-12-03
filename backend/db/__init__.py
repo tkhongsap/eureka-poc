@@ -1,6 +1,6 @@
 from db.base import Base
 from db.session import engine, SessionLocal, get_db, init_db
-from db.models import Request, WorkOrder, Image, Notification
+from db.models import Request, WorkOrder, Image, Notification, User
 
 __all__ = [
     "Base",
@@ -12,4 +12,5 @@ __all__ = [
     "WorkOrder",
     "Image",
     "Notification",
+    "User",
 ]

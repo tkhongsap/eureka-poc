@@ -3,6 +3,7 @@ from db.models.request import Request
 from db.models.workorder import WorkOrder
 from db.models.image import Image
 from db.models.notification import Notification
+from db.models.user import User
 
 __all__ = [
     "Base",
@@ -10,6 +11,7 @@ __all__ = [
     "WorkOrder",
     "Image",
     "Notification",
+    "User",
 ]
 
 

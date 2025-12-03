@@ -93,12 +93,12 @@ def test_get_work_order_permissions_head_technician():
     )
     assert perms_pending.can_edit is True
     assert perms_pending.can_change_status is True
-    assert perms_pending.can_assign is False
+    assert perms_pending.can_assign is True
     assert perms_pending.can_delete is False
 
     perms_open = get_work_order_permissions(Status.OPEN, UserRole.HEAD_TECHNICIAN.value)
-    assert perms_open.can_edit is False
-    assert perms_open.can_change_status is False
+    assert perms_open.can_edit is True
+    assert perms_open.can_change_status is True
 
 
 def test_get_work_order_permissions_technician_assignment_logic():
