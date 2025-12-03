@@ -9,8 +9,12 @@ import {
   CheckCircle,
   Building2
 } from 'lucide-react';
+import { useLanguage } from '../lib/i18n';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const LandingPage: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <div className="min-h-screen bg-stone-50">
       {/* Navbar */}
@@ -38,25 +42,21 @@ const LandingPage: React.FC = () => {
                 href="#features"
                 className="relative text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors group"
               >
-                Features
+                {t('landing.navFeatures')}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-teal-500 group-hover:w-full transition-all duration-300" />
               </a>
-              <Link
-                to="/request"
-                className="relative text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors group"
-              >
-                Submit Request
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-teal-500 group-hover:w-full transition-all duration-300" />
-              </Link>
             </div>
 
-            {/* CTA */}
-            <Link
-              to="/login"
-              className="px-5 py-2.5 bg-stone-900 text-white text-sm font-semibold rounded-xl hover:bg-stone-800 hover:-translate-y-0.5 transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              Login
-            </Link>
+            {/* Language Switcher & CTA */}
+            <div className="flex items-center gap-4">
+              <LanguageSwitcher variant="minimal" />
+              <Link
+                to="/login"
+                className="min-w-[90px] text-center px-5 py-2.5 bg-stone-900 text-white text-sm font-semibold rounded-xl hover:bg-stone-800 hover:-translate-y-0.5 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                {t('landing.navLogin')}
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
@@ -74,35 +74,29 @@ const LandingPage: React.FC = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-sm font-medium mb-10 border border-teal-100">
             <span className="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></span>
-            Now in Pilot
+            {t('landing.badge')}
           </div>
 
           {/* Headline - Serif for elegance */}
           <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl text-stone-900 mb-8 leading-[1.1] tracking-tight">
-            Maintenance Management
+            {t('landing.heroTitle1')}
             <br />
-            <span className="text-teal-600">Made Simple</span>
+            <span className="text-teal-600">{t('landing.heroTitle2')}</span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-stone-600 mb-12 max-w-2xl mx-auto leading-relaxed">
-            Streamline work orders, track assets, and reduce downtime across all your facilities with one intuitive platform.
+            {t('landing.heroSubtitle')}
           </p>
 
-          {/* Two Clear CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* CTA */}
+          <div className="flex justify-center">
             <Link
-              to="/dashboard"
-              className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 hover:-translate-y-0.5 transition-all duration-200 shadow-lg shadow-teal-600/25 hover:shadow-xl hover:shadow-teal-600/30"
+              to="/login"
+              className="group inline-flex items-center justify-center gap-2 min-w-[160px] px-8 py-4 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 hover:-translate-y-0.5 transition-all duration-200 shadow-lg shadow-teal-600/25 hover:shadow-xl hover:shadow-teal-600/30"
             >
-              Get Started
+              {t('landing.getStarted')}
               <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-            <Link
-              to="/request"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white border-2 border-stone-200 text-stone-700 font-semibold rounded-xl hover:border-stone-300 hover:bg-stone-50 hover:-translate-y-0.5 transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              Submit a Request
             </Link>
           </div>
         </div>
@@ -113,15 +107,15 @@ const LandingPage: React.FC = () => {
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4 md:gap-x-16">
             {[
-              'Multi-site ready',
-              'Real-time tracking',
-              'Asset management',
-              'Mobile friendly'
+              { key: 'landing.trustMultiSite' as const },
+              { key: 'landing.trustRealTime' as const },
+              { key: 'landing.trustAsset' as const },
+              { key: 'landing.trustMobile' as const }
             ].map((item, index) => (
-              <React.Fragment key={item}>
+              <React.Fragment key={item.key}>
                 <div className="flex items-center gap-2.5 text-stone-600">
                   <CheckCircle size={18} className="text-teal-500" />
-                  <span className="text-sm font-medium">{item}</span>
+                  <span className="text-sm font-medium">{t(item.key)}</span>
                 </div>
                 {index < 3 && (
                   <div className="hidden md:block w-px h-4 bg-stone-200" />
@@ -138,10 +132,10 @@ const LandingPage: React.FC = () => {
           {/* Section Header */}
           <div className="text-center mb-20">
             <h2 className="font-serif text-4xl md:text-5xl text-stone-900 mb-5">
-              Everything you need
+              {t('landing.featuresTitle')}
             </h2>
             <p className="text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed">
-              From request to resolution, Eureka handles the entire maintenance lifecycle.
+              {t('landing.featuresSubtitle')}
             </p>
           </div>
 
@@ -151,29 +145,29 @@ const LandingPage: React.FC = () => {
               icon={<Activity size={24} />}
               iconColor="text-teal-600"
               iconBg="from-teal-50 to-teal-100/50"
-              title="Work Order Tracking"
-              description="Create, assign, and track work orders in real-time. Monitor SLA compliance and team performance with precision."
+              title={t('landing.featureWorkOrderTitle')}
+              description={t('landing.featureWorkOrderDesc')}
             />
             <FeatureCard
               icon={<ShieldCheck size={24} />}
               iconColor="text-emerald-600"
               iconBg="from-emerald-50 to-emerald-100/50"
-              title="Asset Management"
-              description="Complete asset registry with maintenance history, documentation, and preventive scheduling built-in."
+              title={t('landing.featureAssetTitle')}
+              description={t('landing.featureAssetDesc')}
             />
             <FeatureCard
               icon={<BarChart2 size={24} />}
               iconColor="text-violet-600"
               iconBg="from-violet-50 to-violet-100/50"
-              title="Smart Analytics"
-              description="Gain actionable insights into costs, performance trends, and efficiency with integrated dashboards."
+              title={t('landing.featureAnalyticsTitle')}
+              description={t('landing.featureAnalyticsDesc')}
             />
             <FeatureCard
               icon={<Building2 size={24} />}
               iconColor="text-amber-600"
               iconBg="from-amber-50 to-amber-100/50"
-              title="Multi-Site Support"
-              description="Manage multiple facilities from one central platform with role-based access and data isolation."
+              title={t('landing.featureMultiSiteTitle')}
+              description={t('landing.featureMultiSiteDesc')}
             />
           </div>
         </div>
@@ -187,16 +181,16 @@ const LandingPage: React.FC = () => {
 
         <div className="relative max-w-3xl mx-auto text-center">
           <h2 className="font-serif text-4xl md:text-5xl text-stone-900 mb-5">
-            Ready to get started?
+            {t('landing.ctaTitle')}
           </h2>
           <p className="text-lg text-stone-600 mb-10 leading-relaxed">
-            Join the pilot program and start managing your operations more effectively today.
+            {t('landing.ctaSubtitle')}
           </p>
           <Link
             to="/dashboard"
             className="group inline-flex items-center justify-center gap-2 px-10 py-5 bg-teal-600 text-white text-lg font-semibold rounded-xl hover:bg-teal-700 hover:-translate-y-0.5 transition-all duration-200 shadow-lg shadow-teal-600/25 hover:shadow-xl hover:shadow-teal-600/30"
           >
-            Get Started Free
+            {t('landing.ctaButton')}
             <ArrowRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
@@ -212,7 +206,7 @@ const LandingPage: React.FC = () => {
             <span className="font-semibold text-stone-900">Eureka CMMS</span>
           </div>
           <p className="text-sm text-stone-500">
-            © 2024 Eureka Platform. All rights reserved.
+            {t('landing.footerCopyright')}
           </p>
         </div>
       </footer>

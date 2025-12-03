@@ -20,21 +20,62 @@ const getBackendUrl = () => {
 
 const API_BASE_URL = getBackendUrl();
 
+// User context for API calls
+let currentUserRole: string | null = null;
+let currentUserName: string | null = null;
+
+export const setUserContext = (role: string, name: string) => {
+  currentUserRole = role;
+  currentUserName = name;
+};
+
+export const getUserContext = () => ({
+  role: currentUserRole,
+  name: currentUserName
+});
+
+const getAuthHeaders = (): Record<string, string> => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (currentUserRole) {
+    headers['X-User-Role'] = currentUserRole;
+  }
+  if (currentUserName) {
+    headers['X-User-Name'] = currentUserName;
+  }
+  
+  return headers;
+};
+
 // --- Image API ---
 export interface ImageInfo {
   id: string;
   originalName: string;
-  filename: string;
+  filename?: string;
+  base64Data: string;
   createdAt: string;
 }
 
 export const uploadImage = async (file: File): Promise<ImageInfo> => {
-  const formData = new FormData();
-  formData.append('file', file);
+  const toBase64 = (f: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const commaIdx = result.indexOf(',');
+      resolve(commaIdx > -1 ? result.substring(commaIdx + 1) : result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(f);
+  });
 
-  const response = await fetch(`${API_BASE_URL}/images/upload`, {
+  const base64 = await toBase64(file);
+
+  const response = await fetch(`${API_BASE_URL}/images/upload-base64`, {
     method: 'POST',
-    body: formData,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ originalName: file.name, base64Data: base64 }),
   });
 
   if (!response.ok) {
@@ -44,8 +85,14 @@ export const uploadImage = async (file: File): Promise<ImageInfo> => {
   return response.json();
 };
 
-export const getImageUrl = (imageId: string): string => {
-  return `${API_BASE_URL}/images/${imageId}`;
+export const getImageDataUrl = async (imageId: string): Promise<string> => {
+  const response = await fetch(`${API_BASE_URL}/images/${imageId}`);
+  if (!response.ok) {
+    throw new Error('Failed to get image');
+  }
+  const data: ImageInfo = await response.json();
+  const ext = (data.filename && data.filename.split('.').pop()) || 'jpg';
+  return `data:image/${ext};base64,${data.base64Data}`;
 };
 
 export const listImages = async (): Promise<ImageInfo[]> => {
@@ -66,6 +113,13 @@ export const deleteImage = async (imageId: string): Promise<void> => {
 };
 
 // --- Request API ---
+export interface LocationData {
+  latitude: number;
+  longitude: number;
+  address: string;
+  googleMapsUrl: string;
+}
+
 export interface RequestItem {
   id: string;
   location: string;
@@ -76,6 +130,8 @@ export interface RequestItem {
   imageIds: string[];
   assignedTo?: string;
   createdBy?: string;
+  locationData?: LocationData;
+  preferredDate?: string; // Preferred date for maintenance visit
 }
 
 export interface CreateRequestData {
@@ -85,6 +141,8 @@ export interface CreateRequestData {
   imageIds: string[];
   assignedTo?: string;
   createdBy?: string;
+  locationData?: LocationData;
+  preferredDate?: string; // Preferred date for maintenance visit
 }
 
 export const createRequest = async (data: CreateRequestData): Promise<RequestItem> => {
@@ -152,9 +210,13 @@ export interface WorkOrderItem {
   createdAt: string;
   imageIds: string[];
   requestId?: string;
+  createdBy?: string; // Name of the requester who created this WO
   technicianNotes?: string;
   technicianImages?: string[];
   partsUsed?: { id: string; name: string; quantity: number }[];
+  adminReview?: string;
+  locationData?: LocationData;
+  preferredDate?: string; // Preferred maintenance date from request
 }
 
 export interface CreateWorkOrderData {
@@ -168,6 +230,9 @@ export interface CreateWorkOrderData {
   dueDate: string;
   imageIds?: string[];
   requestId?: string;
+  createdBy?: string; // Name of the requester who created this WO
+  locationData?: LocationData;
+  preferredDate?: string; // Preferred maintenance date from request
 }
 
 export const createWorkOrder = async (data: CreateWorkOrderData): Promise<WorkOrderItem> => {
@@ -186,8 +251,25 @@ export const createWorkOrder = async (data: CreateWorkOrderData): Promise<WorkOr
   return response.json();
 };
 
-export const listWorkOrders = async (): Promise<WorkOrderItem[]> => {
-  const response = await fetch(`${API_BASE_URL}/workorders`);
+export interface WorkOrderQuery {
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  assignedTo?: string;
+  priority?: string;
+}
+
+export const listWorkOrders = async (query?: WorkOrderQuery): Promise<WorkOrderItem[]> => {
+  const params = new URLSearchParams();
+  if (query?.search) params.append('search', query.search);
+  if (query?.startDate) params.append('startDate', query.startDate);
+  if (query?.endDate) params.append('endDate', query.endDate);
+  if (query?.assignedTo) params.append('assignedTo', query.assignedTo);
+
+  const qs = params.toString();
+  const url = qs ? `${API_BASE_URL}/workorders?${qs}` : `${API_BASE_URL}/workorders`;
+
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Failed to list work orders');
   }
@@ -205,9 +287,7 @@ export const getWorkOrder = async (woId: string): Promise<WorkOrderItem> => {
 export const updateWorkOrder = async (woId: string, updates: Partial<WorkOrderItem>): Promise<WorkOrderItem> => {
   const response = await fetch(`${API_BASE_URL}/workorders/${woId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(updates),
   });
 
@@ -233,17 +313,164 @@ export interface TechnicianUpdateData {
   technicianImages?: string[];
 }
 
-export const technicianUpdateWorkOrder = async (woId: string, data: TechnicianUpdateData): Promise<WorkOrderItem> => {
+export const technicianUpdateWorkOrder = async (
+  woId: string,
+  data: TechnicianUpdateData
+): Promise<WorkOrderItem> => {
   const response = await fetch(`${API_BASE_URL}/workorders/${woId}/technician-update`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
-    throw new Error('Failed to update work order as technician');
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to update work order as technician');
+  }
+
+  return response.json();
+};
+
+// --- Admin Review API ---
+export const adminApproveWorkOrder = async (woId: string): Promise<WorkOrderItem> => {
+  const response = await fetch(`${API_BASE_URL}/workorders/${woId}/approve`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to approve work order');
+  }
+
+  return response.json();
+};
+
+export interface AdminRejectData {
+  rejectionReason: string;
+}
+
+export const adminRejectWorkOrder = async (woId: string, data: AdminRejectData): Promise<WorkOrderItem> => {
+  const response = await fetch(`${API_BASE_URL}/workorders/${woId}/reject`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to reject work order');
+  }
+
+  return response.json();
+};
+
+export const adminCloseWorkOrder = async (woId: string): Promise<WorkOrderItem> => {
+  const response = await fetch(`${API_BASE_URL}/workorders/${woId}/close`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to close work order');
+  }
+
+  return response.json();
+};
+
+// --- Notification API ---
+export interface NotificationItem {
+  id: string;
+  type: string;
+  workOrderId: string;
+  workOrderTitle: string;
+  message: string;
+  recipientRole: string;
+  recipientName?: string;
+  isRead: boolean;
+  createdAt: string;
+  triggeredBy: string;
+}
+
+export const getNotifications = async (): Promise<NotificationItem[]> => {
+  const response = await fetch(`${API_BASE_URL}/notifications`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch notifications');
+  }
+
+  return response.json();
+};
+
+export const createNotification = async (notification: Omit<NotificationItem, 'id'>): Promise<NotificationItem> => {
+  const response = await fetch(`${API_BASE_URL}/notifications`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(notification),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to create notification');
+  }
+
+  return response.json();
+};
+
+export const markNotificationAsRead = async (notificationId: string): Promise<NotificationItem> => {
+  const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}/read`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to mark notification as read');
+  }
+
+  return response.json();
+};
+
+export const markAllNotificationsAsRead = async (): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/notifications/read-all`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to mark all notifications as read');
+  }
+};
+
+export const deleteNotification = async (notificationId: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete notification');
+  }
+};
+
+export const deleteAllReadNotifications = async (): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/notifications/read`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete read notifications');
+  }
+};
+
+// Check and create reminder notifications for upcoming work orders
+export const checkAndCreateReminders = async (): Promise<{ message: string; notifications: { workOrderId: string; type: string; assignedTo: string }[] }> => {
+  const response = await fetch(`${API_BASE_URL}/notifications/check-reminders`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to check reminders');
   }
 
   return response.json();

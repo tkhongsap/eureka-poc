@@ -1,14 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Send, MapPin, AlertCircle, History, Clock, CheckCircle, X, Image as ImageIcon, UserCheck } from 'lucide-react';
+import { Camera, Send, MapPin, AlertCircle, History, Clock, CheckCircle, X, Image as ImageIcon, UserCheck, Navigation, Calendar } from 'lucide-react';
+import DateInput from './DateInput';
+import { useLanguage } from '../lib/i18n';
+
+// Helper function to format date as DD/MM/YYYY
+const formatDateDDMMYYYY = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
 import { 
   uploadImage, 
   createRequest, 
   listRequests, 
-  getImageUrl,
+  getImageDataUrl,
   RequestItem as ApiRequestItem,
-  ImageInfo
+  ImageInfo,
+  createNotification,
+  LocationData
 } from '../services/apiService';
-import { User, UserRole } from '../types';
+import { User, UserRole, WorkOrder } from '../types';
+import RequestorWorkOrders from './RequestorWorkOrders';
+import { createWOCreatedNotification } from '../services/notificationService';
+import LocationPicker, { LocationDisplay, InlineLocationPicker } from './LocationPicker';
 
 interface RequestItem {
   id: string;
@@ -20,6 +36,8 @@ interface RequestItem {
   imageIds: string[];  // Store image IDs instead of base64
   assignedTo?: string;
   createdBy?: string;
+  locationData?: LocationData;
+  preferredDate?: string; // Preferred date for maintenance visit
 }
 
 interface TempImage {
@@ -36,9 +54,11 @@ interface WorkRequestPortalProps {
     description: string;
     imageIds: string[];
     assignedTo?: string;
+    locationData?: LocationData;
   }) => void;
   currentUser?: User;
   technicians?: { id: string; name: string }[];
+  workOrders?: WorkOrder[];
 }
 
 const INITIAL_HISTORY: RequestItem[] = [
@@ -46,22 +66,33 @@ const INITIAL_HISTORY: RequestItem[] = [
     { id: 'REQ-999', location: 'Break Room', priority: 'Low', desc: 'Light flickering in break room', status: 'Completed', date: 'Oct 21, 2024', imageIds: [] },
 ];
 
-const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, currentUser, technicians = [] }) => {
+const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ 
+  onSubmitRequest, 
+  currentUser, 
+  technicians = [], 
+  workOrders = [] 
+}) => {
+  const { t } = useLanguage();
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [location, setLocation] = useState('');
   const [priority, setPriority] = useState('Low - Cosmetic issue');
   const [description, setDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState<string>('');
+  const [preferredDate, setPreferredDate] = useState<string>(''); // Preferred maintenance date
   const [tempImages, setTempImages] = useState<TempImage[]>([]); // Temporary images before submit
   const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
   const [selectedRequestImages, setSelectedRequestImages] = useState<string[]>([]); // Image URLs
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Location picker state
+  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
 
   // Check if current user can assign technicians
-  const canAssign = currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Technician';
+  const canAssign = currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Technician' || currentUser?.userRole === 'Head Technician';
   const isRequester = currentUser?.userRole === 'Requester';
+  const canSetPreferredDate = currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician';
 
   // Load requests from API on mount - filter by current user
   useEffect(() => {
@@ -76,10 +107,12 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
             priority: r.priority,
             desc: r.description,
             status: r.status,
-            date: new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            date: formatDateDDMMYYYY(r.createdAt),
             imageIds: r.imageIds,
             assignedTo: r.assignedTo,
             createdBy: r.createdBy,
+            locationData: r.locationData,
+            preferredDate: r.preferredDate,
           }));
         setRequests(mappedRequests);
       } catch (error) {
@@ -99,12 +132,15 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
 
   // Load image URLs when selecting a request
   useEffect(() => {
-    if (selectedRequest && selectedRequest.imageIds.length > 0) {
-      const imageUrls = selectedRequest.imageIds.map(id => getImageUrl(id));
-      setSelectedRequestImages(imageUrls);
-    } else {
-      setSelectedRequestImages([]);
-    }
+    const loadImages = async () => {
+      if (selectedRequest && selectedRequest.imageIds.length > 0) {
+        const imageUrls = await Promise.all(selectedRequest.imageIds.map(id => getImageDataUrl(id)));
+        setSelectedRequestImages(imageUrls);
+      } else {
+        setSelectedRequestImages([]);
+      }
+    };
+    loadImages();
   }, [selectedRequest]);
 
   // Auto-hide success toast after 2.5 seconds
@@ -120,15 +156,99 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      Array.from(files).forEach((file: File) => {
+      const maxImages = 10;
+      const maxVideoSize = 10 * 1024 * 1024; // 10 MB in bytes
+      const maxImageSize = 5 * 1024 * 1024; // 5 MB for images
+      
+      // Check if adding these files would exceed the limit
+      if (tempImages.length + files.length > maxImages) {
+        alert(`You can only upload a maximum of ${maxImages} images/videos. Currently you have ${tempImages.length} files.`);
+        return;
+      }
+      
+      // Validate each file
+      const fileArray = Array.from(files) as File[];
+      for (const file of fileArray) {
+        // Check video file size
+        if (file.type.startsWith('video/') && file.size > maxVideoSize) {
+          alert(`Video "${file.name}" is too large. Maximum video size is 10 MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+          continue;
+        }
+        
+        // Check image file size
+        if (file.type.startsWith('image/') && file.size > maxImageSize) {
+          // Try to compress image for mobile
+          compressImage(file).then(compressedFile => {
+            const preview = URL.createObjectURL(compressedFile);
+            setTempImages(prev => {
+              if (prev.length >= maxImages) return prev;
+              return [...prev, { file: compressedFile, preview, name: file.name }];
+            });
+          }).catch(() => {
+            alert(`Image "${file.name}" is too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Please use a smaller image.`);
+          });
+          continue;
+        }
+        
         const preview = URL.createObjectURL(file);
-        setTempImages(prev => [...prev, { 
-          file: file,
-          preview: preview, 
-          name: file.name 
-        }]);
-      });
+        setTempImages(prev => {
+          // Double check we don't exceed the limit
+          if (prev.length >= maxImages) {
+            alert(`Maximum ${maxImages} files allowed.`);
+            return prev;
+          }
+          return [...prev, { 
+            file: file,
+            preview: preview, 
+            name: file.name 
+          }];
+        });
+      }
     }
+    // Reset input to allow selecting same file again
+    e.target.value = '';
+  };
+
+  // Compress image for mobile uploads
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxWidth = 1920;
+        const maxHeight = 1080;
+        let { width, height } = img;
+
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width *= ratio;
+          height *= ratio;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Cannot get canvas context'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+            } else {
+              reject(new Error('Compression failed'));
+            }
+          },
+          'image/jpeg',
+          0.8
+        );
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
   };
 
   const removeImage = (index: number) => {
@@ -144,8 +264,13 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
       // Upload images to backend and get IDs
       const savedImageIds: string[] = [];
       for (const img of tempImages) {
-        const uploadedImage = await uploadImage(img.file);
-        savedImageIds.push(uploadedImage.id);
+        try {
+          const uploadedImage = await uploadImage(img.file);
+          savedImageIds.push(uploadedImage.id);
+        } catch (uploadError) {
+          console.error('Failed to upload image:', img.name, uploadError);
+          // Continue with other images instead of failing completely
+        }
       }
 
       const priorityValue = priority.split(' - ')[0];
@@ -153,13 +278,15 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
       // Determine assignedTo value
       const assignedToValue = canAssign ? (assignedTo || undefined) : undefined;
 
-      // Create request via API
+      // Create request via API with location data and preferred date
       const createdRequest = await createRequest({
         location: location,
         priority: priorityValue,
         description: description,
         imageIds: savedImageIds,
         assignedTo: assignedToValue,
+        locationData: selectedLocation || undefined,
+        preferredDate: canSetPreferredDate ? (preferredDate || undefined) : undefined,
       });
 
       const now = new Date();
@@ -171,9 +298,11 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
         priority: createdRequest.priority,
         desc: createdRequest.description,
         status: createdRequest.status,
-        date: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        date: formatDateDDMMYYYY(now.toISOString()),
         imageIds: createdRequest.imageIds,
         assignedTo: createdRequest.assignedTo,
+        locationData: createdRequest.locationData,
+        preferredDate: createdRequest.preferredDate,
       };
 
       // Notify parent to create Work Order
@@ -185,7 +314,19 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
           description: createdRequest.description,
           imageIds: createdRequest.imageIds,
           assignedTo: createdRequest.assignedTo,
+          locationData: createdRequest.locationData,
+          preferredDate: createdRequest.preferredDate,
         });
+      }
+
+      // Create notification for Admin (WO_CREATED)
+      if (currentUser) {
+        const notification = createWOCreatedNotification(
+          createdRequest.id,
+          createdRequest.location, // Using location as title
+          currentUser.name
+        );
+        await createNotification(notification);
       }
 
       // Update UI
@@ -193,6 +334,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
       setLocation('');
       setPriority('Low - Cosmetic issue');
       setDescription('');
+      setSelectedLocation(null); // Reset location
+      setPreferredDate(''); // Reset preferred date
       // Reset assignedTo only for Admin (Technician keeps self-assigned)
       if (currentUser?.userRole === 'Admin') {
         setAssignedTo('');
@@ -212,7 +355,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-8 pb-16 grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="max-w-6xl mx-auto p-8 pb-16 grid grid-cols-1 lg:grid-cols-3 gap-8">
 
        {/* Success Toast Notification */}
        {showSuccessToast && (
@@ -220,8 +363,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
            <div className="bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
              <CheckCircle size={24} className="flex-shrink-0" />
              <div>
-               <p className="font-semibold">Request Submitted!</p>
-               <p className="text-sm text-emerald-50">Your request is being processed</p>
+               <p className="font-semibold">{t('request.submitted')}</p>
+               <p className="text-sm text-emerald-50">{t('request.beingProcessed')}</p>
              </div>
            </div>
          </div>
@@ -230,63 +373,92 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
        {/* Left Column: Form */}
        <div className="md:col-span-2 space-y-8">
             <div className="mb-6">
-                <h2 className="font-serif text-3xl text-stone-900">Submit a Request</h2>
-                <p className="text-stone-500 mt-2">Describe the issue and we'll assign a technician.</p>
+                <h2 className="font-serif text-3xl text-stone-900">{t('request.title')}</h2>
+                <p className="text-stone-500 mt-2">{t('request.subtitle')}</p>
             </div>
 
             <div className="bg-white p-8 rounded-2xl shadow-lg border border-stone-200/60">
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-2">Location / Asset</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">{t('request.location')}</label>
                         <div className="relative">
                             <MapPin className="absolute left-3.5 top-3.5 text-stone-400" size={18} />
                             <input
                               type="text"
                               value={location}
                               onChange={(e) => setLocation(e.target.value)}
-                              placeholder="e.g. Line 1 Conveyor"
+                              placeholder={t('request.locationPlaceholder')}
                               className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                             />
                         </div>
                         </div>
                         <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-2">Priority</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">{t('request.priority')}</label>
                         <select
                           value={priority}
                           onChange={(e) => setPriority(e.target.value)}
-                          title="Select priority level"
-                          aria-label="Priority"
+                          title={t('request.selectPriority')}
+                          aria-label={t('request.priority')}
                           className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                         >
-                            <option>Low - Cosmetic issue</option>
-                            <option>Medium - Affects performance</option>
-                            <option>High - Production Stopped</option>
-                            <option>Critical - Safety Hazard</option>
+                            <option>{t('request.priorityLow')}</option>
+                            <option>{t('request.priorityMedium')}</option>
+                            <option>{t('request.priorityHigh')}</option>
+                            <option>{t('request.priorityCritical')}</option>
                         </select>
                         </div>
+                    </div>
+
+                    {/* Preferred Maintenance Date - Only Admin or Head Technician */}
+                    {canSetPreferredDate && (
+                      <div>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">
+                          📅 {t('request.preferredDate')} <span className="text-stone-400 font-normal">({t('common.optional')})</span>
+                        </label>
+                        <DateInput
+                          value={preferredDate}
+                          onChange={(value) => setPreferredDate(value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          title={t('request.preferredDate')}
+                          className="bg-stone-50"
+                          size="lg"
+                        />
+                        <p className="text-xs text-stone-400 mt-1">{t('request.preferredDateHint')}</p>
+                      </div>
+                    )}
+
+                    {/* GPS Location Picker - Inline Map */}
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-2">
+                        📍 {t('request.gpsLocation')} <span className="text-stone-400 font-normal">({t('common.optional')} - {t('gps.clickMapToPin')})</span>
+                      </label>
+                      <InlineLocationPicker
+                        selectedLocation={selectedLocation}
+                        onLocationSelect={setSelectedLocation}
+                      />
                     </div>
 
                     {/* Assign Technician - Only visible for Admin and Technician */}
                     {canAssign && (
                       <div>
                         <label className="block text-sm font-medium text-stone-700 mb-2">
-                          Assign Technician
+                          {t('request.assignTechnician')}
                           {currentUser?.userRole === 'Technician' && (
-                            <span className="text-xs text-stone-400 ml-2">(Auto-assigned to you)</span>
+                            <span className="text-xs text-stone-400 ml-2">({t('request.autoAssignedToYou')})</span>
                           )}
                         </label>
                         <div className="relative">
                           <UserCheck className="absolute left-3.5 top-3.5 text-stone-400" size={18} />
-                          {currentUser?.userRole === 'Admin' ? (
+                          {(currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician') ? (
                             <select
                               value={assignedTo}
                               onChange={(e) => setAssignedTo(e.target.value)}
-                              title="Assign technician"
-                              aria-label="Assign technician"
+                              title={t('request.assignTechnician')}
+                              aria-label={t('request.assignTechnician')}
                               className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                             >
-                              <option value="">-- Select Technician --</option>
+                              <option value="">-- {t('request.selectTechnician')} --</option>
                               {technicians.map(tech => (
                                 <option key={tech.id} value={tech.name}>{tech.name}</option>
                               ))}
@@ -296,8 +468,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                               type="text"
                               value={assignedTo}
                               readOnly
-                              title="Assigned technician"
-                              aria-label="Assigned technician"
+                              title={t('request.assignedTo')}
+                              aria-label={t('request.assignedTo')}
                               className="w-full pl-10 pr-4 py-3 bg-stone-100 border border-stone-200 rounded-xl text-stone-600 cursor-not-allowed"
                             />
                           )}
@@ -306,59 +478,81 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-2">Issue Description</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">{t('request.issueDescription')}</label>
                         <textarea
                           rows={4}
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
-                          placeholder="Describe what happened, any strange noises, etc."
+                          placeholder={t('request.descriptionPlaceholder')}
                           className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200 resize-none"
                         ></textarea>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-2">Photos / Videos</label>
+                        <span className="block text-sm font-medium text-stone-700 mb-2">{t('request.photosVideos')}</span>
                         <input
                           type="file"
+                          id="file-upload-input"
                           ref={fileInputRef}
                           onChange={handleImageUpload}
                           accept="image/*,video/*"
                           multiple
-                          title="Upload photos or videos"
-                          aria-label="Upload photos or videos"
-                          className="hidden"
+                          title={t('request.uploadPhotos')}
+                          aria-label={t('request.uploadPhotos')}
+                          className="sr-only"
                         />
-
-                        {/* Image Previews */}
-                        {tempImages.length > 0 && (
-                          <div className="flex flex-wrap gap-3 mb-4">
-                            {tempImages.map((img, idx) => (
-                              <div key={idx} className="relative group">
-                                <img src={img.preview} alt={`Upload ${idx + 1}`} className="w-20 h-20 object-cover rounded-xl border border-stone-200" />
-                                <button
-                                  type="button"
-                                  onClick={() => removeImage(idx)}
-                                  title="Remove image"
-                                  aria-label="Remove image"
-                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                                >
-                                  <X size={12} />
-                                </button>
+                        {/* Combined Dropzone + Preview Area */}
+                        {tempImages.length === 0 ? (
+                          <label
+                            htmlFor="file-upload-input"
+                            className="relative block border-2 border-dashed border-stone-300 rounded-2xl p-4 md:p-6 transition-colors duration-200 cursor-pointer hover:bg-stone-50 active:bg-stone-100 text-center group touch-manipulation"
+                            style={{ WebkitTapHighlightColor: 'transparent' }}
+                          >
+                              <div className="w-12 h-12 bg-stone-100 text-stone-400 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-50 group-hover:text-teal-500 transition-colors duration-200">
+                                <Camera size={24} />
                               </div>
-                            ))}
-                          </div>
-                        )}
-
+                              <p className="text-sm text-stone-600 font-medium">{t('request.uploadPrompt')}</p>
+                              <p className="text-xs text-stone-400 mt-1">{t('request.uploadHint')}</p>
+                          </label>
+                        ) : (
                         <div
-                          onClick={() => fileInputRef.current?.click()}
-                          className="border-2 border-dashed border-stone-300 rounded-2xl p-8 text-center hover:bg-stone-50 transition-colors duration-200 cursor-pointer group"
+                          className="relative border-2 border-dashed border-stone-300 rounded-2xl p-4 md:p-6 transition-colors duration-200 cursor-default"
+                          aria-label="Uploaded files area"
                         >
-                          <div className="w-12 h-12 bg-stone-100 text-stone-400 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-50 group-hover:text-teal-500 transition-colors duration-200">
-                            <Camera size={24} />
-                          </div>
-                          <p className="text-sm text-stone-600 font-medium">Click to upload or drag & drop</p>
-                          <p className="text-xs text-stone-400 mt-1">JPG, PNG, MP4 up to 50MB</p>
+                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-64 overflow-auto pr-2">
+                                {tempImages.map((img, idx) => (
+                                  <div key={idx} className="relative group">
+                                    <img
+                                      src={img.preview}
+                                      alt={`Upload ${idx + 1}`}
+                                      className="w-full h-24 object-cover rounded-xl border border-stone-200"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => removeImage(idx)}
+                                      title={t('request.removeImage')}
+                                      aria-label={t('request.removeImage')}
+                                      className="absolute top-1 right-1 z-10 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-md ring-2 ring-white"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
                         </div>
+                        )}
+                          {tempImages.length > 0 && (
+                            <div className="flex justify-end mt-2">
+                              <label
+                                htmlFor="file-upload-input"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-sm font-medium rounded-lg shadow-sm cursor-pointer touch-manipulation"
+                                style={{ WebkitTapHighlightColor: 'transparent' }}
+                              >
+                                <Camera size={16} />
+                                {t('request.addMore')}
+                              </label>
+                            </div>
+                          )}
                     </div>
 
                     <div className="pt-4">
@@ -368,7 +562,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                           className="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-teal-600/25 hover:shadow-xl hover:shadow-teal-600/30 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
                         >
                           <Send size={20} />
-                          {isLoading ? 'Submitting...' : 'Submit Request'}
+                          {isLoading ? t('request.submitting') : t('request.submitButton')}
                         </button>
                     </div>
                 </form>
@@ -377,16 +571,27 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
             <div className="bg-teal-50 border border-teal-100 p-4 rounded-2xl flex items-start gap-3">
                 <AlertCircle className="text-teal-600 mt-0.5" size={20} />
                 <div>
-                    <h4 className="font-semibold text-teal-900 text-sm">Need immediate assistance?</h4>
-                    <p className="text-sm text-teal-700 mt-1">For safety emergencies, please call the EOC hotline at <span className="font-mono font-bold">555-0199</span> immediately.</p>
+                    <h4 className="font-semibold text-teal-900 text-sm">{t('request.emergencyTitle')}</h4>
+                    <p className="text-sm text-teal-700 mt-1">{t('request.emergencyHint')} <span className="font-mono font-bold">555-0199</span></p>
                 </div>
             </div>
+
+            {/* Work Orders Section - Show work orders created from requests */}
+            {currentUser && workOrders.length > 0 && (
+              <div>
+                <h3 className="font-serif text-2xl text-stone-900 mb-4">{t('request.myWorkOrders')}</h3>
+                <RequestorWorkOrders 
+                  workOrders={workOrders} 
+                  requestorName={currentUser.name}
+                />
+              </div>
+            )}
        </div>
 
        {/* Right Column: History */}
        <div className="md:col-span-1">
             <h3 className="font-semibold text-stone-800 mb-4 flex items-center gap-2">
-                <History size={20} className="text-stone-400" /> My Recent Requests
+                <History size={20} className="text-stone-400" /> {t('request.myHistory')}
             </h3>
             <div className="space-y-4">
                 {requests.map(req => (
@@ -406,17 +611,38 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                             </span>
                         </div>
                         <p className="text-sm font-medium text-stone-800 mb-1">{req.desc}</p>
-                        <p className="text-xs text-stone-500 mb-2">📍 {req.location} • Priority: {req.priority}</p>
+                        <p className="text-xs text-stone-500 mb-2">📍 {req.location} • {t('workOrders.priority')}: {req.priority}</p>
+                        {req.preferredDate && canSetPreferredDate && (
+                          <div className="flex items-center gap-1 text-xs text-violet-600 mb-2">
+                            <Calendar size={12} />
+                            <span>{t('workOrders.appointment')}: {formatDateDDMMYYYY(req.preferredDate)}</span>
+                          </div>
+                        )}
                         {req.assignedTo && (
                           <div className="flex items-center gap-1 text-xs text-teal-600 mb-2">
                             <UserCheck size={12} />
                             <span>{req.assignedTo}</span>
                           </div>
                         )}
+                        {req.locationData && (
+                          <div className="flex items-center gap-1 text-xs text-stone-500 mb-2">
+                            <Navigation size={12} className="text-teal-500" />
+                            <a
+                              href={req.locationData.googleMapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="hover:text-teal-600 hover:underline truncate max-w-[180px]"
+                              title={req.locationData.address}
+                            >
+                              {t('request.gpsLocation')}
+                            </a>
+                          </div>
+                        )}
                         {req.imageIds.length > 0 && (
                           <div className="flex items-center gap-1 text-xs text-stone-400 mb-2">
                             <ImageIcon size={12} />
-                            <span>{req.imageIds.length} image(s)</span>
+                            <span>{req.imageIds.length} {t('request.images')}</span>
                           </div>
                         )}
                         <div className="flex items-center gap-2 text-xs text-stone-500 pt-2 border-t border-stone-100">
@@ -427,7 +653,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                 ))}
 
                 <button className="w-full py-2.5 text-sm text-stone-500 hover:text-teal-600 hover:bg-stone-50 rounded-xl border border-transparent hover:border-stone-200 transition-all duration-200">
-                    View All History
+                    {t('request.viewHistory')}
                 </button>
             </div>
        </div>
@@ -453,8 +679,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                </div>
                <button
                  onClick={() => setSelectedRequest(null)}
-                 title="Close dialog"
-                 aria-label="Close dialog"
+                 title={t('common.close')}
+                 aria-label={t('common.close')}
                  className="p-2 hover:bg-stone-100 rounded-xl text-stone-400 hover:text-stone-600 transition-colors duration-200"
                >
                  <X size={20} />
@@ -463,12 +689,12 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
 
              <div className="p-6 space-y-4">
                <div>
-                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Location</label>
+                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">{t('workOrders.location')}</label>
                  <p className="text-stone-800">{selectedRequest.location}</p>
                </div>
 
                <div>
-                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Priority</label>
+                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">{t('workOrders.priority')}</label>
                  <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
                    selectedRequest.priority === 'Critical' ? 'bg-red-50 text-red-700' :
                    selectedRequest.priority === 'High' ? 'bg-orange-50 text-orange-700' :
@@ -479,14 +705,27 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                  </span>
                </div>
 
+               {/* Preferred Maintenance Date - Only Admin or Head Technician */}
+               {selectedRequest.preferredDate && canSetPreferredDate && (
+                 <div>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">📅 {t('request.preferredDate')}</label>
+                   <div className="flex items-center gap-2 bg-violet-50 p-3 rounded-xl border border-violet-100">
+                     <Calendar size={18} className="text-violet-500" />
+                     <span className="text-violet-800 font-medium">
+                       {formatDateDDMMYYYY(selectedRequest.preferredDate)}
+                     </span>
+                   </div>
+                 </div>
+               )}
+
                <div>
-                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Description</label>
+                 <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">{t('request.description')}</label>
                  <p className="text-stone-800 bg-stone-50 p-4 rounded-xl">{selectedRequest.desc}</p>
                </div>
 
                {selectedRequest.assignedTo && (
                  <div>
-                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">Assigned To</label>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">{t('request.assignedTo')}</label>
                    <div className="flex items-center gap-2">
                      <UserCheck size={16} className="text-teal-500" />
                      <span className="text-stone-800 font-medium">{selectedRequest.assignedTo}</span>
@@ -494,9 +733,39 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                  </div>
                )}
 
+               {/* GPS Location with Navigate Button */}
+               {selectedRequest.locationData && (
+                 <div>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">📍 {t('request.gpsLocation')}</label>
+                   <div className="bg-stone-50 p-4 rounded-xl border border-stone-200">
+                     <div className="flex items-start gap-3">
+                       <div className="p-2 bg-teal-100 text-teal-600 rounded-lg flex-shrink-0">
+                         <MapPin size={18} />
+                       </div>
+                       <div className="flex-1 min-w-0">
+                         <p className="text-sm text-stone-800 mb-1">{selectedRequest.locationData.address}</p>
+                         <p className="text-xs text-stone-400 font-mono">
+                           {selectedRequest.locationData.latitude.toFixed(6)}, {selectedRequest.locationData.longitude.toFixed(6)}
+                         </p>
+                       </div>
+                       <a
+                         href={`https://www.google.com/maps/dir/?api=1&destination=${selectedRequest.locationData.latitude},${selectedRequest.locationData.longitude}`}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors flex-shrink-0"
+                         title={t('gps.navigate')}
+                       >
+                         <Navigation size={16} />
+                         {t('gps.navigate')}
+                       </a>
+                     </div>
+                   </div>
+                 </div>
+               )}
+
                {selectedRequestImages.length > 0 && (
                  <div>
-                   <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">Attached Images</label>
+                   <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">{t('request.attachedImages')}</label>
                    <div className="grid grid-cols-2 gap-3">
                      {selectedRequestImages.map((imgUrl, idx) => (
                        <img
@@ -516,7 +785,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({ onSubmitRequest, 
                  onClick={() => setSelectedRequest(null)}
                  className="w-full py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-700 font-medium rounded-xl transition-colors duration-200"
                >
-                 Close
+                 {t('common.close')}
                </button>
              </div>
            </div>

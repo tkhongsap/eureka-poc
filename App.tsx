@@ -8,10 +8,14 @@ import WorkRequestPortal from './components/WorkRequestPortal';
 import AssetHierarchy from './components/AssetHierarchy';
 import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
-import { WorkOrder, Status, Priority, User, UserRole } from './types';
-import { UserCircle2, ShieldCheck, HardHat, ClipboardList } from 'lucide-react';
+import NotificationCenter from './components/NotificationCenter';
+import LanguageSwitcher from './components/LanguageSwitcher';
+import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
+import { UserCircle2, ShieldCheck, HardHat, ClipboardList, Crown } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
-import { listWorkOrders, createWorkOrder, WorkOrderItem } from './services/apiService';
+import { listWorkOrders, createWorkOrder, WorkOrderItem, setUserContext, getNotifications, checkAndCreateReminders } from './services/apiService';
+import { filterNotificationsForUser } from './services/notificationService';
+import { useLanguage } from './lib/i18n';
 
 // --- MOCK DATA ---
 
@@ -23,6 +27,13 @@ const ALL_USERS: User[] = [
     role: 'Admin',
     userRole: 'Admin',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex'
+  },
+  {
+    id: 'u9',
+    name: 'Robert Chen',
+    role: 'Head Technician',
+    userRole: 'Head Technician',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Robert'
   },
   {
     id: 'u2',
@@ -53,6 +64,20 @@ const ALL_USERS: User[] = [
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=TomW'
   },
   {
+    id: 'u7',
+    name: 'David K.',
+    role: 'Technician',
+    userRole: 'Technician',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=DavidK'
+  },
+  {
+    id: 'u8',
+    name: 'James L.',
+    role: 'Technician',
+    userRole: 'Technician',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=JamesL'
+  },
+  {
     id: 'u3',
     name: 'Sarah Line',
     role: 'Requester',
@@ -69,6 +94,7 @@ const TECHNICIANS = ALL_USERS
 // USERS object for role-based lookup (used by login flow)
 const USERS: Record<UserRole, User> = {
   Admin: ALL_USERS.find(u => u.userRole === 'Admin')!,
+  'Head Technician': ALL_USERS.find(u => u.userRole === 'Head Technician')!,
   Technician: ALL_USERS.find(u => u.userRole === 'Technician')!,
   Requester: ALL_USERS.find(u => u.userRole === 'Requester')!,
 };
@@ -118,10 +144,12 @@ const MOCK_WOS: WorkOrder[] = [
 
 const App: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(MOCK_WOS);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // Check for logged in user from LoginPage on mount
   useEffect(() => {
@@ -129,11 +157,14 @@ const App: React.FC = () => {
     if (storedUser) {
       try {
         const { role } = JSON.parse(storedUser);
+        console.log('Loading user from sessionStorage:', role); // Debug log
         if (role && USERS[role as UserRole]) {
-          setCurrentUser(USERS[role as UserRole]);
+          const user = USERS[role as UserRole];
+          console.log('User loaded:', user); // Debug log
+          setCurrentUser(user);
           setIsLoggedIn(true);
-          // เมื่อล็อกอินสำเร็จ ให้เข้า dashboard เสมอ
-          setCurrentView('dashboard');
+          // Set user context for API calls
+          setUserContext(user.userRole, user.name);
         }
       } catch (e) {
         console.error('Failed to parse stored user:', e);
@@ -150,11 +181,13 @@ const App: React.FC = () => {
     window.location.href = '/';
   };
 
-  // Load work orders from backend on mount
+  // Load work orders from backend on mount and when user changes
   useEffect(() => {
     const loadWorkOrders = async () => {
       try {
-        const apiWorkOrders = await listWorkOrders();
+        const apiWorkOrders = await listWorkOrders({
+          assignedTo: currentUser?.userRole === 'Technician' ? currentUser.name : undefined,
+        });
         const mappedWorkOrders: WorkOrder[] = apiWorkOrders.map((wo: WorkOrderItem) => ({
           id: wo.id,
           title: wo.title,
@@ -169,6 +202,11 @@ const App: React.FC = () => {
           partsUsed: [],
           imageIds: wo.imageIds || [],
           requestId: wo.requestId,
+          adminReview: wo.adminReview,
+          locationData: wo.locationData,
+          technicianNotes: wo.technicianNotes,
+          technicianImages: wo.technicianImages || [],
+          preferredDate: wo.preferredDate,
         }));
         // Merge with mock data if API returns empty
         setWorkOrders(mappedWorkOrders.length > 0 ? mappedWorkOrders : MOCK_WOS);
@@ -180,6 +218,58 @@ const App: React.FC = () => {
     loadWorkOrders();
   }, [currentUser]);
 
+  // Load notifications from backend
+  const loadNotifications = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const allNotifications = await getNotifications();
+      // Map NotificationItem to Notification and filter for current user
+      const mappedNotifications: Notification[] = allNotifications.map(item => ({
+        id: item.id,
+        type: item.type as any,
+        workOrderId: item.workOrderId,
+        workOrderTitle: item.workOrderTitle,
+        message: item.message,
+        recipientRole: item.recipientRole as UserRole,
+        recipientName: item.recipientName,
+        isRead: item.isRead,
+        createdAt: item.createdAt,
+        triggeredBy: item.triggeredBy,
+      }));
+      
+      const userNotifications = filterNotificationsForUser(
+        mappedNotifications,
+        currentUser.userRole,
+        currentUser.name
+      );
+      setNotifications(userNotifications);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+      setNotifications([]);
+    }
+  };
+
+  // Load notifications when user logs in or changes
+  useEffect(() => {
+    if (currentUser) {
+      // Check and create reminder notifications first, then load notifications
+      const initNotifications = async () => {
+        try {
+          await checkAndCreateReminders();
+        } catch (error) {
+          console.error('Failed to check reminders:', error);
+        }
+        loadNotifications();
+      };
+      
+      initNotifications();
+      // Poll for new notifications every 10 seconds
+      const interval = setInterval(loadNotifications, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [currentUser]);
+
   // Handler to add new work order from request
   const handleNewRequest = async (request: {
     id: string;
@@ -188,12 +278,24 @@ const App: React.FC = () => {
     description: string;
     imageIds: string[];
     assignedTo?: string;
+    locationData?: { latitude: number; longitude: number; address: string; googleMapsUrl: string };
+    preferredDate?: string;
   }) => {
     try {
       // Generate AI title from description
       const aiTitle = await generateTitleFromDescription(request.description);
 
       // Create work order via API
+      // dueDate should be 7 days after preferredDate if set, otherwise 7 days from now
+      const calculateDueDate = () => {
+        if (request.preferredDate) {
+          const preferred = new Date(request.preferredDate);
+          preferred.setDate(preferred.getDate() + 7);
+          return preferred.toISOString().split('T')[0];
+        }
+        return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      };
+
       const createdWO = await createWorkOrder({
         title: aiTitle,
         description: request.description,
@@ -202,9 +304,12 @@ const App: React.FC = () => {
         priority: request.priority,
         status: 'Open',
         assignedTo: request.assignedTo,
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        dueDate: calculateDueDate(),
         imageIds: request.imageIds,
         requestId: request.id,
+        createdBy: currentUser?.name, // Store who created this WO
+        locationData: request.locationData,
+        preferredDate: request.preferredDate,
       });
 
       // Map to WorkOrder type for UI
@@ -222,6 +327,9 @@ const App: React.FC = () => {
         partsUsed: [],
         imageIds: createdWO.imageIds || [],
         requestId: createdWO.requestId,
+        createdBy: createdWO.createdBy, // Include createdBy in UI state
+        locationData: createdWO.locationData,
+        preferredDate: createdWO.preferredDate,
       };
 
       setWorkOrders(prev => [newWO, ...prev]);
@@ -238,6 +346,8 @@ const App: React.FC = () => {
         setCurrentView('requests');
       } else if (currentUser.userRole === 'Technician') {
         setCurrentView('work-orders');
+      } else if (currentUser.userRole === 'Head Technician') {
+        setCurrentView('work-orders'); // Head Technician reviews work orders
       } else {
         setCurrentView('dashboard');
       }
@@ -257,20 +367,24 @@ const App: React.FC = () => {
 
   // Show nothing while checking login status or redirecting
   if (!isLoggedIn || !currentUser) {
+    console.log('Not logged in or no user, showing null. isLoggedIn:', isLoggedIn, 'currentUser:', currentUser); // Debug log
     return null;
   }
+
+  console.log('Rendering main app for user:', currentUser.name, currentUser.userRole, 'currentView:', currentView); // Debug log
 
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard':
         return <Dashboard />;
       case 'work-orders':
-        return <WorkOrders workOrders={workOrders} currentUser={currentUser} />;
+        return <WorkOrders workOrders={workOrders} currentUser={currentUser} technicians={TECHNICIANS} />;
       case 'requests':
         return <WorkRequestPortal 
           onSubmitRequest={handleNewRequest} 
           currentUser={currentUser}
           technicians={TECHNICIANS}
+          workOrders={workOrders}
         />;
       case 'assets':
         return <AssetHierarchy />;
@@ -296,15 +410,30 @@ const App: React.FC = () => {
         <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shadow-sm flex-shrink-0">
            <div className="flex items-center gap-2">
              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
-             <span className="font-bold text-slate-800">Eureka Request Portal</span>
+             <span className="font-bold text-slate-800">Eureka <span className="text-brand-600">{t('requestor.requestPortal')}</span></span>
            </div>
-           <PersonaSwitcher currentUser={currentUser} onSwitch={setCurrentUser} dropdownPosition="bottom" />
+           <div className="flex items-center gap-4">
+             {/* Notification Center for Requester */}
+             <NotificationCenter 
+               notifications={notifications}
+               onNotificationsUpdate={loadNotifications}
+             />
+             <LanguageSwitcher variant="minimal" />
+             <button
+               onClick={handleLogout}
+               className="min-w-[100px] flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-stone-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+             >
+               {t('nav.logout')}
+             </button>
+             <PersonaSwitcher currentUser={currentUser} onSwitch={setCurrentUser} dropdownPosition="bottom" />
+           </div>
         </header>
         <main className="flex-1 overflow-y-auto">
            <WorkRequestPortal 
              onSubmitRequest={handleNewRequest} 
              currentUser={currentUser}
              technicians={TECHNICIANS}
+             workOrders={workOrders}
            />
         </main>
       </div>
@@ -320,10 +449,15 @@ const App: React.FC = () => {
         currentUser={currentUser}
         onSwitchUser={setCurrentUser}
         allUsers={Object.values(USERS)}
+        onLogout={handleLogout}
       />
       
       <div className="flex-1 ml-64 flex flex-col h-screen">
-        <Header user={currentUser} />
+        <Header 
+          user={currentUser} 
+          notifications={notifications}
+          onNotificationsUpdate={loadNotifications}
+        />
         
         <main className="flex-1 pt-16 overflow-y-auto scroll-smooth relative">
            {renderContent()}
@@ -336,6 +470,12 @@ const App: React.FC = () => {
 const PersonaSwitcher: React.FC<{ currentUser: User, onSwitch: (u: User) => void, dropdownPosition?: 'top' | 'bottom' }> = ({ currentUser, onSwitch, dropdownPosition = 'top' }) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const handleUserSwitch = (user: User) => {
+    onSwitch(user);
+    setUserContext(user.userRole, user.name);
+    setIsOpen(false);
+  };
+
   return (
     <div className="relative">
       {isOpen && (
@@ -347,11 +487,11 @@ const PersonaSwitcher: React.FC<{ currentUser: User, onSwitch: (u: User) => void
               {ALL_USERS.map((u) => (
                 <button
                   key={u.id}
-                  onClick={() => { onSwitch(u); setIsOpen(false); }}
+                  onClick={() => handleUserSwitch(u)}
                   className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${currentUser.id === u.id ? 'bg-brand-50 text-brand-700' : 'hover:bg-slate-50 text-slate-700'}`}
                 >
-                  <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-100 text-purple-600' : u.userRole === 'Technician' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
-                    {u.userRole === 'Admin' ? <ShieldCheck size={16} /> : u.userRole === 'Technician' ? <HardHat size={16} /> : <ClipboardList size={16} />}
+                  <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-100 text-purple-600' : u.userRole === 'Head Technician' ? 'bg-amber-100 text-amber-600' : u.userRole === 'Technician' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                    {u.userRole === 'Admin' ? <ShieldCheck size={16} /> : u.userRole === 'Head Technician' ? <Crown size={16} /> : u.userRole === 'Technician' ? <HardHat size={16} /> : <ClipboardList size={16} />}
                   </div>
                   <div>
                     <div className="font-bold text-sm">{u.name}</div>

@@ -1,0 +1,1182 @@
+# Eureka CMMS - Implementation Task List
+
+## Relevant Files
+
+### Phase 1: High-Level Mockups & Skeleton
+
+**Backend Structure:**
+- `backend/src/index.ts` - Main ElysiaJS application entry point
+- `backend/src/config/database.ts` - PostgreSQL and InfluxDB configuration
+- `backend/src/config/redis.ts` - Redis cache configuration
+- `backend/src/config/auth.ts` - PASETO/JWT authentication configuration
+- `backend/src/types/user.types.ts` - User and role type definitions
+- `backend/src/types/workorder.types.ts` - Work order type definitions
+- `backend/src/types/asset.types.ts` - Asset and equipment type definitions
+- `backend/src/types/inventory.types.ts` - Inventory and parts type definitions
+- `backend/src/models/User.ts` - User model schema
+- `backend/src/models/Tenant.ts` - Tenant model schema
+- `backend/src/models/Site.ts` - Site model schema
+- `backend/src/models/WorkOrder.ts` - Work order model schema
+- `backend/src/models/Asset.ts` - Asset model schema
+- `backend/src/models/Inventory.ts` - Inventory model schema
+- `backend/src/routes/auth.routes.ts` - Authentication endpoints
+- `backend/src/routes/workorder.routes.ts` - Work order endpoints
+- `backend/src/routes/asset.routes.ts` - Asset endpoints
+- `backend/src/routes/inventory.routes.ts` - Inventory endpoints
+- `backend/src/middleware/auth.middleware.ts` - Authentication middleware
+- `backend/src/middleware/rbac.middleware.ts` - Role-based access control middleware
+- `backend/package.json` - Backend dependencies
+
+**Frontend Structure:**
+- `frontend/src/routes/+layout.svelte` - Root layout with navigation
+- `frontend/src/routes/+page.svelte` - Dashboard home page
+- `frontend/src/routes/workorders/+page.svelte` - Work orders Kanban board
+- `frontend/src/routes/assets/+page.svelte` - Assets list page
+- `frontend/src/routes/inventory/+page.svelte` - Inventory management page
+- `frontend/src/lib/components/Navigation/Sidebar.svelte` - Sidebar navigation component
+- `frontend/src/lib/components/Navigation/TopBar.svelte` - Top navigation bar component
+- `frontend/src/lib/components/WorkOrder/KanbanBoard.svelte` - Kanban board component
+- `frontend/src/lib/components/WorkOrder/WorkOrderCard.svelte` - Work order card component
+- `frontend/src/lib/components/Common/Button.svelte` - Reusable button component
+- `frontend/src/lib/components/Common/Card.svelte` - Reusable card component
+- `frontend/src/lib/components/Common/Badge.svelte` - Badge component for status/priority
+- `frontend/src/lib/stores/auth.store.ts` - Authentication state store
+- `frontend/src/lib/stores/workorder.store.ts` - Work order state store
+- `frontend/src/lib/api/client.ts` - API client configuration
+- `frontend/src/lib/styles/variables.css` - CSS variables for design system
+- `frontend/src/lib/styles/tokens.ts` - Design tokens for UnoCSS
+- `frontend/package.json` - Frontend dependencies
+- `frontend/uno.config.ts` - UnoCSS configuration
+
+**Design Mockups:**
+- `docs/mockups/dashboard-wireframe.md` - Dashboard layout wireframe
+- `docs/mockups/kanban-board-wireframe.md` - Work order Kanban board wireframe
+- `docs/mockups/navigation-structure.md` - Navigation hierarchy and structure
+- `docs/mockups/mobile-pwa-wireframe.md` - Mobile PWA interface wireframe
+- `docs/mockups/design-system.md` - Complete design system specifications
+
+**Infrastructure:**
+- `docker-compose.yml` - Docker services for PostgreSQL, Redis, InfluxDB, MinIO
+- `backend/Dockerfile` - Backend container configuration
+- `frontend/Dockerfile` - Frontend container configuration
+- `.env.example` - Environment variables template
+
+### Notes
+
+- This is a large-scale enterprise application - tasks are organized into 6 phases
+- Each phase must be completed before moving to the next
+- Use atomic sub-tasks (e.g., 1.1.1, 1.1.2) for granular implementation steps
+- Tests will be added in Phase 5
+- Start with Phase 1 to establish the skeleton and mockups
+
+## Instructions for Completing Tasks
+
+**IMPORTANT:** As you complete each task, you must check it off in this markdown file by changing `- [ ]` to `- [x]`. This helps track progress and ensures you don't skip any steps.
+
+Example:
+- `- [ ] 1.1 Read file` → `- [x] 1.1 Read file` (after completing)
+
+Update the file after completing each sub-task, not just after completing an entire parent task.
+
+## Tasks
+
+### Phase 1 — High-Level Mockups & Skeleton
+
+- [ ] 0.0 Create feature branch
+  - [ ] 0.1 Create and checkout a new branch for Eureka CMMS implementation (e.g., `git checkout -b feature/eureka-cmms-initial`)
+
+- [x] 1.0 Design System & Mockup Documentation (Implemented via Tailwind CSS)
+  - [x] 1.1 Create design system specification document (using Tailwind defaults)
+  - [x] 1.2 Define color palette with hex values (brand colors in Tailwind config)
+  - [x] 1.3 Define typography scale and font families (Inter font)
+  - [x] 1.4 Define spacing system (4px base - Tailwind spacing)
+  - [x] 1.5 Document component design principles (buttons, cards, inputs, badges)
+  - [x] 1.6 Create icon library selection guide (Lucide React)
+  
+- [x] 2.0 Navigation Structure Wireframes
+  - [x] 2.1 Create top navigation bar wireframe with all components (Header.tsx)
+  - [x] 2.2 Create sidebar navigation structure with all menu items (Sidebar.tsx)
+  - [x] 2.3 Define role-based menu visibility matrix (userRole prop)
+  - [ ] 2.4 Document navigation keyboard shortcuts
+  - [x] 2.5 Create mobile navigation behavior specification (responsive design)
+  - [ ] 2.6 Create breadcrumb navigation structure
+
+- [x] 3.0 Dashboard Wireframe
+  - [x] 3.1 Create dashboard layout wireframe for different roles (Dashboard.tsx)
+  - [x] 3.2 Define KPI widget types and positions (KPI cards with metrics)
+  - [x] 3.3 Specify chart types for analytics widgets (Area & Bar charts with Recharts)
+  - [ ] 3.4 Create quick actions menu specification
+  - [ ] 3.5 Define alert and notification display areas
+
+- [x] 4.0 Work Order Kanban Board Wireframe
+  - [x] 4.1 Create Kanban board multi-column layout wireframe (WorkOrders.tsx)
+  - [x] 4.2 Design work order card layout with all elements (card with ID, title, priority, assignee)
+  - [x] 4.3 Specify drag-and-drop interaction behavior (HTML5 drag API)
+  - [x] 4.4 Define filter panel layout and controls ("Assigned to Me" checkbox)
+  - [x] 4.5 Create board view options (My Board, Team Board, Site Board) - "Assigned to Me" filter
+  - [ ] 4.6 Specify real-time update indicators
+  - [x] 4.7 Create mobile responsive board wireframe (responsive grid)
+
+- [ ] 5.0 Mobile PWA Wireframe
+  - [ ] 5.1 Create mobile work order list view wireframe
+  - [ ] 5.2 Create mobile work order detail view wireframe
+  - [ ] 5.3 Design QR code scanner interface
+  - [ ] 5.4 Create offline indicator and sync status UI
+  - [ ] 5.5 Design mobile navigation drawer
+  - [ ] 5.6 Create checklist and forms mobile interface
+
+- [ ] 6.0 Backend Project Structure Setup
+  - [ ] 6.1 Initialize backend project with Bun and ElysiaJS
+  - [ ] 6.2 Create folder structure (src, config, models, routes, middleware, services, types, utils)
+  - [ ] 6.3 Configure TypeScript with strict settings
+  - [ ] 6.4 Set up ESLint and Prettier for backend
+  - [ ] 6.5 Create package.json with all dependencies
+  - [ ] 6.6 Create environment variables template (.env.example)
+
+- [ ] 7.0 Frontend Project Structure Setup
+  - [ ] 7.1 Initialize SvelteKit project
+  - [ ] 7.2 Create folder structure (routes, lib/components, lib/stores, lib/api, lib/styles, lib/utils)
+  - [ ] 7.3 Configure TypeScript for frontend
+  - [ ] 7.4 Set up UnoCSS with design tokens
+  - [ ] 7.5 Configure Vite PWA plugin
+  - [ ] 7.6 Create package.json with all dependencies
+  - [ ] 7.7 Set up ESLint and Prettier for frontend
+
+- [ ] 8.0 Database Schema Design (PostgreSQL)
+  - [ ] 8.1 Design tenants table schema
+  - [ ] 8.2 Design sites table schema
+  - [ ] 8.3 Design users table schema with role columns
+  - [ ] 8.4 Design work_orders table schema
+  - [ ] 8.5 Design assets table schema with hierarchy support
+  - [ ] 8.6 Design functional_locations table schema
+  - [ ] 8.7 Design inventory_parts table schema
+  - [ ] 8.8 Design inventory_transactions table schema
+  - [ ] 8.9 Design pm_schedules table schema
+  - [ ] 8.10 Design work_notifications table schema
+  - [ ] 8.11 Create database migration files for all tables
+  - [ ] 8.12 Define indexes for performance optimization
+
+- [ ] 9.0 Type Definitions (Backend)
+  - [ ] 9.1 Create User type with all role enums
+  - [ ] 9.2 Create Tenant type with configuration options
+  - [ ] 9.3 Create Site type with location data
+  - [ ] 9.4 Create WorkOrder type with status enum
+  - [ ] 9.5 Create Asset type with criticality levels
+  - [ ] 9.6 Create InventoryPart type
+  - [ ] 9.7 Create PMSchedule type
+  - [ ] 9.8 Create WorkNotification type
+  - [ ] 9.9 Create API response wrapper types
+
+- [ ] 10.0 Infrastructure Setup (Docker)
+  - [ ] 10.1 Create docker-compose.yml with PostgreSQL service
+  - [ ] 10.2 Add Redis service to docker-compose.yml
+  - [ ] 10.3 Add InfluxDB service to docker-compose.yml
+  - [ ] 10.4 Add MinIO service to docker-compose.yml
+  - [ ] 10.5 Add RabbitMQ service to docker-compose.yml
+  - [ ] 10.6 Configure service networking and volumes
+  - [ ] 10.7 Create backend Dockerfile
+  - [ ] 10.8 Create frontend Dockerfile
+  - [ ] 10.9 Test full stack startup with docker-compose up
+
+- [ ] 11.0 Placeholder API Routes (Backend)
+  - [ ] 11.1 Create auth routes skeleton (login, register, logout)
+  - [ ] 11.2 Create work order routes skeleton (CRUD operations)
+  - [ ] 11.3 Create asset routes skeleton (CRUD operations)
+  - [ ] 11.4 Create inventory routes skeleton (CRUD operations)
+  - [ ] 11.5 Create tenant routes skeleton (admin operations)
+  - [ ] 11.6 Create site routes skeleton (management operations)
+  - [ ] 11.7 Create PM routes skeleton (schedule management)
+  - [ ] 11.8 Set up route registration in main app file
+
+- [x] 12.0 Placeholder Components (Frontend)
+  - [x] 12.1 Create Sidebar component with empty menu structure
+  - [x] 12.2 Create TopBar component with placeholder sections (Header.tsx)
+  - [x] 12.3 Create root layout integrating Sidebar and TopBar (App.tsx)
+  - [x] 12.4 Create Button component with variant props (inline styles)
+  - [x] 12.5 Create Card component with styling (inline styles)
+  - [x] 12.6 Create Badge component for status/priority display (inline styles)
+  - [x] 12.7 Create Input component with validation states (inline styles)
+  - [x] 12.8 Create Modal component wrapper (slide-over panel)
+  - [x] 12.9 Create KanbanBoard component skeleton (WorkOrders.tsx board view)
+  - [x] 12.10 Create WorkOrderCard component skeleton (inline in WorkOrders.tsx)
+
+- [x] 13.0 Design System Implementation (Frontend)
+  - [x] 13.1 Create CSS variables file with color palette (Tailwind CDN config)
+  - [ ] 13.2 Configure UnoCSS with custom design tokens (using Tailwind CDN)
+  - [x] 13.3 Create typography utility classes (Tailwind classes)
+  - [x] 13.4 Create spacing utility classes (Tailwind classes)
+  - [x] 13.5 Set up Lucide Icons integration
+  - [x] 13.6 Create global styles for base elements (index.css)
+
+- [x] 14.0 Mock Data Creation
+  - [x] 14.1 Create mock user data for different roles (USERS object in App.tsx)
+  - [ ] 14.2 Create mock tenant and site data
+  - [x] 14.3 Create mock work order data with various statuses (MOCK_WOS in App.tsx)
+  - [ ] 14.4 Create mock asset hierarchy data
+  - [x] 14.5 Create mock inventory parts data (AVAILABLE_PARTS in WorkOrders.tsx)
+  - [ ] 14.6 Create mock PM schedule data
+  - [x] 14.7 Store mock data in JSON files or in-memory stores (storage/information/*.json)
+
+### Phase 2 — Core Feature Implementation
+
+- [x] 15.0 Authentication & Authorization Implementation (Mock/Frontend Only)
+  - [ ] 15.1 Implement PASETO token generation
+    - [ ] 15.1.1 Install PASETO library for Bun
+    - [ ] 15.1.2 Create token generation utility function
+    - [ ] 15.1.3 Define token payload structure with user roles
+    - [ ] 15.1.4 Set token expiration and refresh logic
+  - [x] 15.2 Implement login endpoint logic (Mock only)
+    - [x] 15.2.1 Create password hashing utility (bcrypt/argon2) - Mock only
+    - [x] 15.2.2 Validate user credentials against database - Mock hardcoded users
+    - [ ] 15.2.3 Generate and return PASETO token on success
+    - [x] 15.2.4 Handle login failures with appropriate error messages
+  - [ ] 15.3 Implement registration endpoint logic
+    - [ ] 15.3.1 Validate registration input (email, password strength)
+    - [ ] 15.3.2 Check for existing user conflicts
+    - [ ] 15.3.3 Hash password before storing
+    - [ ] 15.3.4 Create user record in database
+    - [ ] 15.3.5 Return success response with user data
+  - [ ] 15.4 Create authentication middleware
+    - [ ] 15.4.1 Extract token from Authorization header
+    - [ ] 15.4.2 Verify and decode PASETO token
+    - [ ] 15.4.3 Attach user data to request context
+    - [ ] 15.4.4 Handle invalid or expired tokens
+  - [ ] 15.5 Create RBAC middleware
+    - [ ] 15.5.1 Define role permission matrix
+    - [ ] 15.5.2 Check user role against required permissions
+    - [ ] 15.5.3 Return 403 Forbidden for unauthorized access
+    - [ ] 15.5.4 Support multi-role checks (OR/AND logic)
+
+- [ ] 16.0 Multi-Tenant & Site Management
+  - [ ] 16.1 Implement tenant CRUD operations
+    - [ ] 16.1.1 Create tenant creation logic with validation
+    - [ ] 16.1.2 Implement tenant update logic
+    - [ ] 16.1.3 Implement tenant deletion/deactivation logic
+    - [ ] 16.1.4 Add tenant license pool management
+    - [ ] 16.1.5 Create tenant listing with pagination
+  - [ ] 16.2 Implement site CRUD operations
+    - [ ] 16.2.1 Create site creation under tenant
+    - [ ] 16.2.2 Link site to parent tenant with foreign key
+    - [ ] 16.2.3 Implement site update logic
+    - [ ] 16.2.4 Implement site deletion logic
+    - [ ] 16.2.5 Create site listing by tenant
+  - [ ] 16.3 Implement tenant-site data isolation
+    - [ ] 16.3.1 Add tenant_id to all relevant database queries
+    - [ ] 16.3.2 Create database query helper with automatic tenant filtering
+    - [ ] 16.3.3 Implement Row-Level Security (RLS) policies in PostgreSQL
+    - [ ] 16.3.4 Test data isolation between tenants
+  - [ ] 16.4 Implement license allocation logic
+    - [ ] 16.4.1 Track license usage per tenant
+    - [ ] 16.4.2 Validate license availability before user creation
+    - [ ] 16.4.3 Release licenses on user deactivation
+    - [ ] 16.4.4 Create license usage reporting endpoint
+
+- [x] 17.0 Work Order Management Core Logic
+  - [x] 17.1 Implement work order creation
+    - [x] 17.1.1 Validate input data (asset, priority, due date)
+    - [x] 17.1.2 Generate unique work order ID (WO-YYYY-NNN)
+    - [x] 17.1.3 Insert work order into database (JSON storage)
+    - [x] 17.1.4 Set initial status to "Open"
+    - [ ] 17.1.5 Create audit log entry
+  - [x] 17.2 Implement work order update logic
+    - [ ] 17.2.1 Validate status transitions based on workflow rules
+    - [x] 17.2.2 Update work order fields in database
+    - [ ] 17.2.3 Track field changes for audit trail
+    - [x] 17.2.4 Update modified timestamp
+  - [x] 17.3 Implement work order assignment
+    - [ ] 17.3.1 Validate technician availability
+    - [ ] 17.3.2 Check technician skills match work requirements
+    - [x] 17.3.3 Assign technician to work order
+    - [x] 17.3.4 Send notification to assigned technician (UI only)
+  - [x] 17.4 Implement work order status transitions
+    - [x] 17.4.1 Define allowed status transitions (Open → In Progress → Pending → Completed)
+    - [ ] 17.4.2 Validate transition rules before update
+    - [x] 17.4.3 Update status in database (via drag-and-drop)
+    - [ ] 17.4.4 Log status change in audit trail
+  - [x] 17.5 Implement work order filtering and search
+    - [x] 17.5.1 Add query parameters for status filter (frontend)
+    - [x] 17.5.2 Add query parameters for priority filter (frontend)
+    - [x] 17.5.3 Add query parameters for assigned technician filter ("Assigned to Me")
+    - [ ] 17.5.4 Add full-text search on title and description
+    - [ ] 17.5.5 Implement date range filtering
+    - [ ] 17.5.6 Add pagination support
+  - [ ] 17.6 Implement work order bulk operations
+    - [ ] 17.6.1 Create bulk status update logic
+    - [ ] 17.6.2 Create bulk assignment logic
+    - [ ] 17.6.3 Create bulk priority update logic
+    - [ ] 17.6.4 Validate all operations before execution
+    - [ ] 17.6.5 Return detailed results for each operation
+
+- [ ] 18.0 Asset Management Core Logic
+  - [ ] 18.1 Implement asset hierarchy creation
+    - [ ] 18.1.1 Create functional location creation logic
+    - [ ] 18.1.2 Create equipment creation logic
+    - [ ] 18.1.3 Implement parent-child relationship linking
+    - [ ] 18.1.4 Validate hierarchy integrity (no circular references)
+  - [ ] 18.2 Implement asset CRUD operations
+    - [ ] 18.2.1 Create asset with all attributes (criticality, specs, warranty)
+    - [ ] 18.2.2 Update asset properties
+    - [ ] 18.2.3 Delete asset with cascade checks
+    - [ ] 18.2.4 Retrieve asset with full hierarchy path
+  - [ ] 18.3 Implement asset BOM (Bill of Materials)
+    - [ ] 18.3.1 Create BOM item creation logic
+    - [ ] 18.3.2 Link spare parts to assets
+    - [ ] 18.3.3 Define quantity per assembly
+    - [ ] 18.3.4 Update BOM when parts are used
+  - [ ] 18.4 Implement asset criticality ranking
+    - [ ] 18.4.1 Define criticality levels (A, B, C classification)
+    - [ ] 18.4.2 Store criticality in asset record
+    - [ ] 18.4.3 Create endpoint to update criticality
+    - [ ] 18.4.4 Filter assets by criticality level
+  - [ ] 18.5 Implement asset downtime tracking
+    - [ ] 18.5.1 Create downtime event creation logic
+    - [ ] 18.5.2 Link downtime to work orders
+    - [ ] 18.5.3 Calculate downtime duration
+    - [ ] 18.5.4 Store failure codes and root causes
+  - [ ] 18.6 Implement meter reading tracking
+    - [ ] 18.6.1 Create meter reading entry logic
+    - [ ] 18.6.2 Store timestamp and reading value
+    - [ ] 18.6.3 Calculate meter-based maintenance triggers
+    - [ ] 18.6.4 Validate meter reading progression
+
+- [x] 19.0 Inventory Management Core Logic (Partially - Frontend Only)
+  - [x] 19.1 Implement parts catalog management (Mock data)
+    - [x] 19.1.1 Create spare part creation logic with all attributes (AVAILABLE_PARTS)
+    - [ ] 19.1.2 Store part images and specifications
+    - [ ] 19.1.3 Link parts to suppliers
+    - [ ] 19.1.4 Implement part search by number, name, or description
+  - [ ] 19.2 Implement stock level management
+    - [ ] 19.2.1 Create stock transaction logic (add/remove)
+    - [ ] 19.2.2 Update current stock levels
+    - [ ] 19.2.3 Track stock by warehouse and bin location
+    - [ ] 19.2.4 Validate stock availability before reservation
+  - [ ] 19.3 Implement reorder point (ROP) logic
+    - [ ] 19.3.1 Define ROP and reorder quantity for each part
+    - [ ] 19.3.2 Check stock levels against ROP daily
+    - [ ] 19.3.3 Generate reorder alerts when stock falls below ROP
+    - [ ] 19.3.4 Send notifications to Store Manager
+  - [ ] 19.4 Implement parts reservation
+    - [ ] 19.4.1 Reserve parts for specific work orders
+    - [ ] 19.4.2 Reduce available stock count
+    - [ ] 19.4.3 Release reservation on work order completion
+    - [ ] 19.4.4 Handle partial reservations
+  - [ ] 19.5 Implement parts issuance and returns
+    - [ ] 19.5.1 Issue parts from stock to work order
+    - [ ] 19.5.2 Deduct from inventory
+    - [ ] 19.5.3 Record transaction in audit log
+    - [ ] 19.5.4 Process part returns to stock
+    - [ ] 19.5.5 Update BOM usage history
+  - [ ] 19.6 Implement cycle counting
+    - [ ] 19.6.1 Create cycle count schedule logic
+    - [ ] 19.6.2 Generate count sheets
+    - [ ] 19.6.3 Process count results
+    - [ ] 19.6.4 Calculate variances
+    - [ ] 19.6.5 Adjust stock levels based on counts
+
+- [ ] 20.0 Preventive Maintenance (PM) Core Logic
+  - [ ] 20.1 Implement time-based PM scheduling
+    - [ ] 20.1.1 Define PM frequency (daily, weekly, monthly, yearly)
+    - [ ] 20.1.2 Calculate next PM due date
+    - [ ] 20.1.3 Create PM schedule record
+    - [ ] 20.1.4 Auto-generate work orders based on schedule
+  - [ ] 20.2 Implement meter-based PM triggers
+    - [ ] 20.2.1 Define meter thresholds for PM
+    - [ ] 20.2.2 Monitor meter readings against thresholds
+    - [ ] 20.2.3 Trigger PM work order when threshold reached
+    - [ ] 20.2.4 Reset meter counter after PM completion
+  - [ ] 20.3 Implement job plans
+    - [ ] 20.3.1 Create reusable job plan templates
+    - [ ] 20.3.2 Store task checklists in job plans
+    - [ ] 20.3.3 Attach job plans to PM schedules
+    - [ ] 20.3.4 Copy job plan to work order on creation
+  - [ ] 20.4 Implement PM calendar management
+    - [ ] 20.4.1 Create calendar view data endpoint
+    - [ ] 20.4.2 Support drag-and-drop rescheduling
+    - [ ] 20.4.3 Handle PM date changes
+    - [ ] 20.4.4 Check for scheduling conflicts
+  - [ ] 20.5 Implement route-based maintenance
+    - [ ] 20.5.1 Create inspection route definition
+    - [ ] 20.5.2 Define checkpoint sequence
+    - [ ] 20.5.3 Assign routes to technicians
+    - [ ] 20.5.4 Generate route work orders
+
+- [x] 21.0 Work Notification Management
+  - [x] 21.1 Implement work notification creation
+    - [x] 21.1.1 Create notification from mobile/web portal (WorkRequestPortal.tsx)
+    - [ ] 21.1.2 Allow QR code scanning for asset linking
+    - [x] 21.1.3 Attach photos and descriptions
+    - [x] 21.1.4 Set priority based on urgency
+  - [x] 21.2 Implement notification to work order conversion
+    - [x] 21.2.1 Review notification details
+    - [x] 21.2.2 Create work order from notification (auto-conversion)
+    - [x] 21.2.3 Link notification to created work order (requestId field)
+    - [x] 21.2.4 Update notification status
+  - [x] 21.3 Implement notification status tracking
+    - [x] 21.3.1 Track Open, In Progress, Converted, Closed statuses
+    - [x] 21.3.2 Send status update notifications to reporter (toast notification)
+    - [ ] 21.3.3 Allow direct closure without WO creation
+
+- [ ] 22.0 User & Workforce Management
+  - [ ] 22.1 Implement user CRUD operations
+    - [ ] 22.1.1 Create user with role assignment
+    - [ ] 22.1.2 Validate license availability before user creation
+    - [ ] 22.1.3 Update user profile and roles
+    - [ ] 22.1.4 Deactivate users and release licenses
+  - [ ] 22.2 Implement technician profile management
+    - [ ] 22.2.1 Store skills and certifications
+    - [ ] 22.2.2 Define proficiency levels
+    - [ ] 22.2.3 Track certification expiration dates
+    - [ ] 22.2.4 Link technicians to work orders
+  - [ ] 22.3 Implement shift scheduling
+    - [ ] 22.3.1 Define shift templates (start/end times)
+    - [ ] 22.3.2 Create shift assignments for technicians
+    - [ ] 22.3.3 Handle rotation cycles
+    - [ ] 22.3.4 Manage company holidays and non-working days
+  - [ ] 22.4 Implement availability tracking
+    - [ ] 22.4.1 Track leave requests
+    - [ ] 22.4.2 Track training schedules
+    - [ ] 22.4.3 Calculate available capacity
+    - [ ] 22.4.4 Show technician availability on calendar
+
+### Phase 3 — Integration & Validation
+
+- [ ] 23.0 API Input Validation
+  - [ ] 23.1 Add validation to authentication endpoints
+    - [ ] 23.1.1 Validate email format on registration
+    - [ ] 23.1.2 Validate password strength requirements
+    - [ ] 23.1.3 Sanitize input to prevent SQL injection
+    - [ ] 23.1.4 Return detailed validation error messages
+  - [ ] 23.2 Add validation to work order endpoints
+    - [ ] 23.2.1 Validate required fields (asset, priority)
+    - [ ] 23.2.2 Validate date formats and ranges
+    - [ ] 23.2.3 Validate status transition rules
+    - [ ] 23.2.4 Validate assignment to valid technicians
+  - [ ] 23.3 Add validation to asset endpoints
+    - [ ] 23.3.1 Validate hierarchy relationships
+    - [ ] 23.3.2 Validate criticality values
+    - [ ] 23.3.3 Validate meter reading progression
+    - [ ] 23.3.4 Prevent circular references in hierarchy
+  - [ ] 23.4 Add validation to inventory endpoints
+    - [ ] 23.4.1 Validate stock quantities (non-negative)
+    - [ ] 23.4.2 Validate part numbers and SKUs
+    - [ ] 23.4.3 Validate warehouse and bin locations
+    - [ ] 23.4.4 Validate reorder point logic
+
+- [ ] 24.0 Error Handling Implementation
+  - [ ] 24.1 Create global error handler middleware
+    - [ ] 24.1.1 Catch unhandled exceptions
+    - [ ] 24.1.2 Format error responses consistently
+    - [ ] 24.1.3 Log errors to monitoring system
+    - [ ] 24.1.4 Hide sensitive error details from clients
+  - [ ] 24.2 Implement domain-specific error classes
+    - [ ] 24.2.1 Create AuthenticationError class
+    - [ ] 24.2.2 Create ValidationError class
+    - [ ] 24.2.3 Create NotFoundError class
+    - [ ] 24.2.4 Create PermissionError class
+  - [ ] 24.3 Add error handling to database operations
+    - [ ] 24.3.1 Handle connection failures
+    - [ ] 24.3.2 Handle query timeouts
+    - [ ] 24.3.3 Handle unique constraint violations
+    - [ ] 24.3.4 Handle foreign key violations
+  - [ ] 24.4 Add error handling to external integrations
+    - [ ] 24.4.1 Handle Redis connection failures
+    - [ ] 24.4.2 Handle message queue failures
+    - [ ] 24.4.3 Handle object storage failures
+    - [ ] 24.4.4 Implement retry logic with exponential backoff
+
+- [ ] 25.0 Database Integration & Optimization
+  - [ ] 25.1 Implement connection pooling
+    - [ ] 25.1.1 Configure PostgreSQL connection pool
+    - [ ] 25.1.2 Set pool size and timeout parameters
+    - [ ] 25.1.3 Handle connection acquisition failures
+    - [ ] 25.1.4 Monitor pool utilization
+  - [ ] 25.2 Add database indexes for performance
+    - [ ] 25.2.1 Index foreign keys (tenant_id, site_id, asset_id)
+    - [ ] 25.2.2 Index frequently queried fields (status, priority, due_date)
+    - [ ] 25.2.3 Create composite indexes for common queries
+    - [ ] 25.2.4 Add full-text search indexes
+  - [ ] 25.3 Implement database migrations
+    - [ ] 25.3.1 Set up migration tool (node-pg-migrate or similar)
+    - [ ] 25.3.2 Create initial schema migration
+    - [ ] 25.3.3 Create seed data migration
+    - [ ] 25.3.4 Test migration rollback
+  - [ ] 25.4 Implement query optimization
+    - [ ] 25.4.1 Use SELECT specific columns instead of SELECT *
+    - [ ] 25.4.2 Implement query result caching
+    - [ ] 25.4.3 Use EXPLAIN ANALYZE to identify slow queries
+    - [ ] 25.4.4 Optimize N+1 query problems
+
+- [ ] 26.0 Caching Layer Integration (Redis)
+  - [ ] 26.1 Set up Redis connection
+    - [ ] 26.1.1 Configure Redis client
+    - [ ] 26.1.2 Handle connection failures gracefully
+    - [ ] 26.1.3 Implement reconnection logic
+  - [ ] 26.2 Implement cache for frequently accessed data
+    - [ ] 26.2.1 Cache user profile data
+    - [ ] 26.2.2 Cache tenant and site configuration
+    - [ ] 26.2.3 Cache asset hierarchy
+    - [ ] 26.2.4 Cache parts catalog
+  - [ ] 26.3 Implement cache invalidation strategies
+    - [ ] 26.3.1 Invalidate cache on data updates
+    - [ ] 26.3.2 Set appropriate TTL values
+    - [ ] 26.3.3 Implement cache warming on startup
+    - [ ] 26.3.4 Handle cache stampede prevention
+  - [ ] 26.4 Implement session storage in Redis
+    - [ ] 26.4.1 Store active user sessions
+    - [ ] 26.4.2 Implement session expiration
+    - [ ] 26.4.3 Support session refresh
+
+- [ ] 27.0 Message Queue Integration (RabbitMQ)
+  - [ ] 27.1 Set up RabbitMQ connection
+    - [ ] 27.1.1 Configure RabbitMQ client
+    - [ ] 27.1.2 Create exchanges and queues
+    - [ ] 27.1.3 Define routing keys
+  - [ ] 27.2 Implement async work order notifications
+    - [ ] 27.2.1 Publish work order assignment events
+    - [ ] 27.2.2 Publish work order status change events
+    - [ ] 27.2.3 Create consumer for notification service
+    - [ ] 27.2.4 Send email/SMS notifications
+  - [ ] 27.3 Implement async PM generation
+    - [ ] 27.3.1 Publish PM due date events
+    - [ ] 27.3.2 Create consumer to generate PM work orders
+    - [ ] 27.3.3 Handle PM generation failures
+  - [ ] 27.4 Implement async inventory alerts
+    - [ ] 27.4.1 Publish low stock events
+    - [ ] 27.4.2 Create consumer for reorder alerts
+    - [ ] 27.4.3 Send notifications to Store Managers
+
+- [x] 28.0 Object Storage Integration (MinIO/S3) - Backend Python
+  - [x] 28.1 Set up MinIO client
+    - [x] 28.1.1 Configure S3-compatible client (backend storage)
+    - [x] 28.1.2 Create buckets for different file types
+    - [ ] 28.1.3 Set bucket policies and permissions
+  - [x] 28.2 Implement file upload logic
+    - [x] 28.2.1 Handle multipart file uploads (uploadImage in apiService.ts)
+    - [x] 28.2.2 Validate file types and sizes
+    - [x] 28.2.3 Generate unique file keys (image IDs)
+    - [x] 28.2.4 Store file metadata in database (imageIds array)
+  - [x] 28.3 Implement file retrieval logic
+    - [x] 28.3.1 Generate presigned URLs for secure access (getImageUrl)
+    - [ ] 28.3.2 Set URL expiration times
+    - [x] 28.3.3 Handle file not found errors
+  - [ ] 28.4 Implement file deletion logic
+    - [ ] 28.4.1 Delete files from storage
+    - [ ] 28.4.2 Remove file metadata from database
+    - [ ] 28.4.3 Handle deletion failures
+
+- [ ] 29.0 Frontend-Backend Integration
+  - [ ] 29.1 Create API client service
+    - [ ] 29.1.1 Configure base URL and headers
+    - [ ] 29.1.2 Implement request interceptor for auth tokens
+    - [ ] 29.1.3 Implement response interceptor for error handling
+    - [ ] 29.1.4 Add retry logic for failed requests
+  - [ ] 29.2 Implement authentication flow
+    - [ ] 29.2.1 Create login form component
+    - [ ] 29.2.2 Connect login to backend API
+    - [ ] 29.2.3 Store auth token in localStorage/cookie
+    - [ ] 29.2.4 Implement auto-login on page load
+    - [ ] 29.2.5 Implement logout functionality
+  - [ ] 29.3 Connect work order Kanban board to API
+    - [ ] 29.3.1 Fetch work orders from backend
+    - [ ] 29.3.2 Update work order status via drag-and-drop
+    - [ ] 29.3.3 Implement real-time updates via WebSocket or polling
+    - [ ] 29.3.4 Handle API errors gracefully
+  - [ ] 29.4 Connect asset management to API
+    - [ ] 29.4.1 Fetch asset hierarchy from backend
+    - [ ] 29.4.2 Create/update assets via API
+    - [ ] 29.4.3 Display asset details and history
+  - [ ] 29.5 Connect inventory management to API
+    - [ ] 29.5.1 Fetch parts catalog
+    - [ ] 29.5.2 Update stock levels
+    - [ ] 29.5.3 Display reorder alerts
+  - [ ] 29.6 Implement state management
+    - [ ] 29.6.1 Create Svelte stores for global state
+    - [ ] 29.6.2 Use TanStack Query for server state
+    - [ ] 29.6.3 Implement optimistic updates
+    - [ ] 29.6.4 Handle cache invalidation
+
+- [ ] 30.0 Real-Time Updates Implementation
+  - [ ] 30.1 Set up WebSocket server
+    - [ ] 30.1.1 Integrate WebSocket with ElysiaJS
+    - [ ] 30.1.2 Handle WebSocket connections
+    - [ ] 30.1.3 Implement authentication for WebSocket
+    - [ ] 30.1.4 Handle connection errors and reconnection
+  - [ ] 30.2 Implement work order real-time updates
+    - [ ] 30.2.1 Broadcast work order status changes
+    - [ ] 30.2.2 Broadcast new work order assignments
+    - [ ] 30.2.3 Broadcast work order deletions
+  - [ ] 30.3 Implement frontend WebSocket client
+    - [ ] 30.3.1 Connect to WebSocket server
+    - [ ] 30.3.2 Listen for work order updates
+    - [ ] 30.3.3 Update Kanban board in real-time
+    - [ ] 30.3.4 Show toast notifications for updates
+    - [ ] 30.3.5 Handle reconnection on disconnect
+
+### Phase 4 — Advanced Features / Enhancements
+
+- [x] 31.0 Advanced Work Order Features (Partially)
+  - [x] 31.1 Implement work order templates (AI-Generated)
+    - [x] 31.1.1 Create template definition logic (Gemini API)
+    - [x] 31.1.2 Store predefined checklists and procedures (AI-generated)
+    - [x] 31.1.3 Create work orders from templates (AI title generation)
+    - [ ] 31.1.4 Allow template customization
+  - [ ] 31.2 Implement work order approval workflows
+    - [ ] 31.2.1 Define approval stages (submitted → approved → in progress)
+    - [ ] 31.2.2 Assign approvers by role
+    - [ ] 31.2.3 Send approval notifications
+    - [ ] 31.2.4 Track approval history
+  - [ ] 31.3 Implement work order recurring patterns
+    - [ ] 31.3.1 Define recurrence rules (daily, weekly, monthly)
+    - [ ] 31.3.2 Auto-generate recurring work orders
+    - [ ] 31.3.3 Handle exceptions and cancellations
+  - [ ] 31.4 Implement work order cost tracking
+    - [ ] 31.4.1 Track labor costs (hours × rate)
+    - [ ] 31.4.2 Track material costs (parts used)
+    - [ ] 31.4.3 Track contractor costs
+    - [ ] 31.4.4 Calculate total work order cost
+  - [x] 31.5 Implement work order attachments
+    - [x] 31.5.1 Upload files to MinIO (backend storage)
+    - [x] 31.5.2 Link files to work orders (imageIds array)
+    - [x] 31.5.3 Display attachments in work order details (with fullscreen)
+    - [x] 31.5.4 Support multiple file types (images, PDFs, videos)
+
+- [ ] 32.0 Advanced Asset Features
+  - [ ] 32.1 Implement asset warranty tracking
+    - [ ] 32.1.1 Store warranty start and end dates
+    - [ ] 32.1.2 Set expiration alerts
+    - [ ] 32.1.3 Link warranty documents
+    - [ ] 32.1.4 Display warranty status on asset details
+  - [ ] 32.2 Implement asset TCO (Total Cost of Ownership)
+    - [ ] 32.2.1 Track acquisition cost
+    - [ ] 32.2.2 Track maintenance costs from work orders
+    - [ ] 32.2.3 Track downtime costs
+    - [ ] 32.2.4 Calculate and display TCO
+  - [ ] 32.3 Implement asset performance metrics
+    - [ ] 32.3.1 Calculate MTBF (Mean Time Between Failures)
+    - [ ] 32.3.2 Calculate MTTR (Mean Time To Repair)
+    - [ ] 32.3.3 Calculate availability percentage
+    - [ ] 32.3.4 Display metrics on asset dashboard
+  - [ ] 32.4 Implement asset QR code generation
+    - [ ] 32.4.1 Generate unique QR codes for assets
+    - [ ] 32.4.2 Link QR codes to asset IDs
+    - [ ] 32.4.3 Provide QR code download/print functionality
+    - [ ] 32.4.4 Implement QR code scanning in mobile app
+
+- [ ] 33.0 Advanced Inventory Features
+  - [ ] 33.1 Implement multi-warehouse support
+    - [ ] 33.1.1 Create warehouse definitions
+    - [ ] 33.1.2 Track stock by warehouse
+    - [ ] 33.1.3 Implement stock transfers between warehouses
+    - [ ] 33.1.4 Calculate lead times per warehouse
+  - [ ] 33.2 Implement demand forecasting
+    - [ ] 33.2.1 Analyze historical parts usage
+    - [ ] 33.2.2 Calculate average consumption rate
+    - [ ] 33.2.3 Factor in upcoming PM schedules
+    - [ ] 33.2.4 Generate demand predictions
+  - [ ] 33.3 Implement purchase request workflow
+    - [ ] 33.3.1 Create purchase request from low stock alert
+    - [ ] 33.3.2 Submit PR for approval
+    - [ ] 33.3.3 Track PR approval status
+    - [ ] 33.3.4 Convert PR to purchase order
+  - [ ] 33.4 Implement barcode/RFID scanning
+    - [ ] 33.4.1 Support barcode scanning for parts
+    - [ ] 33.4.2 Support RFID tag reading
+    - [ ] 33.4.3 Quick lookup by scanning
+    - [ ] 33.4.4 Mobile scanning integration
+
+- [ ] 34.0 Enterprise Operations Center (EOC)
+  - [ ] 34.1 Implement multi-site dashboard
+    - [ ] 34.1.1 Aggregate data from all sites
+    - [ ] 34.1.2 Display critical events across sites
+    - [ ] 34.1.3 Show real-time work order status by site
+    - [ ] 34.1.4 Display technician availability by site
+  - [ ] 34.2 Implement emergency coordination
+    - [ ] 34.2.1 Create emergency event logging
+    - [ ] 34.2.2 Dispatch cross-site technicians
+    - [ ] 34.2.3 Coordinate with external agencies
+    - [ ] 34.2.4 Track emergency resolution
+  - [ ] 34.3 Implement resource allocation
+    - [ ] 34.3.1 View technician locations across sites
+    - [ ] 34.3.2 Allocate technicians to critical events
+    - [ ] 34.3.3 Track resource utilization
+
+- [ ] 35.0 Spare Part Center (Tenant-Level)
+  - [ ] 35.1 Implement cross-site inventory view
+    - [ ] 35.1.1 Aggregate inventory across all sites
+    - [ ] 35.1.2 Display total available stock by part
+    - [ ] 35.1.3 Show stock distribution by site
+  - [ ] 35.2 Implement bulk purchasing logic
+    - [ ] 35.2.1 Consolidate purchase requests from sites
+    - [ ] 35.2.2 Create bulk purchase orders
+    - [ ] 35.2.3 Track supplier negotiations
+    - [ ] 35.2.4 Distribute purchased stock to sites
+  - [ ] 35.3 Implement stock optimization
+    - [ ] 35.3.1 Identify slow-moving inventory
+    - [ ] 35.3.2 Recommend stock transfers between sites
+    - [ ] 35.3.3 Optimize reorder points based on usage
+
+- [ ] 36.0 Safety & Compliance Features
+  - [ ] 36.1 Implement work permit management
+    - [ ] 36.1.1 Create work permit templates
+    - [ ] 36.1.2 Link permits to work orders
+    - [ ] 36.1.3 Track permit approval workflow
+    - [ ] 36.1.4 Store permit documentation
+  - [ ] 36.2 Implement LOTO (Lockout/Tagout) procedures
+    - [ ] 36.2.1 Create LOTO checklists
+    - [ ] 36.2.2 Enforce LOTO completion before work
+    - [ ] 36.2.3 Track LOTO tags and locks
+    - [ ] 36.2.4 Audit LOTO compliance
+  - [ ] 36.3 Implement incident reporting
+    - [ ] 36.3.1 Create incident report form
+    - [ ] 36.3.2 Link incidents to work orders or assets
+    - [ ] 36.3.3 Track corrective actions
+    - [ ] 36.3.4 Generate incident reports
+  - [ ] 36.4 Implement audit trail
+    - [ ] 36.4.1 Log all data changes
+    - [ ] 36.4.2 Store user, timestamp, and change details
+    - [ ] 36.4.3 Create audit report generation
+    - [ ] 36.4.4 Support regulatory compliance exports
+
+- [ ] 37.0 Analytics & Reporting
+  - [ ] 37.1 Implement OEE (Overall Equipment Effectiveness) calculation
+    - [ ] 37.1.1 Calculate availability (uptime / total time)
+    - [ ] 37.1.2 Calculate performance (actual output / target output)
+    - [ ] 37.1.3 Calculate quality (good units / total units)
+    - [ ] 37.1.4 Calculate OEE (availability × performance × quality)
+  - [ ] 37.2 Implement PM compliance reporting
+    - [ ] 37.2.1 Track completed vs. scheduled PM
+    - [ ] 37.2.2 Calculate PM completion rate
+    - [ ] 37.2.3 Identify overdue PM tasks
+    - [ ] 37.2.4 Generate PM compliance dashboard
+  - [ ] 37.3 Implement work order analytics
+    - [ ] 37.3.1 Calculate work order completion rate
+    - [ ] 37.3.2 Calculate average resolution time
+    - [ ] 37.3.3 Analyze work order backlog trends
+    - [ ] 37.3.4 Generate work order reports by asset, technician, site
+  - [ ] 37.4 Implement custom report builder
+    - [ ] 37.4.1 Create drag-and-drop report designer
+    - [ ] 37.4.2 Support filters, grouping, and sorting
+    - [ ] 37.4.3 Save custom report templates
+    - [ ] 37.4.4 Export reports to PDF, Excel, CSV
+  - [ ] 37.5 Implement scheduled reports
+    - [ ] 37.5.1 Define report schedules (daily, weekly, monthly)
+    - [ ] 37.5.2 Auto-generate and email reports
+    - [ ] 37.5.3 Store report history
+
+- [ ] 38.0 Mobile PWA Enhancements
+  - [ ] 38.1 Implement offline data synchronization
+    - [ ] 38.1.1 Store offline changes in IndexedDB
+    - [ ] 38.1.2 Queue API requests when offline
+    - [ ] 38.1.3 Sync queued requests when online
+    - [ ] 38.1.4 Resolve sync conflicts
+  - [ ] 38.2 Implement QR code scanning
+    - [ ] 38.2.1 Integrate QR code scanner library
+    - [ ] 38.2.2 Scan asset QR codes
+    - [ ] 38.2.3 Scan part QR codes for inventory
+    - [ ] 38.2.4 Navigate to asset/part details after scan
+  - [ ] 38.3 Implement photo/video capture
+    - [ ] 38.3.1 Access device camera
+    - [ ] 38.3.2 Capture photos and videos
+    - [ ] 38.3.3 Compress media before upload
+    - [ ] 38.3.4 Upload to MinIO when online
+  - [ ] 38.4 Implement geolocation tracking
+    - [ ] 38.4.1 Request location permissions
+    - [ ] 38.4.2 Capture GPS coordinates on transactions
+    - [ ] 38.4.3 Store location with work order updates
+    - [ ] 38.4.4 Display technician locations on map
+
+- [ ] 39.0 Performance Optimization
+  - [ ] 39.1 Implement lazy loading for routes
+    - [ ] 39.1.1 Use SvelteKit's dynamic imports
+    - [ ] 39.1.2 Split large components into chunks
+    - [ ] 39.1.3 Implement route prefetching
+  - [ ] 39.2 Optimize database queries
+    - [ ] 39.2.1 Use query result pagination
+    - [ ] 39.2.2 Implement cursor-based pagination
+    - [ ] 39.2.3 Add database query caching
+    - [ ] 39.2.4 Use prepared statements
+  - [ ] 39.3 Implement frontend performance monitoring
+    - [ ] 39.3.1 Track page load times
+    - [ ] 39.3.2 Track API response times
+    - [ ] 39.3.3 Monitor bundle sizes
+    - [ ] 39.3.4 Identify performance bottlenecks
+  - [ ] 39.4 Optimize asset loading
+    - [ ] 39.4.1 Compress images before storage
+    - [ ] 39.4.2 Serve images via CDN
+    - [ ] 39.4.3 Implement lazy loading for images
+    - [ ] 39.4.4 Use responsive image formats (WebP, AVIF)
+
+### Phase 5 — Testing & QA
+
+- [ ] 40.0 Unit Testing Setup
+  - [ ] 40.1 Configure testing framework
+    - [ ] 40.1.1 Install Jest or Vitest
+    - [ ] 40.1.2 Configure test environment
+    - [ ] 40.1.3 Set up code coverage reporting
+    - [ ] 40.1.4 Create test utilities and helpers
+  - [ ] 40.2 Set up frontend testing tools
+    - [ ] 40.2.1 Install Testing Library for Svelte
+    - [ ] 40.2.2 Configure component testing
+    - [ ] 40.2.3 Set up mock data factories
+
+- [ ] 41.0 Backend Unit Tests
+  - [ ] 41.1 Test authentication logic
+    - [ ] 41.1.1 Test token generation
+    - [ ] 41.1.2 Test token verification
+    - [ ] 41.1.3 Test password hashing
+    - [ ] 41.1.4 Test login success and failure scenarios
+  - [ ] 41.2 Test work order logic
+    - [ ] 41.2.1 Test work order creation
+    - [ ] 41.2.2 Test status transitions
+    - [ ] 41.2.3 Test assignment logic
+    - [ ] 41.2.4 Test validation rules
+  - [ ] 41.3 Test asset management logic
+    - [ ] 41.3.1 Test asset hierarchy creation
+    - [ ] 41.3.2 Test BOM management
+    - [ ] 41.3.3 Test meter reading tracking
+    - [ ] 41.3.4 Test downtime calculation
+  - [ ] 41.4 Test inventory logic
+    - [ ] 41.4.1 Test stock level updates
+    - [ ] 41.4.2 Test ROP alerts
+    - [ ] 41.4.3 Test reservation logic
+    - [ ] 41.4.4 Test cycle counting
+  - [ ] 41.5 Test PM scheduling logic
+    - [ ] 41.5.1 Test time-based PM generation
+    - [ ] 41.5.2 Test meter-based PM triggers
+    - [ ] 41.5.3 Test PM calendar calculations
+
+- [ ] 42.0 Frontend Unit Tests
+  - [ ] 42.1 Test component rendering
+    - [ ] 42.1.1 Test Button component variants
+    - [ ] 42.1.2 Test Card component
+    - [ ] 42.1.3 Test Badge component
+    - [ ] 42.1.4 Test Input component with validation
+  - [ ] 42.2 Test Kanban board logic
+    - [ ] 42.2.1 Test work order card rendering
+    - [ ] 42.2.2 Test drag-and-drop functionality
+    - [ ] 42.2.3 Test filtering logic
+    - [ ] 42.2.4 Test search functionality
+  - [ ] 42.3 Test state management
+    - [ ] 42.3.1 Test auth store
+    - [ ] 42.3.2 Test work order store
+    - [ ] 42.3.3 Test asset store
+    - [ ] 42.3.4 Test inventory store
+  - [ ] 42.4 Test API client
+    - [ ] 42.4.1 Test request interceptors
+    - [ ] 42.4.2 Test response interceptors
+    - [ ] 42.4.3 Test error handling
+    - [ ] 42.4.4 Test retry logic
+
+- [ ] 43.0 Integration Tests
+  - [ ] 43.1 Test authentication flow end-to-end
+    - [ ] 43.1.1 Test registration → login → token storage
+    - [ ] 43.1.2 Test protected route access
+    - [ ] 43.1.3 Test logout and token cleanup
+  - [ ] 43.2 Test work order workflow
+    - [ ] 43.2.1 Test work order creation → assignment → completion
+    - [ ] 43.2.2 Test status transitions through Kanban board
+    - [ ] 43.2.3 Test real-time updates
+  - [ ] 43.3 Test asset and inventory integration
+    - [ ] 43.3.1 Test parts reservation from work order
+    - [ ] 43.3.2 Test parts issuance and stock deduction
+    - [ ] 43.3.3 Test BOM update suggestions
+  - [ ] 43.4 Test PM generation and execution
+    - [ ] 43.4.1 Test PM schedule → work order generation
+    - [ ] 43.4.2 Test meter reading → PM trigger
+    - [ ] 43.4.3 Test PM completion and rescheduling
+
+- [ ] 44.0 API Testing
+  - [ ] 44.1 Set up API testing framework
+    - [ ] 44.1.1 Install Supertest or similar
+    - [ ] 44.1.2 Create test database seeder
+    - [ ] 44.1.3 Set up test data factories
+  - [ ] 44.2 Test API endpoints
+    - [ ] 44.2.1 Test all work order endpoints (GET, POST, PUT, DELETE)
+    - [ ] 44.2.2 Test all asset endpoints
+    - [ ] 44.2.3 Test all inventory endpoints
+    - [ ] 44.2.4 Test all auth endpoints
+  - [ ] 44.3 Test API security
+    - [ ] 44.3.1 Test unauthorized access returns 401
+    - [ ] 44.3.2 Test forbidden access returns 403
+    - [ ] 44.3.3 Test RBAC enforcement
+    - [ ] 44.3.4 Test input sanitization
+  - [ ] 44.4 Test API performance
+    - [ ] 44.4.1 Load test work order listing endpoint
+    - [ ] 44.4.2 Load test asset hierarchy endpoint
+    - [ ] 44.4.3 Measure response times under load
+    - [ ] 44.4.4 Test concurrent user scenarios
+
+- [ ] 45.0 Mobile PWA Testing
+  - [ ] 45.1 Test offline functionality
+    - [ ] 45.1.1 Test work order updates while offline
+    - [ ] 45.1.2 Test data sync when back online
+    - [ ] 45.1.3 Test conflict resolution
+  - [ ] 45.2 Test mobile interactions
+    - [ ] 45.2.1 Test QR code scanning
+    - [ ] 45.2.2 Test photo capture and upload
+    - [ ] 45.2.3 Test geolocation tracking
+    - [ ] 45.2.4 Test touch gestures
+  - [ ] 45.3 Test PWA installation
+    - [ ] 45.3.1 Test PWA install prompt
+    - [ ] 45.3.2 Test PWA runs in standalone mode
+    - [ ] 45.3.3 Test service worker caching
+    - [ ] 45.3.4 Test push notifications
+
+- [ ] 46.0 Cross-Browser & Responsive Testing
+  - [ ] 46.1 Test on desktop browsers
+    - [ ] 46.1.1 Test on Chrome
+    - [ ] 46.1.2 Test on Firefox
+    - [ ] 46.1.3 Test on Safari
+    - [ ] 46.1.4 Test on Edge
+  - [ ] 46.2 Test on mobile browsers
+    - [ ] 46.2.1 Test on Chrome Mobile
+    - [ ] 46.2.2 Test on Safari iOS
+    - [ ] 46.2.3 Test on Samsung Internet
+  - [ ] 46.3 Test responsive layouts
+    - [ ] 46.3.1 Test at 320px width (mobile)
+    - [ ] 46.3.2 Test at 768px width (tablet)
+    - [ ] 46.3.3 Test at 1024px width (desktop)
+    - [ ] 46.3.4 Test at 1920px width (large desktop)
+
+- [ ] 47.0 Security Testing
+  - [ ] 47.1 Test authentication security
+    - [ ] 47.1.1 Test password strength requirements
+    - [ ] 47.1.2 Test token expiration
+    - [ ] 47.1.3 Test session hijacking prevention
+  - [ ] 47.2 Test authorization security
+    - [ ] 47.2.1 Test role-based access controls
+    - [ ] 47.2.2 Test tenant data isolation
+    - [ ] 47.2.3 Test privilege escalation prevention
+  - [ ] 47.3 Test input security
+    - [ ] 47.3.1 Test SQL injection prevention
+    - [ ] 47.3.2 Test XSS prevention
+    - [ ] 47.3.3 Test CSRF protection
+  - [ ] 47.4 Conduct security audit
+    - [ ] 47.4.1 Run OWASP ZAP scan
+    - [ ] 47.4.2 Review dependency vulnerabilities
+    - [ ] 47.4.3 Fix identified security issues
+
+- [ ] 48.0 Performance Testing
+  - [ ] 48.1 Conduct load testing
+    - [ ] 48.1.1 Test with 100 concurrent users
+    - [ ] 48.1.2 Test with 500 concurrent users
+    - [ ] 48.1.3 Test with 1000 concurrent users
+    - [ ] 48.1.4 Identify performance bottlenecks
+  - [ ] 48.2 Test database performance
+    - [ ] 48.2.1 Test query performance under load
+    - [ ] 48.2.2 Test connection pool exhaustion
+    - [ ] 48.2.3 Optimize slow queries
+  - [ ] 48.3 Test frontend performance
+    - [ ] 48.3.1 Measure Lighthouse scores
+    - [ ] 48.3.2 Test Time to First Byte (TTFB)
+    - [ ] 48.3.3 Test Largest Contentful Paint (LCP)
+    - [ ] 48.3.4 Test First Input Delay (FID)
+
+- [ ] 49.0 User Acceptance Testing (UAT)
+  - [ ] 49.1 Prepare UAT environment
+    - [ ] 49.1.1 Set up staging environment
+    - [ ] 49.1.2 Load production-like test data
+    - [ ] 49.1.3 Create UAT test accounts for all roles
+  - [ ] 49.2 Create UAT test scenarios
+    - [ ] 49.2.1 Create test scenarios for Site Manager role
+    - [ ] 49.2.2 Create test scenarios for Technician role
+    - [ ] 49.2.3 Create test scenarios for Store Manager role
+    - [ ] 49.2.4 Create test scenarios for Tenant Admin role
+  - [ ] 49.3 Conduct UAT sessions
+    - [ ] 49.3.1 Recruit beta testers from target user groups
+    - [ ] 49.3.2 Conduct guided UAT sessions
+    - [ ] 49.3.3 Collect feedback and bug reports
+    - [ ] 49.3.4 Prioritize and fix critical issues
+
+### Phase 6 — Documentation & Final Polish
+
+- [ ] 50.0 API Documentation
+  - [ ] 50.1 Set up API documentation tool
+    - [ ] 50.1.1 Install Swagger/OpenAPI
+    - [ ] 50.1.2 Configure Swagger UI
+    - [ ] 50.1.3 Integrate with ElysiaJS
+  - [ ] 50.2 Document all API endpoints
+    - [ ] 50.2.1 Document authentication endpoints
+    - [ ] 50.2.2 Document work order endpoints
+    - [ ] 50.2.3 Document asset endpoints
+    - [ ] 50.2.4 Document inventory endpoints
+    - [ ] 50.2.5 Document PM endpoints
+    - [ ] 50.2.6 Document tenant/site management endpoints
+  - [ ] 50.3 Add API usage examples
+    - [ ] 50.3.1 Add cURL examples
+    - [ ] 50.3.2 Add JavaScript examples
+    - [ ] 50.3.3 Add authentication flow examples
+  - [ ] 50.4 Document error codes
+    - [ ] 50.4.1 List all error codes and meanings
+    - [ ] 50.4.2 Provide error handling guidance
+
+- [ ] 51.0 User Documentation
+  - [ ] 51.1 Create user guide
+    - [ ] 51.1.1 Write getting started guide
+    - [ ] 51.1.2 Document work order management
+    - [ ] 51.1.3 Document asset management
+    - [ ] 51.1.4 Document inventory management
+    - [ ] 51.1.5 Document PM scheduling
+    - [ ] 51.1.6 Add screenshots and annotated images
+  - [ ] 51.2 Create role-specific guides
+    - [ ] 51.2.1 Create guide for Site Managers
+    - [ ] 51.2.2 Create guide for Technicians
+    - [ ] 51.2.3 Create guide for Store Managers
+    - [ ] 51.2.4 Create guide for Tenant Admins
+  - [ ] 51.3 Create video tutorials
+    - [ ] 51.3.1 Record work order creation walkthrough
+    - [ ] 51.3.2 Record Kanban board usage walkthrough
+    - [ ] 51.3.3 Record mobile app usage walkthrough
+    - [ ] 51.3.4 Record PM scheduling walkthrough
+  - [ ] 51.4 Create FAQ document
+    - [ ] 51.4.1 Compile common questions from UAT
+    - [ ] 51.4.2 Write clear answers with examples
+    - [ ] 51.4.3 Organize by topic
+
+- [ ] 52.0 Developer Documentation
+  - [ ] 52.1 Create README files
+    - [ ] 52.1.1 Write project overview and features
+    - [ ] 52.1.2 Document installation instructions
+    - [ ] 52.1.3 Document environment setup
+    - [ ] 52.1.4 Document development workflow
+  - [ ] 52.2 Document architecture
+    - [ ] 52.2.1 Create system architecture diagram
+    - [ ] 52.2.2 Document database schema with ERD
+    - [ ] 52.2.3 Document API architecture
+    - [ ] 52.2.4 Document authentication flow
+  - [ ] 52.3 Write code contribution guidelines
+    - [ ] 52.3.1 Define coding standards
+    - [ ] 52.3.2 Define commit message conventions
+    - [ ] 52.3.3 Define PR review process
+    - [ ] 52.3.4 Document testing requirements
+  - [ ] 52.4 Document deployment process
+    - [ ] 52.4.1 Write Docker deployment guide
+    - [ ] 52.4.2 Write Kubernetes deployment guide
+    - [ ] 52.4.3 Document environment variables
+    - [ ] 52.4.4 Document database migration process
+
+- [ ] 53.0 Code Quality & Cleanup
+  - [ ] 53.1 Run code quality tools
+    - [ ] 53.1.1 Run ESLint and fix issues
+    - [ ] 53.1.2 Run Prettier and format code
+    - [ ] 53.1.3 Run TypeScript strict checks
+    - [ ] 53.1.4 Fix all type errors
+  - [ ] 53.2 Remove dead code
+    - [ ] 53.2.1 Identify unused imports
+    - [ ] 53.2.2 Remove commented-out code
+    - [ ] 53.2.3 Remove unused functions and components
+  - [ ] 53.3 Optimize bundle size
+    - [ ] 53.3.1 Analyze bundle with webpack-bundle-analyzer
+    - [ ] 53.3.2 Tree-shake unused dependencies
+    - [ ] 53.3.3 Split large bundles
+    - [ ] 53.3.4 Lazy load heavy components
+  - [ ] 53.4 Review and refactor
+    - [ ] 53.4.1 Refactor complex functions for readability
+    - [ ] 53.4.2 Extract reusable utilities
+    - [ ] 53.4.3 Improve variable and function naming
+    - [ ] 53.4.4 Add inline comments for complex logic
+
+- [ ] 54.0 Accessibility (A11y) Compliance
+  - [ ] 54.1 Add ARIA labels
+    - [ ] 54.1.1 Add labels to interactive elements
+    - [ ] 54.1.2 Add roles to custom components
+    - [ ] 54.1.3 Add live regions for dynamic content
+  - [ ] 54.2 Test keyboard navigation
+    - [ ] 54.2.1 Test tab order
+    - [ ] 54.2.2 Test focus indicators
+    - [ ] 54.2.3 Test keyboard shortcuts
+    - [ ] 54.2.4 Test modal and dropdown keyboard access
+  - [ ] 54.3 Test screen reader compatibility
+    - [ ] 54.3.1 Test with NVDA
+    - [ ] 54.3.2 Test with JAWS
+    - [ ] 54.3.3 Test with VoiceOver
+  - [ ] 54.4 Run accessibility audits
+    - [ ] 54.4.1 Run Lighthouse accessibility audit
+    - [ ] 54.4.2 Run axe DevTools audit
+    - [ ] 54.4.3 Fix all critical accessibility issues
+
+- [ ] 55.0 Internationalization (i18n)
+  - [ ] 55.1 Set up i18n framework
+    - [ ] 55.1.1 Install svelte-i18n or similar
+    - [ ] 55.1.2 Configure language detection
+    - [ ] 55.1.3 Create language switcher component
+  - [ ] 55.2 Extract hardcoded strings
+    - [ ] 55.2.1 Identify all UI strings
+    - [ ] 55.2.2 Move strings to translation files
+    - [ ] 55.2.3 Replace with translation function calls
+  - [ ] 55.3 Create translation files
+    - [ ] 55.3.1 Create English (en) translation file
+    - [ ] 55.3.2 Create Spanish (es) translation file
+    - [ ] 55.3.3 Create French (fr) translation file
+    - [ ] 55.3.4 Create additional languages as needed
+  - [ ] 55.4 Test translations
+    - [ ] 55.4.1 Test language switching
+    - [ ] 55.4.2 Test RTL layout for Arabic/Hebrew
+    - [ ] 55.4.3 Test date/time formatting per locale
+
+- [ ] 56.0 Monitoring & Logging Setup
+  - [ ] 56.1 Set up backend logging
+    - [ ] 56.1.1 Configure Pino or Winston logger
+    - [ ] 56.1.2 Log all API requests
+    - [ ] 56.1.3 Log errors with stack traces
+    - [ ] 56.1.4 Set log levels (info, warn, error)
+  - [ ] 56.2 Set up application monitoring
+    - [ ] 56.2.1 Install Prometheus client
+    - [ ] 56.2.2 Expose metrics endpoint
+    - [ ] 56.2.3 Track request count and duration
+    - [ ] 56.2.4 Track error rates
+  - [ ] 56.3 Set up error tracking
+    - [ ] 56.3.1 Install Sentry or similar
+    - [ ] 56.3.2 Configure error capture
+    - [ ] 56.3.3 Add user context to errors
+    - [ ] 56.3.4 Set up error alerts
+  - [ ] 56.4 Set up log aggregation
+    - [ ] 56.4.1 Configure ELK Stack (Elasticsearch, Logstash, Kibana)
+    - [ ] 56.4.2 Ship logs to centralized system
+    - [ ] 56.4.3 Create log dashboards
+
+- [ ] 57.0 Deployment Preparation
+  - [ ] 57.1 Create production environment config
+    - [ ] 57.1.1 Create production .env file
+    - [ ] 57.1.2 Configure production database
+    - [ ] 57.1.3 Configure production Redis
+    - [ ] 57.1.4 Configure production object storage
+  - [ ] 57.2 Set up CI/CD pipeline
+    - [ ] 57.2.1 Create GitHub Actions workflow
+    - [ ] 57.2.2 Add build and test steps
+    - [ ] 57.2.3 Add Docker image build
+    - [ ] 57.2.4 Add deployment step
+  - [ ] 57.3 Create backup strategy
+    - [ ] 57.3.1 Set up automated database backups
+    - [ ] 57.3.2 Set up object storage backups
+    - [ ] 57.3.3 Test backup restoration
+    - [ ] 57.3.4 Document backup procedures
+  - [ ] 57.4 Set up SSL certificates
+    - [ ] 57.4.1 Obtain SSL certificate
+    - [ ] 57.4.2 Configure HTTPS
+    - [ ] 57.4.3 Set up auto-renewal
+  - [ ] 57.5 Create disaster recovery plan
+    - [ ] 57.5.1 Document recovery procedures
+    - [ ] 57.5.2 Identify RTO and RPO
+    - [ ] 57.5.3 Test disaster recovery
+
+- [ ] 58.0 Final Review & Launch Preparation
+  - [ ] 58.1 Conduct final code review
+    - [ ] 58.1.1 Review all critical paths
+    - [ ] 58.1.2 Verify error handling
+    - [ ] 58.1.3 Verify security measures
+    - [ ] 58.1.4 Verify performance optimizations
+  - [ ] 58.2 Create launch checklist
+    - [ ] 58.2.1 List all pre-launch tasks
+    - [ ] 58.2.2 Assign responsibilities
+    - [ ] 58.2.3 Set launch date and time
+  - [ ] 58.3 Prepare rollback plan
+    - [ ] 58.3.1 Document rollback procedures
+    - [ ] 58.3.2 Prepare rollback scripts
+    - [ ] 58.3.3 Test rollback process
+  - [ ] 58.4 Create post-launch monitoring plan
+    - [ ] 58.4.1 Define KPIs to monitor
+    - [ ] 58.4.2 Set up real-time dashboards
+    - [ ] 58.4.3 Define escalation procedures
+    - [ ] 58.4.4 Schedule post-launch review meeting
+

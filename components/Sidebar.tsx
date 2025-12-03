@@ -13,9 +13,12 @@ import {
   ShieldCheck,
   HardHat,
   ClipboardList,
-  ChevronUp
+  ChevronUp,
+  Crown
 } from 'lucide-react';
 import { UserRole, User } from '../types';
+import { setUserContext } from '../services/apiService';
+import { useLanguage } from '../lib/i18n';
 
 interface SidebarProps {
   currentView: string;
@@ -29,17 +32,15 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, currentUser, onSwitchUser, allUsers, onLogout }) => {
   const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false);
+  const { t } = useLanguage();
   
-  // Define all possible items
+  // Define all possible items with translation keys
   const allMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Admin'] },
-    { id: 'work-orders', label: 'Work Orders', icon: Wrench, roles: ['Admin', 'Technician'] },
-    { id: 'requests', label: 'Requests', icon: FileText, roles: ['Admin', 'Technician'] },
-    // { id: 'assets', label: 'Assets & Hierarchy', icon: Factory, roles: ['Admin', 'Technician'] },
-    { id: 'inventory', label: 'Inventory & Parts', icon: Package, roles: ['Admin', 'Technician'] },
-    // { id: 'analytics', label: 'Analytics & OEE', icon: BarChart3, roles: ['Admin'] },
-    { id: 'team', label: 'Team & Shifts', icon: Users, roles: ['Admin'] },
-    // { id: 'settings', label: 'Settings', icon: Settings, roles: ['Admin'] },
+    { id: 'dashboard', labelKey: 'nav.dashboard' as const, icon: LayoutDashboard, roles: ['Admin'] },
+    { id: 'work-orders', labelKey: 'nav.workOrders' as const, icon: Wrench, roles: ['Admin', 'Head Technician', 'Technician'] },
+    { id: 'requests', labelKey: 'nav.requests' as const, icon: FileText, roles: ['Admin', 'Head Technician', 'Technician'] },
+    { id: 'inventory', labelKey: 'inventory.title' as const, icon: Package, roles: ['Admin', 'Head Technician', 'Technician'] },
+    { id: 'team', labelKey: 'team.title' as const, icon: Users, roles: ['Admin', 'Head Technician'] },
   ];
 
   const filteredItems = allMenuItems.filter(item => item.roles.includes(userRole));
@@ -68,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
               }`}
             >
               <Icon size={20} />
-              <span className="font-medium text-sm">{item.label}</span>
+              <span className="font-medium text-sm">{t(item.labelKey)}</span>
             </button>
           );
         })}
@@ -83,7 +84,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
           >
             <div className="flex items-center space-x-3">
               <UserCircle2 size={20} />
-              <span className="font-medium text-sm">Role: {currentUser.userRole}</span>
+              <span className="font-medium text-sm">{t('sidebar.role')}: {
+                currentUser.userRole === 'Admin' ? t('login.admin') :
+                currentUser.userRole === 'Head Technician' ? t('login.headTechnician') :
+                currentUser.userRole === 'Technician' ? t('login.technician') :
+                t('login.requester')
+              }</span>
             </div>
             <ChevronUp size={16} className={`transition-transform ${isRoleSwitcherOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -91,20 +97,29 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
           {isRoleSwitcherOpen && (
             <div className="absolute bottom-full left-0 right-0 mb-2 bg-stone-800 rounded-xl border border-stone-700 overflow-hidden shadow-xl">
               <div className="p-2 bg-stone-800/80 border-b border-stone-700 text-xs font-bold text-stone-400 uppercase px-3">
-                Switch Role
+                {t('sidebar.switchRole')}
               </div>
               <div className="p-1">
                 {allUsers.map((u) => (
                   <button
                     key={u.userRole}
-                    onClick={() => { onSwitchUser(u); setIsRoleSwitcherOpen(false); }}
+                    onClick={() => { 
+                      onSwitchUser(u); 
+                      setUserContext(u.userRole, u.name);
+                      setIsRoleSwitcherOpen(false); 
+                    }}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 ${currentUser.userRole === u.userRole ? 'bg-teal-600 text-white' : 'hover:bg-stone-700 text-stone-300'}`}
                   >
-                    <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-500/20 text-purple-400' : u.userRole === 'Technician' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                      {u.userRole === 'Admin' ? <ShieldCheck size={14} /> : u.userRole === 'Technician' ? <HardHat size={14} /> : <ClipboardList size={14} />}
+                    <div className={`p-2 rounded-full ${u.userRole === 'Admin' ? 'bg-purple-500/20 text-purple-400' : u.userRole === 'Head Technician' ? 'bg-amber-500/20 text-amber-400' : u.userRole === 'Technician' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                      {u.userRole === 'Admin' ? <ShieldCheck size={14} /> : u.userRole === 'Head Technician' ? <Crown size={14} /> : u.userRole === 'Technician' ? <HardHat size={14} /> : <ClipboardList size={14} />}
                     </div>
                     <div>
-                      <div className="font-medium text-sm">{u.userRole}</div>
+                      <div className="font-medium text-sm">{
+                        u.userRole === 'Admin' ? t('login.admin') :
+                        u.userRole === 'Head Technician' ? t('login.headTechnician') :
+                        u.userRole === 'Technician' ? t('login.technician') :
+                        t('login.requester')
+                      }</div>
                       <div className="text-xs opacity-70">{u.name}</div>
                     </div>
                   </button>
@@ -117,10 +132,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
         {/* Sign Out Button */}
         <button onClick={onLogout} className="flex items-center space-x-3 text-stone-400 hover:text-red-400 hover:bg-stone-800 w-full px-4 py-3 rounded-xl transition-all duration-200">
           <LogOut size={20} />
-          <span className="font-medium text-sm">Sign Out</span>
+          <span className="font-medium text-sm">{t('nav.logout')}</span>
         </button>
         <div className="mt-4 px-4 text-xs text-stone-500 text-center">
-          v2.5.0 • Tenant: Acme Corp
+          {t('sidebar.version')} • {t('sidebar.tenant')}: Acme Corp
         </div>
       </div>
     </div>

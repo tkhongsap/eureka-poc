@@ -5,15 +5,24 @@ export enum Priority {
   LOW = 'Low'
 }
 
+// Location data for Google Maps integration
+export interface LocationData {
+  latitude: number;
+  longitude: number;
+  address: string;
+  googleMapsUrl: string;
+}
+
 export enum Status {
   OPEN = 'Open',
   IN_PROGRESS = 'In Progress',
   PENDING = 'Pending',
   COMPLETED = 'Completed',
-  CLOSED = 'Closed'
+  CLOSED = 'Closed',
+  CANCELED = 'Canceled'
 }
 
-export type UserRole = 'Admin' | 'Technician' | 'Requester';
+export type UserRole = 'Admin' | 'Technician' | 'Requester' | 'Head Technician';
 
 export interface User {
   id: string;
@@ -44,8 +53,12 @@ export interface WorkOrder {
   partsUsed?: PartUsage[];
   imageIds?: string[];  // Reference to attached images
   requestId?: string;   // Original request ID if created from request
+  createdBy?: string;   // Name of the requester who created this WO
   technicianNotes?: string;  // Notes added by technician
   technicianImages?: string[];  // Images added by technician
+  adminReview?: string; // Review/approval notes by admin
+  locationData?: LocationData; // GPS location for navigation
+  preferredDate?: string; // Preferred maintenance date from request
 }
 
 export interface Asset {
@@ -90,4 +103,48 @@ export interface TeamMember {
   currentTask?: string; // WO ID
   skills: string[];
   avatarUrl: string;
+}
+
+// Work Order Workflow Types
+export interface WorkOrderStatusTransition {
+  from: Status;
+  to: Status;
+  allowedRoles: UserRole[];
+}
+
+export interface WorkOrderPermissions {
+  canEdit: boolean;
+  canChangeStatus: boolean;
+  canAssign: boolean;
+  canDelete: boolean;
+  canView: boolean;
+}
+
+export enum NotificationType {
+  WO_CREATED = 'wo_created',
+  WO_ASSIGNED = 'wo_assigned',
+  WO_COMPLETED = 'wo_completed',
+  WO_APPROVED = 'wo_approved',
+  WO_REJECTED = 'wo_rejected',
+  WO_CLOSED = 'wo_closed',
+  WO_REMINDER_7_DAYS = 'wo_reminder_7_days',
+  WO_REMINDER_3_DAYS = 'wo_reminder_3_days',
+  WO_DUE_7_DAYS = 'wo_due_7_days',
+  WO_DUE_3_DAYS = 'wo_due_3_days',
+  WO_DUE_1_DAY = 'wo_due_1_day'
+}
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  workOrderId: string;
+  workOrderTitle: string;
+  message: string;
+  messageKey?: string; // i18n translation key
+  messageParams?: Record<string, string>; // Parameters for interpolation (title, date, reason, etc.)
+  recipientRole: UserRole;
+  recipientName?: string; // Specific user if applicable
+  isRead: boolean;
+  createdAt: string;
+  triggeredBy: string; // User who triggered the notification
 }

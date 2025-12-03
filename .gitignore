@@ -43,7 +43,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -76,3 +75,6 @@ pnpm-debug.log*
 .upm/
 .cache/
 .breakpoints
+
+package-lock.json
+*.yml

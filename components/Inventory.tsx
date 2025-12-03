@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, Filter, AlertCircle, TrendingUp, Package, ArrowDown, ArrowUp } from 'lucide-react';
 import { InventoryItem } from '../types';
 import { predictInventoryNeeds } from '../services/geminiService';
+import { useLanguage } from '../lib/i18n';
 
 const MOCK_INVENTORY: InventoryItem[] = [
     { id: 'P-001', name: 'Hydraulic Filter 50 micron', sku: 'HF-50M', quantity: 12, minLevel: 10, unit: 'pcs', location: 'WH-A-01', category: 'Filters', lastUpdated: '2024-10-20', cost: 45.00 },
@@ -12,6 +13,7 @@ const MOCK_INVENTORY: InventoryItem[] = [
 ];
 
 const Inventory: React.FC = () => {
+    const { t } = useLanguage();
     const [aiRecommendations, setAiRecommendations] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -31,8 +33,8 @@ const Inventory: React.FC = () => {
         <div className="p-8 h-full flex flex-col">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h2 className="font-serif text-3xl text-stone-900">Inventory Management</h2>
-                    <p className="text-stone-500 mt-1">Track spare parts, stock levels, and reorder points.</p>
+                    <h2 className="font-serif text-3xl text-stone-900">{t('inventory.management')}</h2>
+                    <p className="text-stone-500 mt-1">{t('inventory.trackParts')}</p>
                 </div>
                 <button
                     onClick={runInventoryAI}
@@ -40,7 +42,7 @@ const Inventory: React.FC = () => {
                     className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200"
                 >
                     {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> : <TrendingUp size={18} />}
-                    <span className="font-semibold">AI Stock Analysis</span>
+                    <span className="font-semibold">{t('inventory.aiStockAnalysis')}</span>
                 </button>
             </div>
 
@@ -64,24 +66,24 @@ const Inventory: React.FC = () => {
                 <div className="p-4 border-b border-stone-200 flex gap-4 bg-stone-50">
                     <div className="relative flex-1 max-w-md">
                         <Search className="absolute left-3.5 top-3 text-stone-400" size={16} />
-                        <input type="text" placeholder="Search by SKU or Name..." className="w-full pl-10 pr-4 py-2.5 text-sm border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200" />
+                        <input type="text" placeholder={t('inventory.searchBySku')} className="w-full pl-10 pr-4 py-2.5 text-sm border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200" />
                     </div>
                     <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm text-stone-600 hover:bg-stone-50 hover:border-stone-300 transition-all duration-200">
                         <Filter size={16} />
-                        Filter
+                        {t('common.filter')}
                     </button>
                 </div>
 
                 <div className="overflow-auto flex-1">
                     <table className="w-full text-left border-collapse">
-                        <thead className="bg-stone-50 sticky top-0 z-10 text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                        <thead className="bg-stone-50 sticky top-0 z-[1] text-xs font-semibold text-stone-500 uppercase tracking-wider">
                             <tr>
-                                <th className="px-6 py-3.5 border-b border-stone-200">Part Info</th>
-                                <th className="px-6 py-3.5 border-b border-stone-200">Category</th>
-                                <th className="px-6 py-3.5 border-b border-stone-200">Location</th>
-                                <th className="px-6 py-3.5 border-b border-stone-200">Stock Level</th>
-                                <th className="px-6 py-3.5 border-b border-stone-200 text-right">Value</th>
-                                <th className="px-6 py-3.5 border-b border-stone-200">Status</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200">{t('inventory.partInfo')}</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200">{t('inventory.category')}</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200">{t('inventory.location')}</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200">{t('inventory.stockLevel')}</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200 text-right">{t('inventory.value')}</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200">{t('inventory.status')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100 text-sm">
@@ -113,7 +115,7 @@ const Inventory: React.FC = () => {
                                                     style={{ width: `${Math.min((item.quantity / (item.minLevel * 2)) * 100, 100)}%` }}
                                                 ></div>
                                             </div>
-                                            <div className="text-[10px] text-stone-400 mt-0.5">ROP: {item.minLevel}</div>
+                                            <div className="text-[10px] text-stone-400 mt-0.5">{t('inventory.minLevel')}: {item.minLevel}</div>
                                         </td>
                                         <td className="px-6 py-4 text-right font-medium text-stone-700">
                                             ${(item.cost * item.quantity).toFixed(2)}
@@ -121,11 +123,11 @@ const Inventory: React.FC = () => {
                                         <td className="px-6 py-4">
                                             {isLowStock ? (
                                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-red-50 text-red-700 border border-red-100">
-                                                    <ArrowDown size={12} /> Low Stock
+                                                    <ArrowDown size={12} /> {t('inventory.lowStock')}
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                                    <ArrowUp size={12} /> In Stock
+                                                    <ArrowUp size={12} /> {t('inventory.inStock')}
                                                 </span>
                                             )}
                                         </td>

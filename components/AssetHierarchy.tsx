@@ -2,6 +2,18 @@ import React, { useState } from 'react';
 import { ChevronRight, ChevronDown, Activity, AlertTriangle, CheckCircle, Zap } from 'lucide-react';
 import { Asset } from '../types';
 import { analyzeAssetReliability } from '../services/geminiService';
+import { useLanguage } from '../lib/i18n';
+
+// Helper function to format date as DD/MM/YYYY
+const formatDateDDMMYYYY = (dateString: string | undefined): string => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'N/A';
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
 
 // Mock Tree Data
 const INITIAL_ASSETS: Asset[] = [
@@ -114,6 +126,7 @@ const AssetNode: React.FC<{ asset: Asset; onSelect: (a: Asset) => void; selected
 };
 
 const AssetHierarchy: React.FC = () => {
+  const { t } = useLanguage();
   const [selectedAsset, setSelectedAsset] = useState<Asset>(INITIAL_ASSETS[0]);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [loadingAi, setLoadingAi] = useState(false);
@@ -136,7 +149,7 @@ const AssetHierarchy: React.FC = () => {
       {/* Left Pane: Tree */}
       <div className="w-1/3 border-r border-slate-200 flex flex-col bg-slate-50/50">
         <div className="p-4 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center">
-            <span>Asset Hierarchy</span>
+            <span>{t('assets.hierarchy')}</span>
             <span className="text-xs bg-slate-200 px-2 py-1 rounded-full text-slate-600">Plant A</span>
         </div>
         <div className="overflow-y-auto p-2 flex-1">
@@ -170,39 +183,39 @@ const AssetHierarchy: React.FC = () => {
                 {/* KPI Grid */}
                 <div className="grid grid-cols-3 gap-6 mb-8">
                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="text-slate-500 text-sm mb-1">Health Score</div>
+                        <div className="text-slate-500 text-sm mb-1">{t('assets.healthScore')}</div>
                         <div className="text-3xl font-bold text-brand-600">{selectedAsset.healthScore}%</div>
                     </div>
                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="text-slate-500 text-sm mb-1">Criticality</div>
+                        <div className="text-slate-500 text-sm mb-1">{t('assets.criticality')}</div>
                         <div className={`text-3xl font-bold ${selectedAsset.criticality === 'Critical' ? 'text-red-600' : 'text-slate-700'}`}>
                             {selectedAsset.criticality}
                         </div>
                     </div>
                      <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="text-slate-500 text-sm mb-1">Location</div>
+                        <div className="text-slate-500 text-sm mb-1">{t('assets.location')}</div>
                         <div className="text-lg font-bold text-slate-700 mt-1">{selectedAsset.location}</div>
                     </div>
                 </div>
 
                 {/* Details Tab */}
                 <div className="mb-8">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Technical Details</h3>
+                    <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">{t('assets.technicalDetails')}</h3>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="flex justify-between py-2 border-b border-slate-100">
-                            <span className="text-slate-500">Model</span>
+                            <span className="text-slate-500">{t('assets.model')}</span>
                             <span className="font-medium text-slate-800">{selectedAsset.model || 'N/A'}</span>
                         </div>
                         <div className="flex justify-between py-2 border-b border-slate-100">
-                            <span className="text-slate-500">Install Date</span>
-                            <span className="font-medium text-slate-800">{selectedAsset.installDate || 'N/A'}</span>
+                            <span className="text-slate-500">{t('assets.installDate')}</span>
+                            <span className="font-medium text-slate-800">{formatDateDDMMYYYY(selectedAsset.installDate)}</span>
                         </div>
                         <div className="flex justify-between py-2 border-b border-slate-100">
-                            <span className="text-slate-500">Serial Number</span>
+                            <span className="text-slate-500">{t('assets.serialNumber')}</span>
                             <span className="font-medium text-slate-800">SN-{selectedAsset.id}-2022</span>
                         </div>
                         <div className="flex justify-between py-2 border-b border-slate-100">
-                            <span className="text-slate-500">Manufacturer</span>
+                            <span className="text-slate-500">{t('assets.manufacturer')}</span>
                             <span className="font-medium text-slate-800">Industrial Corp Ltd.</span>
                         </div>
                     </div>
@@ -212,19 +225,19 @@ const AssetHierarchy: React.FC = () => {
                 <div className="bg-gradient-to-r from-violet-50 to-purple-50 p-6 rounded-xl border border-violet-100">
                     <div className="flex items-center gap-2 mb-4">
                         <Zap className="text-violet-600" size={20} />
-                        <h3 className="text-lg font-bold text-violet-900">AI Reliability Analysis</h3>
+                        <h3 className="text-lg font-bold text-violet-900">{t('assets.aiAnalysis')}</h3>
                     </div>
                     
                     {!aiInsight ? (
                         <div className="text-center py-4">
-                            <p className="text-slate-600 mb-4 text-sm">Analyze historical data to predict failure probability and maintenance needs.</p>
+                            <p className="text-slate-600 mb-4 text-sm">{t('assets.analyzeDesc')}</p>
                             <button 
                                 onClick={handleAnalyze}
                                 disabled={loadingAi}
                                 className="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors disabled:opacity-70 flex items-center gap-2 mx-auto"
                             >
                                 {loadingAi ? <Activity className="animate-spin" size={16} /> : <Zap size={16} />}
-                                Run Diagnostic
+                                {t('assets.runDiagnostic')}
                             </button>
                         </div>
                     ) : (
@@ -232,7 +245,7 @@ const AssetHierarchy: React.FC = () => {
                             <div className="bg-white/80 p-4 rounded-lg border border-violet-100 text-slate-700 text-sm leading-relaxed">
                                 {aiInsight}
                             </div>
-                            <button onClick={handleAnalyze} className="text-xs text-violet-600 underline mt-3 hover:text-violet-800">Update Analysis</button>
+                            <button onClick={handleAnalyze} className="text-xs text-violet-600 underline mt-3 hover:text-violet-800">{t('assets.updateAnalysis')}</button>
                         </div>
                     )}
                 </div>
@@ -241,7 +254,7 @@ const AssetHierarchy: React.FC = () => {
          ) : (
              <div className="flex flex-col items-center justify-center h-full text-slate-400">
                  <Activity size={48} className="mb-4 opacity-20" />
-                 <p>Select an asset to view details</p>
+                 <p>{t('assets.selectToView')}</p>
              </div>
          )}
       </div>

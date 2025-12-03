@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff, LogIn, ArrowLeft, Wrench } from 'lucide-react';
+import { useLanguage } from '../lib/i18n';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -12,6 +15,7 @@ const LoginPage: React.FC = () => {
   // Mock users for demo
   const mockUsers = {
     'admin': { password: 'admin123', role: 'Admin' as const },
+    'headtech': { password: 'headtech123', role: 'Head Technician' as const },
     'tech': { password: 'tech123', role: 'Technician' as const },
     'user': { password: 'user123', role: 'Requester' as const },
   };
@@ -24,12 +28,12 @@ const LoginPage: React.FC = () => {
     const user = mockUsers[username.toLowerCase() as keyof typeof mockUsers];
     
     if (!user) {
-      setError('Invalid username or password');
+      setError(t('login.invalidCredentials'));
       return;
     }
 
     if (user.password !== password) {
-      setError('Invalid username or password');
+      setError(t('login.invalidCredentials'));
       return;
     }
 
@@ -54,7 +58,7 @@ const LoginPage: React.FC = () => {
             className="flex items-center gap-2 text-stone-500 hover:text-teal-600 transition-all duration-200"
           >
             <ArrowLeft size={20} />
-            <span className="text-sm font-medium hidden sm:inline">Back to Home</span>
+            <span className="text-sm font-medium hidden sm:inline">{t('common.backToHome')}</span>
           </Link>
           <div className="h-6 w-px bg-stone-200 hidden sm:block"></div>
           <div className="flex items-center gap-3">
@@ -64,6 +68,7 @@ const LoginPage: React.FC = () => {
             <span className="font-semibold text-stone-900">Eureka <span className="text-teal-600">CMMS</span></span>
           </div>
         </div>
+        <LanguageSwitcher variant="minimal" />
       </header>
 
       {/* Login Form */}
@@ -80,12 +85,12 @@ const LoginPage: React.FC = () => {
 
           {/* Login Card */}
           <div className="bg-white rounded-2xl shadow-xl border border-stone-200/60 p-8">
-            <h2 className="font-serif text-2xl text-stone-900 mb-6 text-center">Welcome Back</h2>
+            <h2 className="font-serif text-2xl text-stone-900 mb-6 text-center">{t('login.welcomeBack')}</h2>
             
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Username Input */}
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-stone-700 mb-2">Username</label>
+                <label htmlFor="username" className="block text-sm font-medium text-stone-700 mb-2">{t('login.username')}</label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-3.5 text-stone-400" size={18} />
                   <input
@@ -93,7 +98,7 @@ const LoginPage: React.FC = () => {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter your username"
+                    placeholder={t('login.enterUsername')}
                     className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                     required
                   />
@@ -102,7 +107,7 @@ const LoginPage: React.FC = () => {
 
               {/* Password Input */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-stone-700 mb-2">Password</label>
+                <label htmlFor="password" className="block text-sm font-medium text-stone-700 mb-2">{t('login.password')}</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-3.5 text-stone-400" size={18} />
                   <input
@@ -110,7 +115,7 @@ const LoginPage: React.FC = () => {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder={t('login.enterPassword')}
                     className="w-full pl-10 pr-12 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                     required
                   />
@@ -139,24 +144,28 @@ const LoginPage: React.FC = () => {
                 className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-teal-600/25 transition-all duration-200 flex items-center justify-center gap-2 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-teal-600/30"
               >
                 <LogIn size={18} />
-                Sign In
+                {t('login.signIn')}
               </button>
             </form>
 
             {/* Demo Credentials */}
             <div className="mt-6 pt-6 border-t border-stone-100">
-              <p className="text-xs text-stone-500 text-center mb-3 font-semibold uppercase tracking-wide">Demo Credentials</p>
+              <p className="text-xs text-stone-500 text-center mb-3 font-semibold uppercase tracking-wide">{t('login.demoCredentials')}</p>
               <div className="space-y-2 text-xs text-stone-600">
                 <div className="bg-stone-50 px-4 py-2.5 rounded-xl flex justify-between items-center border border-stone-100">
-                  <span className="font-medium text-stone-700">Admin:</span>
+                  <span className="font-medium text-stone-700">{t('login.admin')}:</span>
                   <span className="font-mono text-teal-600">admin / admin123</span>
                 </div>
+                <div className="bg-amber-50 px-4 py-2.5 rounded-xl flex justify-between items-center border border-amber-100">
+                  <span className="font-medium text-amber-700">{t('login.headTechnician')}:</span>
+                  <span className="font-mono text-amber-600">headtech / headtech123</span>
+                </div>
                 <div className="bg-stone-50 px-4 py-2.5 rounded-xl flex justify-between items-center border border-stone-100">
-                  <span className="font-medium text-stone-700">Technician:</span>
+                  <span className="font-medium text-stone-700">{t('login.technician')}:</span>
                   <span className="font-mono text-teal-600">tech / tech123</span>
                 </div>
                 <div className="bg-stone-50 px-4 py-2.5 rounded-xl flex justify-between items-center border border-stone-100">
-                  <span className="font-medium text-stone-700">Requester:</span>
+                  <span className="font-medium text-stone-700">{t('login.requester')}:</span>
                   <span className="font-mono text-teal-600">user / user123</span>
                 </div>
               </div>
@@ -165,7 +174,7 @@ const LoginPage: React.FC = () => {
 
           {/* Footer */}
           <p className="text-center text-stone-500 text-sm mt-8">
-            © 2025 Eureka CMMS. All rights reserved.
+            {t('login.copyright')}
           </p>
         </div>
       </div>
