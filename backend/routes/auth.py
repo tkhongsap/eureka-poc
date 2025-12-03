@@ -1,25 +1,29 @@
-import os
 import secrets
-import uuid
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
+from typing import Optional
 
 import httpx
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse, JSONResponse
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from sqlalchemy.orm import Session
 
+from config import (
+    SESSION_SECRET, SESSION_COOKIE_NAME, SESSION_MAX_AGE,
+    ISSUER_URL, REPL_ID, IS_PRODUCTION
+)
 from db import get_db
 from db.models import User as UserModel, OAuth as OAuthModel
 from utils import generate_id
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
-ISSUER_URL = os.environ.get("ISSUER_URL", "https://replit.com/oidc")
-REPL_ID = os.environ.get("REPL_ID", "")
-
 PKCE_VERIFIERS = {}
+JWKS_CACHE = {"keys": None, "fetched_at": None}
+
+session_serializer = URLSafeTimedSerializer(SESSION_SECRET)
 
 
 def generate_pkce_pair():
@@ -33,6 +37,93 @@ def generate_pkce_pair():
     return code_verifier, code_challenge
 
 
+async def get_jwks():
+    """Fetch and cache JWKS from Replit OIDC provider"""
+    global JWKS_CACHE
+    
+    if JWKS_CACHE["keys"] and JWKS_CACHE["fetched_at"]:
+        age = (datetime.now() - JWKS_CACHE["fetched_at"]).seconds
+        if age < 3600:
+            return JWKS_CACHE["keys"]
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"{ISSUER_URL}/.well-known/jwks.json")
+            if response.status_code == 200:
+                JWKS_CACHE["keys"] = response.json().get("keys", [])
+                JWKS_CACHE["fetched_at"] = datetime.now()
+                return JWKS_CACHE["keys"]
+        except Exception:
+            pass
+    
+    return JWKS_CACHE.get("keys", [])
+
+
+async def verify_id_token(id_token: str, expected_nonce: str = None) -> dict:
+    """Verify ID token signature and claims"""
+    try:
+        unverified_header = jwt.get_unverified_header(id_token)
+        kid = unverified_header.get("kid")
+        
+        jwks = await get_jwks()
+        public_key = None
+        
+        for key in jwks:
+            if key.get("kid") == kid:
+                from jwt.algorithms import RSAAlgorithm
+                public_key = RSAAlgorithm.from_jwk(key)
+                break
+        
+        if not public_key:
+            raise ValueError("Unable to find matching key in JWKS")
+        
+        claims = jwt.decode(
+            id_token,
+            public_key,
+            algorithms=["RS256"],
+            audience=REPL_ID,
+            issuer=ISSUER_URL,
+            options={
+                "verify_signature": True,
+                "verify_aud": True,
+                "verify_iss": True,
+                "verify_exp": True,
+            }
+        )
+        
+        if expected_nonce and claims.get("nonce") != expected_nonce:
+            raise ValueError("Nonce mismatch")
+        
+        return claims
+    except jwt.ExpiredSignatureError:
+        raise ValueError("Token has expired")
+    except jwt.InvalidAudienceError:
+        raise ValueError("Invalid audience")
+    except jwt.InvalidIssuerError:
+        raise ValueError("Invalid issuer")
+    except Exception as e:
+        raise ValueError(f"Token verification failed: {str(e)}")
+
+
+def create_session_token(user_id: str, user_data: dict) -> str:
+    """Create a signed session token"""
+    session_data = {
+        "user_id": user_id,
+        "user_data": user_data,
+        "created_at": datetime.now().isoformat(),
+    }
+    return session_serializer.dumps(session_data)
+
+
+def verify_session_token(token: str) -> Optional[dict]:
+    """Verify and decode a session token"""
+    try:
+        session_data = session_serializer.loads(token, max_age=SESSION_MAX_AGE)
+        return session_data
+    except (BadSignature, SignatureExpired):
+        return None
+
+
 @router.get("/login")
 async def login(request: Request):
     """Initiate Replit OAuth login flow"""
@@ -40,10 +131,12 @@ async def login(request: Request):
         raise HTTPException(status_code=500, detail="REPL_ID environment variable not set")
     
     state = secrets.token_urlsafe(32)
+    nonce = secrets.token_urlsafe(32)
     code_verifier, code_challenge = generate_pkce_pair()
     
     PKCE_VERIFIERS[state] = {
         "verifier": code_verifier,
+        "nonce": nonce,
         "created_at": datetime.now()
     }
     
@@ -61,6 +154,7 @@ async def login(request: Request):
         "response_type": "code",
         "scope": "openid profile email offline_access",
         "state": state,
+        "nonce": nonce,
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
         "prompt": "login consent",
@@ -88,7 +182,9 @@ async def callback(
     if state not in PKCE_VERIFIERS:
         return RedirectResponse(url="/login?error=invalid_state")
     
-    code_verifier = PKCE_VERIFIERS.pop(state)["verifier"]
+    pkce_data = PKCE_VERIFIERS.pop(state)
+    code_verifier = pkce_data["verifier"]
+    expected_nonce = pkce_data["nonce"]
     
     host = request.headers.get("host", "")
     protocol = "https" if "replit" in host or request.headers.get("x-forwarded-proto") == "https" else "http"
@@ -119,8 +215,13 @@ async def callback(
     
     try:
         id_token = tokens.get("id_token")
-        claims = jwt.decode(id_token, options={"verify_signature": False})
-    except Exception as e:
+        if not id_token:
+            return RedirectResponse(url="/login?error=no_id_token")
+        
+        claims = await verify_id_token(id_token, expected_nonce)
+            
+    except ValueError as e:
+        print(f"Token verification failed: {e}")
         return RedirectResponse(url=f"/login?error=invalid_token")
     
     replit_user_id = claims.get("sub")
@@ -190,8 +291,6 @@ async def callback(
     db.commit()
     db.refresh(user)
     
-    session_token = secrets.token_urlsafe(32)
-    
     user_data = {
         "id": user.id,
         "email": user.email,
@@ -199,15 +298,20 @@ async def callback(
         "avatar_url": user.avatar_url,
         "user_role": user.user_role,
         "role": user.role,
-        "session_token": session_token,
     }
+    session_token = create_session_token(user.id, user_data)
     
-    import json
-    import base64
-    user_json = json.dumps(user_data)
-    user_encoded = base64.urlsafe_b64encode(user_json.encode()).decode()
+    response = RedirectResponse(url="/auth-success")
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=session_token,
+        httponly=True,
+        secure=IS_PRODUCTION,
+        samesite="lax",
+        max_age=SESSION_MAX_AGE,
+        path="/",
+    )
     
-    response = RedirectResponse(url=f"/auth-success?user={user_encoded}")
     return response
 
 
@@ -216,12 +320,16 @@ async def get_current_user(
     request: Request,
     db: Session = Depends(get_db)
 ):
-    """Get current authenticated user info"""
-    user_id = request.headers.get("X-User-Id")
-    if not user_id:
+    """Get current authenticated user info from session"""
+    session_token = request.cookies.get(SESSION_COOKIE_NAME)
+    if not session_token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
-    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    session_data = verify_session_token(session_token)
+    if not session_data:
+        raise HTTPException(status_code=401, detail="Session expired or invalid")
+    
+    user = db.query(UserModel).filter(UserModel.id == session_data["user_id"]).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
@@ -239,17 +347,20 @@ async def get_current_user(
 
 @router.post("/logout")
 async def logout(request: Request, db: Session = Depends(get_db)):
-    """Logout user and revoke tokens"""
-    user_id = request.headers.get("X-User-Id")
+    """Logout user, clear session, and revoke tokens"""
+    session_token = request.cookies.get(SESSION_COOKIE_NAME)
     
-    if user_id:
-        oauth = db.query(OAuthModel).filter(
-            OAuthModel.user_id == user_id,
-            OAuthModel.provider == "replit"
-        ).first()
-        if oauth:
-            db.delete(oauth)
-            db.commit()
+    if session_token:
+        session_data = verify_session_token(session_token)
+        if session_data:
+            user_id = session_data["user_id"]
+            oauth = db.query(OAuthModel).filter(
+                OAuthModel.user_id == user_id,
+                OAuthModel.provider == "replit"
+            ).first()
+            if oauth:
+                db.delete(oauth)
+                db.commit()
     
     end_session_url = f"{ISSUER_URL}/session/end"
     params = {
@@ -257,7 +368,14 @@ async def logout(request: Request, db: Session = Depends(get_db)):
         "post_logout_redirect_uri": "/login",
     }
     
-    return {
+    response = JSONResponse({
         "message": "Logged out successfully",
         "redirect_url": f"{end_session_url}?{urlencode(params)}"
-    }
+    })
+    
+    response.delete_cookie(
+        key=SESSION_COOKIE_NAME,
+        path="/",
+    )
+    
+    return response

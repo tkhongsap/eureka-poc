@@ -151,48 +151,57 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  // Check for logged in user from LoginPage on mount
+  // Check for logged in user from server session on mount
   useEffect(() => {
-    const storedUser = sessionStorage.getItem('loggedInUser');
-    const authUser = sessionStorage.getItem('authUser');
-    
-    if (authUser) {
+    const verifySession = async () => {
       try {
-        const userData = JSON.parse(authUser);
-        console.log('Loading Replit Auth user:', userData);
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+        });
         
-        const user: User = {
-          id: userData.id,
-          name: userData.name || userData.email || 'User',
-          role: userData.role || userData.user_role || 'Requester',
-          userRole: (userData.user_role || 'Requester') as UserRole,
-          avatarUrl: userData.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.id}`,
-        };
-        
-        console.log('Replit Auth user loaded:', user);
-        setCurrentUser(user);
-        setIsLoggedIn(true);
-        setUserContext(user.userRole, user.name);
-      } catch (e) {
-        console.error('Failed to parse auth user:', e);
-      }
-    } else if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        const role = parsed.role;
-        console.log('Loading user from sessionStorage:', role);
-        
-        if (role && USERS[role as UserRole]) {
-          const user = USERS[role as UserRole];
-          console.log('User loaded:', user);
+        if (response.ok) {
+          const userData = await response.json();
+          console.log('Server session verified:', userData);
+          
+          const user: User = {
+            id: userData.id,
+            name: userData.name || userData.email || 'User',
+            role: userData.role || userData.user_role || 'Requester',
+            userRole: (userData.user_role || 'Requester') as UserRole,
+            avatarUrl: userData.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.id}`,
+          };
+          
+          sessionStorage.setItem('authUser', JSON.stringify(userData));
           setCurrentUser(user);
           setIsLoggedIn(true);
           setUserContext(user.userRole, user.name);
+          return;
         }
       } catch (e) {
-        console.error('Failed to parse stored user:', e);
+        console.log('No active server session');
       }
-    }
+      
+      const storedUser = sessionStorage.getItem('loggedInUser');
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          const role = parsed.role;
+          console.log('Loading user from sessionStorage:', role);
+          
+          if (role && USERS[role as UserRole]) {
+            const user = USERS[role as UserRole];
+            console.log('User loaded:', user);
+            setCurrentUser(user);
+            setIsLoggedIn(true);
+            setUserContext(user.userRole, user.name);
+          }
+        } catch (e) {
+          console.error('Failed to parse stored user:', e);
+        }
+      }
+    };
+    
+    verifySession();
   }, []);
 
   // Handle logout
@@ -206,7 +215,10 @@ const App: React.FC = () => {
     
     if (authUser) {
       try {
-        const response = await fetch('/api/auth/logout', { method: 'POST' });
+        const response = await fetch('/api/auth/logout', { 
+          method: 'POST',
+          credentials: 'include',
+        });
         const data = await response.json();
         if (data.redirect_url) {
           window.location.href = data.redirect_url;

@@ -1,18 +1,23 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 const AuthSuccessPage: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const userEncoded = searchParams.get('user');
-    
-    if (userEncoded) {
+    const fetchUser = async () => {
       try {
-        const userJson = atob(userEncoded);
-        const userData = JSON.parse(userJson);
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to get user info');
+        }
+        
+        const userData = await response.json();
         
         sessionStorage.setItem('loggedInUser', JSON.stringify({
           id: userData.id,
@@ -27,13 +32,25 @@ const AuthSuccessPage: React.FC = () => {
         
         navigate('/dashboard');
       } catch (e) {
-        console.error('Failed to parse user data:', e);
-        navigate('/login?error=parse_error');
+        console.error('Failed to fetch user data:', e);
+        setError('Unable to complete sign-in. Please try again.');
+        setTimeout(() => navigate('/login?error=auth_failed'), 3000);
       }
-    } else {
-      navigate('/login?error=no_user');
-    }
-  }, [searchParams, navigate]);
+    };
+    
+    fetchUser();
+  }, [navigate]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-stone-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center">

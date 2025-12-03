@@ -58,6 +58,10 @@ eureka-cmms/
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/health` | Health check |
+| GET | `/api/auth/login` | Initiate Replit Auth login |
+| GET | `/api/auth/callback` | OAuth callback handler |
+| POST | `/api/auth/logout` | Logout user |
+| GET | `/api/auth/me` | Get current authenticated user |
 | POST | `/api/images/upload` | Upload image |
 | GET | `/api/images/{id}` | Get image |
 | GET | `/api/images` | List all images |
@@ -73,6 +77,18 @@ eureka-cmms/
 | POST | `/api/notifications` | Create notification |
 
 ## Recent Changes
+
+### December 3, 2025 - Replit Auth Integration
+- Added Google sign-in authentication using Replit Auth (OIDC provider)
+- Updated User model with `replit_user_id` field for OAuth user linking
+- Made `password_hash` and `email` nullable to support OAuth-only users
+- Created OAuth model for token storage in database
+- Added auth routes: `/api/auth/login`, `/api/auth/callback`, `/api/auth/logout`, `/api/auth/me`
+- Updated LoginPage with "Sign in with Google" button
+- Created AuthSuccessPage for handling OAuth callback
+- Updated App.tsx to handle both legacy mock auth and Replit Auth users
+- Configured Vite proxy to forward `/api` requests to backend on port 8000
+- Installed authlib, httpx, itsdangerous, pyjwt packages for auth handling
 
 ### December 3, 2025 - Production Deployment Configuration
 - Configured Tailwind CSS with @tailwindcss/postcss for proper production builds
@@ -100,6 +116,35 @@ eureka-cmms/
 - Configured autoscale deployment
 - Verified application is running successfully
 
+## Authentication
+
+### Replit Auth Integration
+The system uses Replit Auth (OIDC provider) for Google sign-in authentication:
+
+1. **Login Flow**: User clicks "Sign in with Google" → Redirected to Replit OIDC → Callback with authorization code → Token exchange → Session cookie set
+
+2. **Session Management**: 
+   - Uses signed HttpOnly cookies with itsdangerous
+   - Session tokens are cryptographically signed with SESSION_SECRET
+   - Session expiry: 7 days
+
+3. **Security Features**:
+   - PKCE (Proof Key for Code Exchange) for authorization flow
+   - Nonce validation to prevent replay attacks
+   - ID token signature verification using Replit JWKS
+   - Server-side session verification on each request
+
+4. **Role-Based Access**:
+   - Roles: Admin, Head Technician, Technician, Requester
+   - New users default to "Requester" role
+   - Admin can update user roles via user management
+
+### Auth Dependencies (backend/utils/auth.py)
+- `get_current_user` - Required authentication dependency
+- `get_current_user_optional` - Optional authentication (returns None if not logged in)
+- `require_admin` - Requires Admin role
+- `require_technician_or_above` - Requires Technician, Head Technician, or Admin
+
 ## Configuration
 
 ### Environment Variables
@@ -107,6 +152,7 @@ The app uses the following environment variables:
 - `DATABASE_URL` - PostgreSQL connection string (auto-configured by Replit)
 - `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` - Individual PostgreSQL settings
 - `GEMINI_API_KEY` - Optional API key for Google Gemini AI analysis features
+- `SESSION_SECRET` - Secret key for signing session tokens (auto-generated if not set)
 
 ### Workflows
 Two workflows are configured to run the application:
