@@ -330,8 +330,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                         <select
                           value={priority}
                           onChange={(e) => setPriority(e.target.value)}
-                          title="Select priority level"
-                          aria-label="Priority"
+                          title={t('request.selectPriority')}
+                          aria-label={t('request.priority')}
                           className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all duration-200"
                         >
                             <option>{t('request.priorityLow')}</option>
@@ -428,8 +428,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                           onChange={handleImageUpload}
                           accept="image/*,video/*"
                           multiple
-                          title="Upload photos or videos"
-                          aria-label="Upload photos or videos"
+                          title={t('request.uploadPhotos')}
+                          aria-label={t('request.uploadPhotos')}
                           className="hidden"
                         />
                         {/* Combined Dropzone + Preview Area */}
@@ -462,8 +462,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                                     <button
                                       type="button"
                                       onClick={() => removeImage(idx)}
-                                      title="Remove image"
-                                      aria-label="Remove image"
+                                      title={t('request.removeImage')}
+                                      aria-label={t('request.removeImage')}
                                       className="absolute top-1 right-1 z-10 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md ring-2 ring-white"
                                     >
                                       <X size={12} />
@@ -482,8 +482,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                title="Add more files"
-                                aria-label="Add more files"
+                                title={t('request.addMoreFiles')}
+                                aria-label={t('request.addMoreFiles')}
                                 className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg shadow-sm"
                               >
                                 <Camera size={16} />
