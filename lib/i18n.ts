@@ -11,7 +11,7 @@ type TranslationKeys = keyof typeof translations.en;
 interface LanguageState {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: TranslationKeys) => string;
+  t: (key: TranslationKeys, params?: Record<string, string>) => string;
 }
 
 // All translations
@@ -166,6 +166,8 @@ const translations = {
     'request.images': 'image(s)',
     'request.removeImage': 'Remove image',
     'request.uploadPhotos': 'Upload photos or videos',
+    'request.selectPriority': 'Select priority level',
+    'request.addMoreFiles': 'Add more files',
 
     // ============== Requestor ==============
     'requestor.noWorkOrdersHint': 'Work orders created from your requests will appear here',
@@ -203,9 +205,26 @@ const translations = {
     // ============== Notifications ==============
     'notif.title': 'Notifications',
     'notif.markAllRead': 'Mark all as read',
+    'notif.deleteRead': 'Delete read',
     'notif.noNotifications': 'No notifications',
     'notif.allCaughtUp': 'All caught up! 🎉',
     'notif.new': 'new',
+
+    // Notification Messages
+    'notif.woCreated': 'New work order created: "{title}"',
+    'notif.woAssigned': 'You have been assigned to work order: "{title}"',
+    'notif.woCompleted': 'Work order "{title}" has been completed and is pending review',
+    'notif.woApproved': 'Work order "{title}" has been approved and is ready to be closed',
+    'notif.woApprovedRequestor': 'Your work order "{title}" has been approved and completed',
+    'notif.woApprovedTech': 'Work order "{title}" has been approved',
+    'notif.woRejected': 'Work order "{title}" needs revision',
+    'notif.woRejectedWithReason': 'Work order "{title}" needs revision. Reason: {reason}',
+    'notif.woClosed': 'Work order "{title}" has been closed',
+    'notif.reminder7Days': 'Work order "{title}" has an appointment in 7 days ({date})',
+    'notif.reminder3Days': '⚠️ Work order "{title}" has an appointment in 3 days ({date}). Please prepare.',
+    'notif.due7Days': '📅 Work order "{title}" is due in 7 days ({date})',
+    'notif.due3Days': '⚠️ Work order "{title}" is due in 3 days ({date}). Please expedite.',
+    'notif.due1Day': '🚨 Work order "{title}" is due tomorrow ({date}). Please complete!',
 
     // ============== Team ==============
     'team.title': 'Team Schedule',
@@ -256,6 +275,18 @@ const translations = {
     'gps.recorded': 'Location Recorded',
     'gps.getting': 'Getting location...',
     'gps.clickToCapture': 'Click to capture current location',
+    'gps.searchLocation': 'Search location...',
+    'gps.search': 'Search',
+    'gps.useCurrentLocation': 'Use current location',
+    'gps.clickMapOrGps': 'Click on the map or use GPS button',
+    'gps.loading': 'Loading...',
+    'gps.gettingGps': 'Getting GPS location...',
+    'gps.locationSaved': 'Location saved (Auto-saved)',
+    'gps.selectLocation': 'Select Location',
+    'gps.selectedLocation': 'Selected Location',
+    'gps.confirm': 'Confirm Location',
+    'gps.clear': 'Clear',
+    'gps.viewInMaps': 'View in Google Maps',
 
     // ============== Settings ==============
     'settings.title': 'Settings',
@@ -303,6 +334,12 @@ const translations = {
     'dashboard.fromLastWeek': 'from last week',
     'dashboard.workOrderThroughput': 'Work Order Throughput',
     'dashboard.downtimeVsResponse': 'Downtime vs Response Time',
+
+    // ============== Sidebar ==============
+    'sidebar.role': 'Role',
+    'sidebar.switchRole': 'Switch Role',
+    'sidebar.tenant': 'Tenant',
+    'sidebar.version': 'v2.5.0',
 
     // ============== Login Page ==============
     'login.welcomeBack': 'Welcome Back',
@@ -463,6 +500,23 @@ const translations = {
     'workOrders.savingWillMove': 'Saving will move status from Open to In Progress.',
     'workOrders.savingWillKeep': 'Saving will keep status as In Progress and reassign technician.',
     'workOrders.deleteRead': 'Delete read',
+
+    // ============== WorkOrders Tooltips ==============
+    'workOrders.listView': 'List view',
+    'workOrders.boardView': 'Board view',
+    'workOrders.startDateFilter': 'Start date filter',
+    'workOrders.endDateFilter': 'End date filter',
+    'workOrders.filterByPriority': 'Filter by priority',
+    'workOrders.filterByTechnician': 'Filter by technician',
+    'workOrders.clearAllFilters': 'Clear all filters',
+    'workOrders.closePanel': 'Close panel',
+    'workOrders.locationMap': 'Location Map',
+    'workOrders.selectTechnicianToAssign': 'Select technician to assign',
+    'workOrders.removeImage': 'Remove image',
+    'workOrders.removePart': 'Remove part',
+    'workOrders.addPartFromInventory': 'Add part from inventory',
+    'workOrders.cancelWO': 'Cancel this work order',
+    'workOrders.closeModal': 'Close modal',
   },
 
   th: {
@@ -482,6 +536,12 @@ const translations = {
     'common.no': 'ไม่',
     'common.optional': 'ไม่บังคับ',
     'common.required': 'จำเป็น',
+
+    // ============== Sidebar ==============
+    'sidebar.role': 'บทบาท',
+    'sidebar.switchRole': 'สลับบทบาท',
+    'sidebar.tenant': 'ผู้เช่า',
+    'sidebar.version': 'v2.5.0',
     'common.success': 'สำเร็จ',
     'common.error': 'ข้อผิดพลาด',
     'common.warning': 'คำเตือน',
@@ -615,6 +675,8 @@ const translations = {
     'request.images': 'รูป',
     'request.removeImage': 'ลบรูป',
     'request.uploadPhotos': 'อัปโหลดรูปหรือวิดีโอ',
+    'request.selectPriority': 'เลือกระดับความสำคัญ',
+    'request.addMoreFiles': 'เพิ่มไฟล์อีก',
 
     // ============== Requestor ==============
     'requestor.noWorkOrdersHint': 'ใบงานที่สร้างจากคำร้องของคุณจะแสดงที่นี่',
@@ -652,9 +714,26 @@ const translations = {
     // ============== Notifications ==============
     'notif.title': 'การแจ้งเตือน',
     'notif.markAllRead': 'ทำเครื่องหมายอ่านแล้วทั้งหมด',
+    'notif.deleteRead': 'ลบที่อ่านแล้ว',
     'notif.noNotifications': 'ไม่มีการแจ้งเตือน',
     'notif.allCaughtUp': 'เรียบร้อย! 🎉',
     'notif.new': 'ใหม่',
+
+    // Notification Messages
+    'notif.woCreated': 'สร้างใบงานใหม่: "{title}"',
+    'notif.woAssigned': 'คุณได้รับมอบหมายใบงาน: "{title}"',
+    'notif.woCompleted': 'ใบงาน "{title}" เสร็จสิ้นแล้ว รอการตรวจสอบ',
+    'notif.woApproved': 'ใบงาน "{title}" ได้รับการอนุมัติแล้ว พร้อมปิดงาน',
+    'notif.woApprovedRequestor': 'ใบงานของคุณ "{title}" ได้รับการอนุมัติและเสร็จสิ้นแล้ว',
+    'notif.woApprovedTech': 'ใบงาน "{title}" ได้รับการอนุมัติแล้ว',
+    'notif.woRejected': 'ใบงาน "{title}" ต้องแก้ไข',
+    'notif.woRejectedWithReason': 'ใบงาน "{title}" ต้องแก้ไข เหตุผล: {reason}',
+    'notif.woClosed': 'ใบงาน "{title}" ถูกปิดแล้ว',
+    'notif.reminder7Days': 'ใบงาน "{title}" มีกำหนดนัดหมายในอีก 7 วัน ({date})',
+    'notif.reminder3Days': '⚠️ ใบงาน "{title}" มีกำหนดนัดหมายในอีก 3 วัน ({date}) กรุณาเตรียมตัวให้พร้อม',
+    'notif.due7Days': '📅 ใบงาน "{title}" จะถึงกำหนดส่งในอีก 7 วัน ({date})',
+    'notif.due3Days': '⚠️ ใบงาน "{title}" จะถึงกำหนดส่งในอีก 3 วัน ({date}) กรุณาเร่งดำเนินการ',
+    'notif.due1Day': '🚨 ใบงาน "{title}" จะถึงกำหนดส่งพรุ่งนี้ ({date}) กรุณาดำเนินการให้เสร็จ!',
 
     // ============== Team ==============
     'team.title': 'ตารางทีม',
@@ -705,6 +784,18 @@ const translations = {
     'gps.recorded': 'บันทึกตำแหน่งแล้ว',
     'gps.getting': 'กำลังหาตำแหน่ง...',
     'gps.clickToCapture': 'คลิกเพื่อบันทึกตำแหน่งปัจจุบัน',
+    'gps.searchLocation': 'ค้นหาสถานที่...',
+    'gps.search': 'ค้นหา',
+    'gps.useCurrentLocation': 'ใช้ตำแหน่งปัจจุบัน',
+    'gps.clickMapOrGps': 'คลิกบนแผนที่หรือใช้ปุ่ม GPS',
+    'gps.loading': 'กำลังโหลด...',
+    'gps.gettingGps': 'กำลังหาตำแหน่ง GPS...',
+    'gps.locationSaved': 'บันทึกตำแหน่งแล้ว',
+    'gps.selectLocation': 'เลือกตำแหน่ง',
+    'gps.selectedLocation': 'ตำแหน่งที่เลือก',
+    'gps.confirm': 'ยืนยันตำแหน่ง',
+    'gps.clear': 'ล้าง',
+    'gps.viewInMaps': 'ดูใน Google Maps',
 
     // ============== Settings ==============
     'settings.title': 'ตั้งค่า',
@@ -912,6 +1003,23 @@ const translations = {
     'workOrders.savingWillMove': 'การบันทึกจะเปลี่ยนสถานะจาก เปิด เป็น กำลังดำเนินการ',
     'workOrders.savingWillKeep': 'การบันทึกจะคงสถานะเป็นกำลังดำเนินการและมอบหมายช่างใหม่',
     'workOrders.deleteRead': 'ลบที่อ่านแล้ว',
+
+    // ============== WorkOrders Tooltips ==============
+    'workOrders.listView': 'แสดงแบบรายการ',
+    'workOrders.boardView': 'แสดงแบบบอร์ด',
+    'workOrders.startDateFilter': 'กรองวันที่เริ่มต้น',
+    'workOrders.endDateFilter': 'กรองวันที่สิ้นสุด',
+    'workOrders.filterByPriority': 'กรองตามความสำคัญ',
+    'workOrders.filterByTechnician': 'กรองตามช่าง',
+    'workOrders.clearAllFilters': 'ล้างตัวกรองทั้งหมด',
+    'workOrders.closePanel': 'ปิดแผง',
+    'workOrders.locationMap': 'แผนที่ตำแหน่ง',
+    'workOrders.selectTechnicianToAssign': 'เลือกช่างเพื่อมอบหมาย',
+    'workOrders.removeImage': 'ลบรูปภาพ',
+    'workOrders.removePart': 'ลบอะไหล่',
+    'workOrders.addPartFromInventory': 'เพิ่มอะไหล่จากคลัง',
+    'workOrders.cancelWO': 'ยกเลิกใบงานนี้',
+    'workOrders.closeModal': 'ปิดหน้าต่าง',
   }
 } as const;
 
@@ -921,9 +1029,18 @@ export const useLanguage = create<LanguageState>()(
     (set, get) => ({
       language: 'th', // Default to Thai
       setLanguage: (lang: Language) => set({ language: lang }),
-      t: (key: TranslationKeys) => {
+      t: (key: TranslationKeys, params?: Record<string, string>): string => {
         const lang = get().language;
-        return translations[lang][key] || key;
+        let text: string = translations[lang][key] || key;
+        
+        // Replace {param} placeholders with actual values
+        if (params) {
+          Object.entries(params).forEach(([paramKey, paramValue]) => {
+            text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), paramValue || '');
+          });
+        }
+        
+        return text;
       }
     }),
     {
