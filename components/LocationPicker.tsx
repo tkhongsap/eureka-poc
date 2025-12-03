@@ -496,7 +496,7 @@ export const InlineLocationPicker: React.FC<{
             setHasSelected(true);
             fetchAddress(lat, lng);
           } else {
-            alert('ไม่สามารถหาตำแหน่งได้ กรุณาเปิด GPS และอนุญาตการเข้าถึงตำแหน่ง');
+            alert(t('gps.cannotGetLocation'));
           }
           setIsGettingLocation(false);
         },
@@ -656,6 +656,7 @@ export const LocationDisplay: React.FC<{
   location: LocationData;
   compact?: boolean;
 }> = ({ location, compact = false }) => {
+  const { t } = useLanguage();
   const handleNavigate = () => {
     const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
     window.open(navUrl, '_blank');
@@ -671,7 +672,7 @@ export const LocationDisplay: React.FC<{
         <button
           onClick={handleNavigate}
           className="p-1.5 bg-teal-50 hover:bg-teal-100 text-teal-600 rounded-lg transition-colors"
-          title="Navigate with Google Maps"
+          title={t('gps.navigateWithMaps')}
         >
           <Navigation size={14} />
         </button>
@@ -694,10 +695,10 @@ export const LocationDisplay: React.FC<{
         <button
           onClick={handleNavigate}
           className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors"
-          title="Navigate with Google Maps"
+          title={t('gps.navigateWithMaps')}
         >
           <Navigation size={16} />
-          Navigate
+          {t('gps.navigate')}
         </button>
       </div>
     </div>
