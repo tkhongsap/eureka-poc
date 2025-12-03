@@ -236,7 +236,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 rounded-xl hover:bg-stone-100 transition-all duration-200 hover:scale-105 active:scale-95"
-        title="Notifications"
+        title={t('nav.notifications')}
       >
         <Bell size={20} className="text-stone-600" />
         {unreadCount > 0 && (
@@ -345,7 +345,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                               onClick={(e) => handleMarkAsRead(notification.id, e)}
                               disabled={isProcessing}
                               className="p-1.5 rounded-lg hover:bg-teal-100 text-teal-600 transition-all hover:scale-110 disabled:opacity-50"
-                              title="Mark as read"
+                              title={t('notif.markAsRead')}
                             >
                               <Check size={14} />
                             </button>
@@ -354,7 +354,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                             onClick={(e) => handleDelete(notification.id, e)}
                             disabled={isProcessing}
                             className="p-1.5 rounded-lg hover:bg-red-100 text-red-600 transition-all hover:scale-110 disabled:opacity-50"
-                            title="Delete"
+                            title={t('notif.deleteNotification')}
                           >
                             <X size={14} />
                           </button>
