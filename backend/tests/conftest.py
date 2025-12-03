@@ -5,7 +5,7 @@ from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -71,6 +71,32 @@ def temp_pictures_dir() -> Generator[str, None, None]:
         # Restore original value
         storage_module.PICTURES_DIR = original_dir
         shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+@pytest.fixture(scope="function", autouse=True)
+def clean_db(create_test_db):
+    """
+    Clean all data from database tables before and after each test.
+    This ensures test isolation - each test starts with a fresh database.
+    """
+    # Import models to get all tables registered
+    from db import models as _models  # noqa: F401
+
+    # Get table names from metadata
+    table_names = list(Base.metadata.tables.keys())
+
+    # Clean up before test runs
+    def cleanup():
+        with engine.begin() as conn:
+            # Disable foreign key checks for SQLite to allow any deletion order
+            conn.execute(text("PRAGMA foreign_keys = OFF"))
+            for table_name in table_names:
+                conn.execute(text(f"DELETE FROM {table_name}"))
+            conn.execute(text("PRAGMA foreign_keys = ON"))
+
+    cleanup()  # Clean before test
+    yield
+    cleanup()  # Clean after test
 
 
 @pytest.fixture(scope="session")
