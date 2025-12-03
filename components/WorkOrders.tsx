@@ -25,7 +25,7 @@ const formatDateShort = (dateString: string): string => {
 };
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, AdminRejectData, adminCloseWorkOrder, createNotification } from '../services/apiService';
+import { getImageDataUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, adminCloseWorkOrder, createNotification } from '../services/apiService';
 import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules';
 import { 
   createWOAssignedNotification, 
@@ -91,6 +91,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [showTechnicianModal, setShowTechnicianModal] = useState(false);
   const [technicianNotes, setTechnicianNotes] = useState('');
   const [technicianImages, setTechnicianImages] = useState<string[]>([]);
+  const [technicianPreviewUrls, setTechnicianPreviewUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Admin assignment state
@@ -140,21 +141,24 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
   // Load images when selecting a work order
   useEffect(() => {
-    // Load original request images
-    if (selectedWO && selectedWO.imageIds && selectedWO.imageIds.length > 0) {
-      const imageUrls = selectedWO.imageIds.map(id => getImageUrl(id));
-      setSelectedWOImages(imageUrls);
-    } else {
-      setSelectedWOImages([]);
-    }
-    
-    // Load technician work images for display (separate from upload state)
-    if (selectedWO && selectedWO.technicianImages && selectedWO.technicianImages.length > 0) {
-      const techImageUrls = selectedWO.technicianImages.map(id => getImageUrl(id));
-      setSelectedTechImages(techImageUrls);
-    } else {
-      setSelectedTechImages([]);
-    }
+    const loadImages = async () => {
+      // Load original request images
+      if (selectedWO && selectedWO.imageIds && selectedWO.imageIds.length > 0) {
+        const imageUrls = await Promise.all(selectedWO.imageIds.map(id => getImageDataUrl(id)));
+        setSelectedWOImages(imageUrls);
+      } else {
+        setSelectedWOImages([]);
+      }
+      
+      // Load technician work images for display (separate from upload state)
+      if (selectedWO && selectedWO.technicianImages && selectedWO.technicianImages.length > 0) {
+        const techImageUrls = await Promise.all(selectedWO.technicianImages.map(id => getImageDataUrl(id)));
+        setSelectedTechImages(techImageUrls);
+      } else {
+        setSelectedTechImages([]);
+      }
+    };
+    loadImages();
     
     // Initialize technician fields when selecting a work order so technician can edit inline
     if (selectedWO) {
@@ -171,6 +175,19 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     // Clear admin review fields
     setRejectionReason('');
   }, [selectedWO]);
+
+  // Build preview URLs for technicianImages (avoid async in render)
+  useEffect(() => {
+    const buildPreviews = async () => {
+      if (technicianImages.length > 0) {
+        const urls = await Promise.all(technicianImages.map(id => getImageDataUrl(id)));
+        setTechnicianPreviewUrls(urls);
+      } else {
+        setTechnicianPreviewUrls([]);
+      }
+    };
+    buildPreviews();
+  }, [technicianImages]);
 
   // Base technician scoping: technicians only ever see their own jobs
   const scopedWorkOrders = currentUser?.userRole === 'Technician'
@@ -1212,13 +1229,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                           {t('workOrders.workPhotos')} ({selectedWO.technicianImages.length}):
                         </p>
                         <div className="grid grid-cols-3 gap-2">
-                          {selectedWO.technicianImages.map((imgId, idx) => (
+                          {selectedTechImages.map((imgUrl, idx) => (
                             <img
                               key={idx}
-                              src={getImageUrl(imgId)}
+                              src={imgUrl}
                               alt={`Work photo ${idx + 1}`}
                               className="w-full h-20 object-cover rounded-lg border border-stone-200 cursor-pointer hover:opacity-80 transition-opacity"
-                              onClick={() => setFullscreenImage(getImageUrl(imgId))}
+                              onClick={() => setFullscreenImage(imgUrl)}
                             />
                           ))}
                         </div>
@@ -1381,11 +1398,11 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       )}
                     </div>
 
-                    {technicianImages.length > 0 && (
+                    {technicianPreviewUrls.length > 0 && (
                       <div className="grid grid-cols-3 gap-3 mb-4">
-                        {technicianImages.map((id, idx) => (
+                        {technicianPreviewUrls.map((imgUrl, idx) => (
                           <div key={idx} className="relative rounded-xl overflow-hidden border-2 border-blue-200">
-                            <img src={getImageUrl(id)} alt={`work-photo-${idx}`} className="w-full h-28 object-cover" />
+                            <img src={imgUrl} alt={`work-photo-${idx}`} className="w-full h-28 object-cover" />
                             <button 
                               onClick={() => removeTechnicianImage(idx)} 
                               title={t('workOrders.removeImage')}
@@ -1773,13 +1790,12 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                   </label>
                   {isUploading && <span className="text-sm text-stone-500">{t('workOrders.uploading')}</span>}
                 </div>
-
-                {technicianImages.length > 0 && (
-                  <div className="grid grid-cols-3 gap-3 mt-3">
-                    {technicianImages.map((id, idx) => (
+                {technicianPreviewUrls.length > 0 && (
+                  <div className="grid grid-cols-3 gap-3 mt-4">
+                    {technicianPreviewUrls.map((imgUrl, idx) => (
                       <div key={idx} className="relative rounded-xl overflow-hidden border border-stone-200">
-                        <img src={getImageUrl(id)} alt={`img-${idx}`} className="w-full h-28 object-cover" />
-                        <button onClick={() => removeTechnicianImage(idx)} title={t('workOrders.removeImage')} aria-label={t('workOrders.removeImage')} className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
+                        <img src={imgUrl} alt={`img-${idx}`} className="w-full h-28 object-cover" />
+                        <button onClick={() => removeTechnicianImage(idx)} title="Remove image" aria-label="Remove image" className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
                           <Trash2 size={14} />
                         </button>
                       </div>

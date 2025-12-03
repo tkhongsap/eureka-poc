@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { WorkOrder, Status, Priority } from '../types';
 import { Clock, CheckCircle, AlertCircle, XCircle, Package, Calendar, X, Image as ImageIcon, FileText, Wrench, Eye, Edit2, Save, Lock } from 'lucide-react';
-import { getImageUrl, updateWorkOrder } from '../services/apiService';
+import { getImageDataUrl, updateWorkOrder } from '../services/apiService';
 import { getWorkOrderPermissions } from '../utils/workflowRules';
 import { useLanguage } from '../lib/i18n';
 
@@ -91,30 +91,33 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
 
   // Load images when selecting a work order
   useEffect(() => {
-    if (selectedWO) {
-      if (selectedWO.imageIds && selectedWO.imageIds.length > 0) {
-        const imageUrls = selectedWO.imageIds.map(id => getImageUrl(id));
-        setSelectedWOImages(imageUrls);
+    const loadImages = async () => {
+      if (selectedWO) {
+        if (selectedWO.imageIds && selectedWO.imageIds.length > 0) {
+          const imageUrls = await Promise.all(selectedWO.imageIds.map(id => getImageDataUrl(id)));
+          setSelectedWOImages(imageUrls);
+        } else {
+          setSelectedWOImages([]);
+        }
+
+        if (selectedWO.technicianImages && selectedWO.technicianImages.length > 0) {
+          const techImgUrls = await Promise.all(selectedWO.technicianImages.map(id => getImageDataUrl(id)));
+          setTechnicianImages(techImgUrls);
+        } else {
+          setTechnicianImages([]);
+        }
+
+        // Initialize edit fields
+        setEditDescription(selectedWO.description);
+        setEditPriority(selectedWO.priority);
+        setIsEditMode(false);
       } else {
         setSelectedWOImages([]);
-      }
-
-      if (selectedWO.technicianImages && selectedWO.technicianImages.length > 0) {
-        const techImgUrls = selectedWO.technicianImages.map(id => getImageUrl(id));
-        setTechnicianImages(techImgUrls);
-      } else {
         setTechnicianImages([]);
+        setIsEditMode(false);
       }
-
-      // Initialize edit fields
-      setEditDescription(selectedWO.description);
-      setEditPriority(selectedWO.priority);
-      setIsEditMode(false);
-    } else {
-      setSelectedWOImages([]);
-      setTechnicianImages([]);
-      setIsEditMode(false);
-    }
+    };
+    loadImages();
   }, [selectedWO]);
 
   const handleSave = async () => {
