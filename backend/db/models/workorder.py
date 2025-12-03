@@ -19,6 +19,7 @@ class WorkOrder(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     image_ids = Column(JSON, default=list)
     request_id = Column(String(50), nullable=True)
+    created_by = Column(String(255), nullable=True)  # Name of the requester who created this WO
     technician_notes = Column(Text, nullable=True)
     technician_images = Column(JSON, default=list)
     admin_review = Column(Text, nullable=True)

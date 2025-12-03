@@ -39,6 +39,7 @@ async def create_workorder_internal(wo: WorkOrderCreate, db: Session) -> WorkOrd
         due_date=wo.dueDate,
         image_ids=wo.imageIds,
         request_id=wo.requestId,
+        created_by=wo.createdBy,  # Store who created this WO
         location_data=wo.locationData.dict() if wo.locationData else None,
         preferred_date=wo.preferredDate,
     )

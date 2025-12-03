@@ -210,6 +210,7 @@ export interface WorkOrderItem {
   createdAt: string;
   imageIds: string[];
   requestId?: string;
+  createdBy?: string; // Name of the requester who created this WO
   technicianNotes?: string;
   technicianImages?: string[];
   partsUsed?: { id: string; name: string; quantity: number }[];
@@ -229,6 +230,7 @@ export interface CreateWorkOrderData {
   dueDate: string;
   imageIds?: string[];
   requestId?: string;
+  createdBy?: string; // Name of the requester who created this WO
   locationData?: LocationData;
   preferredDate?: string; // Preferred maintenance date from request
 }

@@ -80,9 +80,9 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
   const [editDescription, setEditDescription] = useState('');
   const [editPriority, setEditPriority] = useState<Priority>(Priority.LOW);
 
-  // Filter work orders that have a requestId (created from requests)
-  // In a real app, we'd also match by the createdBy field from the request
-  const myWorkOrders = workOrders.filter(wo => wo.requestId);
+  // Filter work orders created by this requester
+  // Match by createdBy field which stores the requester's name
+  const myWorkOrders = workOrders.filter(wo => wo.createdBy === requestorName);
 
   // Calculate permissions for selected work order
   const permissions = selectedWO
