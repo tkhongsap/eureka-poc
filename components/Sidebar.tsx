@@ -84,7 +84,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
           >
             <div className="flex items-center space-x-3">
               <UserCircle2 size={20} />
-              <span className="font-medium text-sm">Role: {currentUser.userRole}</span>
+              <span className="font-medium text-sm">{t('sidebar.role')}: {
+                currentUser.userRole === 'Admin' ? t('login.admin') :
+                currentUser.userRole === 'Head Technician' ? t('login.headTechnician') :
+                currentUser.userRole === 'Technician' ? t('login.technician') :
+                t('login.requester')
+              }</span>
             </div>
             <ChevronUp size={16} className={`transition-transform ${isRoleSwitcherOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -92,7 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
           {isRoleSwitcherOpen && (
             <div className="absolute bottom-full left-0 right-0 mb-2 bg-stone-800 rounded-xl border border-stone-700 overflow-hidden shadow-xl">
               <div className="p-2 bg-stone-800/80 border-b border-stone-700 text-xs font-bold text-stone-400 uppercase px-3">
-                Switch Role
+                {t('sidebar.switchRole')}
               </div>
               <div className="p-1">
                 {allUsers.map((u) => (
@@ -109,7 +114,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
                       {u.userRole === 'Admin' ? <ShieldCheck size={14} /> : u.userRole === 'Head Technician' ? <Crown size={14} /> : u.userRole === 'Technician' ? <HardHat size={14} /> : <ClipboardList size={14} />}
                     </div>
                     <div>
-                      <div className="font-medium text-sm">{u.userRole}</div>
+                      <div className="font-medium text-sm">{
+                        u.userRole === 'Admin' ? t('login.admin') :
+                        u.userRole === 'Head Technician' ? t('login.headTechnician') :
+                        u.userRole === 'Technician' ? t('login.technician') :
+                        t('login.requester')
+                      }</div>
                       <div className="text-xs opacity-70">{u.name}</div>
                     </div>
                   </button>
@@ -125,7 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, userRole, 
           <span className="font-medium text-sm">{t('nav.logout')}</span>
         </button>
         <div className="mt-4 px-4 text-xs text-stone-500 text-center">
-          v2.5.0 • Tenant: Acme Corp
+          {t('sidebar.version')} • {t('sidebar.tenant')}: Acme Corp
         </div>
       </div>
     </div>
