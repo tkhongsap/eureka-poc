@@ -7,7 +7,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 # Load .env file from project root
-project_root = Path(__file__).parent.parent
+project_root = Path(__file__).parent.parent.parent
 env_path = project_root / ".env"
 load_dotenv(dotenv_path=env_path)
 
