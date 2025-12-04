@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  PieChart, Pie, Cell
+  PieChart, Pie, Cell,
+  BarChart, Bar
 } from 'recharts';
 import { 
   Clock, 
@@ -391,75 +392,136 @@ const Dashboard: React.FC = () => {
           <div className="h-80">
             {dailyWorkOrders.length > 0 && dailyWorkOrders.some(d => d.created > 0 || d.completed > 0) ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart key={`chart-${selectedPeriod}-${dailyWorkOrders.length}`} data={dailyWorkOrders} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 11, fill: '#78716c' }}
-                    tickLine={false}
-                    axisLine={{ stroke: '#d6d3d1' }}
-                    interval={selectedPeriod <= 14 ? 0 : selectedPeriod <= 30 ? 2 : selectedPeriod <= 90 ? 6 : selectedPeriod <= 180 ? 13 : 29}
-                    angle={selectedPeriod > 14 ? -45 : 0}
-                    textAnchor={selectedPeriod > 14 ? 'end' : 'middle'}
-                    height={selectedPeriod > 14 ? 60 : 30}
-                    tickFormatter={(value) => {
-                      if (selectedPeriod <= 7) return value; // Show full date for 7 days
-                      const d = new Date(value);
-                      return `${d.getDate()}/${d.getMonth() + 1}`;
-                    }}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 12, fill: '#78716c' }}
-                    tickLine={false}
-                    axisLine={{ stroke: '#d6d3d1' }}
-                    allowDecimals={false}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      border: '1px solid #e5e5e5',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                    }}
-                    labelStyle={{ fontWeight: 600, marginBottom: 4 }}
-                    labelFormatter={(label, payload) => {
-                      if (payload && payload.length > 0) {
-                        return payload[0].payload.date;
-                      }
-                      return label;
-                    }}
-                  />
-                  <Legend 
-                    verticalAlign="top" 
-                    height={36}
-                    formatter={(value) => (
-                      <span className="text-sm text-stone-600">
-                        {value === 'created' 
-                          ? (language === 'th' ? 'สร้างใหม่' : 'Created')
-                          : (language === 'th' ? 'เสร็จสิ้น' : 'Completed')
+                {selectedPeriod === 1 ? (
+                  /* Bar Chart for Today */
+                  <BarChart 
+                    key={`bar-chart-${dailyWorkOrders.length}`} 
+                    data={dailyWorkOrders} 
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12, fill: '#78716c' }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#d6d3d1' }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12, fill: '#78716c' }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#d6d3d1' }}
+                      allowDecimals={false}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#fff', 
+                        border: '1px solid #e5e5e5',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      }}
+                      labelStyle={{ fontWeight: 600, marginBottom: 4 }}
+                      cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                    />
+                    <Legend 
+                      verticalAlign="top" 
+                      height={36}
+                      formatter={(value) => (
+                        <span className="text-sm text-stone-600">
+                          {value === 'created' 
+                            ? (language === 'th' ? 'สร้างใหม่' : 'Created')
+                            : (language === 'th' ? 'เสร็จสิ้น' : 'Completed')
+                          }
+                        </span>
+                      )}
+                    />
+                    <Bar 
+                      dataKey="created" 
+                      fill="#0d9488" 
+                      radius={[4, 4, 0, 0]}
+                      name="created"
+                    />
+                    <Bar 
+                      dataKey="completed" 
+                      fill="#8b5cf6" 
+                      radius={[4, 4, 0, 0]}
+                      name="completed"
+                    />
+                  </BarChart>
+                ) : (
+                  /* Line Chart for other periods */
+                  <LineChart key={`chart-${selectedPeriod}-${dailyWorkOrders.length}`} data={dailyWorkOrders} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 10, fill: '#78716c' }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#d6d3d1' }}
+                      interval={selectedPeriod <= 7 ? 0 : selectedPeriod <= 14 ? 1 : selectedPeriod <= 30 ? 4 : selectedPeriod <= 90 ? 13 : selectedPeriod <= 180 ? 29 : 59}
+                      angle={selectedPeriod > 7 ? -45 : 0}
+                      textAnchor={selectedPeriod > 7 ? 'end' : 'middle'}
+                      height={selectedPeriod > 7 ? 50 : 30}
+                      tickFormatter={(value) => {
+                        if (selectedPeriod <= 7) return value;
+                        const d = new Date(value);
+                        if (selectedPeriod <= 30) return `${d.getDate()}/${d.getMonth() + 1}`;
+                        // For longer periods, show month name
+                        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        return `${d.getDate()} ${months[d.getMonth()]}`;
+                      }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12, fill: '#78716c' }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#d6d3d1' }}
+                      allowDecimals={false}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#fff', 
+                        border: '1px solid #e5e5e5',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      }}
+                      labelStyle={{ fontWeight: 600, marginBottom: 4 }}
+                      labelFormatter={(label, payload) => {
+                        if (payload && payload.length > 0) {
+                          return payload[0].payload.date;
                         }
-                      </span>
-                    )}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="created" 
-                    stroke="#0d9488" 
-                    strokeWidth={2}
-                    dot={{ fill: '#0d9488', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
-                    name="created"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="completed" 
-                    stroke="#8b5cf6" 
-                    strokeWidth={2}
-                    dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
-                    name="completed"
-                  />
-                </LineChart>
+                        return label;
+                      }}
+                    />
+                    <Legend 
+                      verticalAlign="top" 
+                      height={36}
+                      formatter={(value) => (
+                        <span className="text-sm text-stone-600">
+                          {value === 'created' 
+                            ? (language === 'th' ? 'สร้างใหม่' : 'Created')
+                            : (language === 'th' ? 'เสร็จสิ้น' : 'Completed')
+                          }
+                        </span>
+                      )}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="created" 
+                      stroke="#0d9488" 
+                      strokeWidth={selectedPeriod > 30 ? 1.5 : 2}
+                      dot={selectedPeriod <= 30 ? { fill: '#0d9488', strokeWidth: 2, r: 3 } : false}
+                      activeDot={{ r: 5, strokeWidth: 0 }}
+                      name="created"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="completed" 
+                      stroke="#8b5cf6" 
+                      strokeWidth={selectedPeriod > 30 ? 1.5 : 2}
+                      dot={selectedPeriod <= 30 ? { fill: '#8b5cf6', strokeWidth: 2, r: 3 } : false}
+                      activeDot={{ r: 5, strokeWidth: 0 }}
+                      name="completed"
+                    />
+                  </LineChart>
+                )}
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-stone-400">
