@@ -1,19 +1,17 @@
 import React from 'react';
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar 
-} from 'recharts';
-import { AlertCircle, CheckCircle2, Clock, Zap } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, Zap, BarChart3 } from 'lucide-react';
 import { KpiData } from '../types';
 import { useLanguage } from '../lib/i18n';
 
-const data = [
-  { name: 'Mon', wo: 40, completed: 24, downtime: 12 },
-  { name: 'Tue', wo: 30, completed: 13, downtime: 20 },
-  { name: 'Wed', wo: 20, completed: 58, downtime: 5 },
-  { name: 'Thu', wo: 27, completed: 39, downtime: 8 },
-  { name: 'Fri', wo: 18, completed: 48, downtime: 3 },
-  { name: 'Sat', wo: 23, completed: 38, downtime: 10 },
-  { name: 'Sun', wo: 34, completed: 43, downtime: 15 },
+// Empty data for charts - will be populated from real data later
+const emptyChartData = [
+  { name: 'Mon', wo: 0, completed: 0, downtime: 0 },
+  { name: 'Tue', wo: 0, completed: 0, downtime: 0 },
+  { name: 'Wed', wo: 0, completed: 0, downtime: 0 },
+  { name: 'Thu', wo: 0, completed: 0, downtime: 0 },
+  { name: 'Fri', wo: 0, completed: 0, downtime: 0 },
+  { name: 'Sat', wo: 0, completed: 0, downtime: 0 },
+  { name: 'Sun', wo: 0, completed: 0, downtime: 0 },
 ];
 
 const KPICard: React.FC<{ title: string; value: string; trend: string; trendLabel: string; icon: any; color: string; gradient: string }> = ({ title, value, trend, trendLabel, icon: Icon, color, gradient }) => (
@@ -49,8 +47,8 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
           title={t('dashboard.openWorkOrders')}
-          value="24"
-          trend="+12%"
+          value="0"
+          trend="-"
           trendLabel={t('dashboard.fromLastWeek')}
           icon={Clock}
           color="text-teal-600"
@@ -58,8 +56,8 @@ const Dashboard: React.FC = () => {
         />
         <KPICard
           title={t('dashboard.criticalDowntime')}
-          value="1.2 hr"
-          trend="-5%"
+          value="0 hr"
+          trend="-"
           trendLabel={t('dashboard.fromLastWeek')}
           icon={AlertCircle}
           color="text-red-600"
@@ -67,8 +65,8 @@ const Dashboard: React.FC = () => {
         />
         <KPICard
           title={t('dashboard.pmCompliance')}
-          value="94%"
-          trend="+2%"
+          value="-%"
+          trend="-"
           trendLabel={t('dashboard.fromLastWeek')}
           icon={CheckCircle2}
           color="text-emerald-600"
@@ -76,8 +74,8 @@ const Dashboard: React.FC = () => {
         />
         <KPICard
           title={t('dashboard.oeeScore')}
-          value="82%"
-          trend="+4%"
+          value="-%"
+          trend="-"
           trendLabel={t('dashboard.fromLastWeek')}
           icon={Zap}
           color="text-violet-600"
@@ -88,43 +86,23 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-2xl border border-stone-200/60 shadow-sm hover:shadow-lg transition-shadow duration-300">
           <h3 className="font-serif text-xl text-stone-900 mb-6">{t('dashboard.workOrderThroughput')}</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
-                <defs>
-                  <linearGradient id="colorWo" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0d9488" stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor="#0d9488" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e5e4" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#78716c'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#78716c'}} />
-                <Tooltip
-                  contentStyle={{borderRadius: '12px', border: '1px solid #e7e5e4', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                />
-                <Area type="monotone" dataKey="wo" stroke="#0d9488" strokeWidth={3} fillOpacity={1} fill="url(#colorWo)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-80 flex items-center justify-center">
+            <div className="text-center text-stone-400">
+              <BarChart3 size={48} className="mx-auto mb-3 opacity-50" />
+              <p className="text-sm">No data available yet</p>
+              <p className="text-xs mt-1">Data will appear when work orders are created</p>
+            </div>
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-2xl border border-stone-200/60 shadow-sm hover:shadow-lg transition-shadow duration-300">
           <h3 className="font-serif text-xl text-stone-900 mb-6">{t('dashboard.downtimeVsResponse')}</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e5e4" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#78716c'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#78716c'}} />
-                <Tooltip
-                  cursor={{fill: '#fafaf9'}}
-                  contentStyle={{borderRadius: '12px', border: '1px solid #e7e5e4', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                />
-                <Bar dataKey="downtime" fill="#ef4444" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="completed" fill="#10b981" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-80 flex items-center justify-center">
+            <div className="text-center text-stone-400">
+              <BarChart3 size={48} className="mx-auto mb-3 opacity-50" />
+              <p className="text-sm">No data available yet</p>
+              <p className="text-xs mt-1">Data will appear when work orders are completed</p>
+            </div>
           </div>
         </div>
       </div>
