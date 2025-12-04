@@ -74,11 +74,16 @@ def cleanup_old_states():
 
 def get_redirect_uri(request: Request) -> str:
     """Build the OAuth callback URI based on request"""
+    from config import IS_REPLIT, REPLIT_DEV_DOMAIN, REPLIT_DOMAINS
+    
     host = request.headers.get("host", "localhost:8000")
     forwarded_proto = request.headers.get("x-forwarded-proto")
     
-    # Debug logging
-    print(f"DEBUG: Building redirect_uri - host={host}, x-forwarded-proto={forwarded_proto}")
+    # On Replit, use the REPLIT_DEV_DOMAIN or REPLIT_DOMAINS environment variable
+    if IS_REPLIT:
+        # Prefer REPLIT_DEV_DOMAIN, fallback to first domain in REPLIT_DOMAINS
+        replit_host = REPLIT_DEV_DOMAIN or (REPLIT_DOMAINS.split(",")[0] if REPLIT_DOMAINS else host)
+        return f"https://{replit_host}/api/auth/callback"
     
     if forwarded_proto:
         protocol = forwarded_proto
@@ -87,19 +92,21 @@ def get_redirect_uri(request: Request) -> str:
     else:
         protocol = "http"
     
-    # For local development with separate frontend/backend
+    # For local development, use frontend port for callback
+    # so the SPA can handle the /auth-success route
     if "localhost:8000" in host:
         host = "localhost:5000"
     
-    redirect_uri = f"{protocol}://{host}/api/auth/callback"
-    print(f"DEBUG: redirect_uri = {redirect_uri}")
-    return redirect_uri
+    return f"{protocol}://{host}/api/auth/callback"
 
 
 @router.get("/login")
 async def login(request: Request):
     """Initiate OAuth login flow (Google or Replit based on config)"""
     oauth_config = get_oauth_config()
+    
+    print(f"[Auth] Starting OAuth login with provider: {oauth_config['provider']}")
+    print(f"[Auth] Client ID: {oauth_config['client_id'][:20]}..." if oauth_config['client_id'] else "[Auth] Client ID: NOT SET")
     
     if not oauth_config["client_id"]:
         raise HTTPException(
@@ -127,6 +134,7 @@ async def login(request: Request):
     cleanup_old_states()
     
     redirect_uri = get_redirect_uri(request)
+    print(f"[Auth] Redirect URI: {redirect_uri}")
     
     # Build authorization URL
     params = {
@@ -151,6 +159,7 @@ async def login(request: Request):
         params["prompt"] = "login consent"
     
     auth_url = f"{oauth_config['auth_endpoint']}?{urlencode(params)}"
+    print(f"[Auth] Authorization URL: {auth_url[:100]}...")
     return RedirectResponse(url=auth_url)
 
 
@@ -160,23 +169,29 @@ async def callback(
     code: str = None,
     state: str = None,
     error: str = None,
+    error_description: str = None,
     db: Session = Depends(get_db)
 ):
     """Handle OAuth callback from provider"""
+    print(f"[Auth Callback] Received callback - code: {bool(code)}, state: {bool(state)}, error: {error}")
+    
     if error:
-        print(f"OAuth error: {error}")
+        print(f"[Auth Callback] OAuth error: {error} - {error_description}")
         return RedirectResponse(url=f"/login?error={error}")
     
     if not code or not state:
+        print(f"[Auth Callback] Missing params - code: {bool(code)}, state: {bool(state)}")
         return RedirectResponse(url="/login?error=missing_params")
     
     if state not in OAUTH_STATES:
+        print(f"[Auth Callback] Invalid state - state not found in OAUTH_STATES")
         return RedirectResponse(url="/login?error=invalid_state")
     
     state_data = OAUTH_STATES.pop(state)
     oauth_config = get_oauth_config()
     
     redirect_uri = get_redirect_uri(request)
+    print(f"[Auth Callback] Using redirect_uri: {redirect_uri}")
     
     # Exchange code for tokens
     token_data = {
@@ -193,6 +208,9 @@ async def callback(
     # Add PKCE verifier if used
     if oauth_config["use_pkce"] and "verifier" in state_data:
         token_data["code_verifier"] = state_data["verifier"]
+        print(f"[Auth Callback] Using PKCE verifier")
+    
+    print(f"[Auth Callback] Exchanging code for tokens at: {oauth_config['token_endpoint']}")
     
     async with httpx.AsyncClient() as client:
         try:
@@ -202,18 +220,22 @@ async def callback(
                 headers={"Content-Type": "application/x-www-form-urlencoded"}
             )
             
+            print(f"[Auth Callback] Token response status: {token_response.status_code}")
+            
             if token_response.status_code != 200:
-                print(f"Token exchange failed: {token_response.text}")
+                print(f"[Auth Callback] Token exchange failed: {token_response.text}")
                 return RedirectResponse(url="/login?error=token_exchange_failed")
             
             tokens = token_response.json()
+            print(f"[Auth Callback] Received tokens: {list(tokens.keys())}")
         except Exception as e:
-            print(f"Token request error: {e}")
+            print(f"[Auth Callback] Token request error: {e}")
             return RedirectResponse(url="/login?error=token_error")
     
     # Get user info
     access_token = tokens.get("access_token")
     if not access_token:
+        print("[Auth Callback] No access token in response")
         return RedirectResponse(url="/login?error=no_access_token")
     
     # For Replit, extract user claims from ID token directly (not userinfo endpoint)
@@ -222,15 +244,15 @@ async def callback(
     if provider == "replit":
         id_token = tokens.get("id_token")
         if not id_token:
-            print("No ID token in response")
+            print("[Auth Callback] No ID token in response")
             return RedirectResponse(url="/login?error=no_id_token")
         
         try:
             # Decode ID token without signature verification (already validated by OAuth flow)
             userinfo = jwt.decode(id_token, options={"verify_signature": False})
-            print(f"Replit user claims: {userinfo}")
+            print(f"[Auth Callback] Replit user claims: {userinfo}")
         except Exception as e:
-            print(f"ID token decode error: {e}")
+            print(f"[Auth Callback] ID token decode error: {e}")
             return RedirectResponse(url="/login?error=token_decode_error")
     else:
         # For Google, use userinfo endpoint
@@ -259,12 +281,19 @@ async def callback(
         profile_image_url = userinfo.get("picture")
         name = userinfo.get("name") or f"{first_name or ''} {last_name or ''}".strip()
     else:  # replit
+        # Replit OIDC claims: sub, username, first_name, last_name, profile_image_url, email
         oauth_user_id = userinfo.get("sub")
         email = userinfo.get("email")
         first_name = userinfo.get("first_name")
         last_name = userinfo.get("last_name")
         profile_image_url = userinfo.get("profile_image_url")
+        username = userinfo.get("username")
+        # Build name from first_name + last_name, fallback to username
         name = f"{first_name or ''} {last_name or ''}".strip()
+        if not name:
+            name = username
+    
+    print(f"[Auth Callback] Extracted user data - id: {oauth_user_id}, email: {email}, name: {name}")
     
     if not name:
         name = email or f"User {oauth_user_id}"
@@ -443,24 +472,12 @@ async def logout(request: Request, db: Session = Depends(get_db)):
 async def get_provider():
     """Get current OAuth provider configuration"""
     oauth_config = get_oauth_config()
+    from config import IS_REPLIT, REPLIT_DEV_DOMAIN, REPLIT_DOMAINS
+    
     return {
         "provider": oauth_config["provider"],
         "configured": bool(oauth_config["client_id"]),
-    }
-
-
-@router.get("/debug")
-async def debug_auth():
-    """Debug endpoint to check OAuth configuration"""
-    oauth_config = get_oauth_config()
-    return {
-        "provider": oauth_config["provider"],
-        "client_id_set": bool(oauth_config["client_id"]),
-        "client_id_preview": oauth_config["client_id"][:15] + "..." if oauth_config["client_id"] else None,
+        "is_replit": IS_REPLIT,
+        "replit_domain": REPLIT_DEV_DOMAIN or REPLIT_DOMAINS.split(",")[0] if REPLIT_DOMAINS else None,
         "auth_endpoint": oauth_config["auth_endpoint"],
-        "token_endpoint": oauth_config["token_endpoint"],
-        "userinfo_endpoint": oauth_config["userinfo_endpoint"],
-        "use_pkce": oauth_config["use_pkce"],
-        "is_production": IS_PRODUCTION,
-        "pending_states": len(OAUTH_STATES),
     }

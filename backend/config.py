@@ -17,16 +17,21 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_ISSUER_URL = "https://accounts.google.com"
 
 # Replit OAuth Configuration (for deployment on Replit)
-REPLIT_ISSUER_URL = os.environ.get("ISSUER_URL", "https://replit.com/oidc")
+# Replit OIDC issuer URL - discovered from https://replit.com/oidc/.well-known/openid-configuration
+REPLIT_ISSUER_URL = "https://replit.com/oidc"
 REPL_ID = os.environ.get("REPL_ID", "")
+REPLIT_DOMAINS = os.environ.get("REPLIT_DOMAINS", "")
+REPLIT_DEV_DOMAIN = os.environ.get("REPLIT_DEV_DOMAIN", "")
 
 # Environment Detection
 IS_PRODUCTION = os.environ.get("REPL_SLUG") is not None or os.environ.get("REPLIT_DEPLOYMENT") is not None
+IS_REPLIT = bool(REPL_ID)  # Running on Replit platform
 
 # Auto-detect provider based on environment
 def get_oauth_config():
     """Get OAuth configuration based on selected provider"""
-    if OAUTH_PROVIDER == "replit" or (IS_PRODUCTION and REPL_ID):
+    # If running on Replit, use Replit OAuth (OIDC)
+    if IS_REPLIT or OAUTH_PROVIDER == "replit":
         return {
             "provider": "replit",
             "client_id": REPL_ID,
@@ -34,7 +39,7 @@ def get_oauth_config():
             "issuer_url": REPLIT_ISSUER_URL,
             "auth_endpoint": f"{REPLIT_ISSUER_URL}/auth",
             "token_endpoint": f"{REPLIT_ISSUER_URL}/token",
-            "userinfo_endpoint": f"{REPLIT_ISSUER_URL}/userinfo",
+            "userinfo_endpoint": f"{REPLIT_ISSUER_URL}/me",  # Correct endpoint
             "scopes": "openid profile email offline_access",
             "use_pkce": True,
         }
