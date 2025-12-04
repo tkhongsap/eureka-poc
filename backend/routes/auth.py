@@ -77,6 +77,9 @@ def get_redirect_uri(request: Request) -> str:
     host = request.headers.get("host", "localhost:8000")
     forwarded_proto = request.headers.get("x-forwarded-proto")
     
+    # Debug logging
+    print(f"DEBUG: Building redirect_uri - host={host}, x-forwarded-proto={forwarded_proto}")
+    
     if forwarded_proto:
         protocol = forwarded_proto
     elif "replit" in host or "localhost" not in host:
@@ -84,12 +87,13 @@ def get_redirect_uri(request: Request) -> str:
     else:
         protocol = "http"
     
-    # For local development, use frontend port for callback
-    # so the SPA can handle the /auth-success route
+    # For local development with separate frontend/backend
     if "localhost:8000" in host:
         host = "localhost:5000"
     
-    return f"{protocol}://{host}/api/auth/callback"
+    redirect_uri = f"{protocol}://{host}/api/auth/callback"
+    print(f"DEBUG: redirect_uri = {redirect_uri}")
+    return redirect_uri
 
 
 @router.get("/login")
@@ -212,25 +216,41 @@ async def callback(
     if not access_token:
         return RedirectResponse(url="/login?error=no_access_token")
     
-    async with httpx.AsyncClient() as client:
-        try:
-            userinfo_response = await client.get(
-                oauth_config["userinfo_endpoint"],
-                headers={"Authorization": f"Bearer {access_token}"}
-            )
-            
-            if userinfo_response.status_code != 200:
-                print(f"Userinfo failed: {userinfo_response.text}")
-                return RedirectResponse(url="/login?error=userinfo_failed")
-            
-            userinfo = userinfo_response.json()
-        except Exception as e:
-            print(f"Userinfo request error: {e}")
-            return RedirectResponse(url="/login?error=userinfo_error")
-    
-    # Extract user data (handle differences between Google and Replit)
+    # For Replit, extract user claims from ID token directly (not userinfo endpoint)
     provider = oauth_config["provider"]
     
+    if provider == "replit":
+        id_token = tokens.get("id_token")
+        if not id_token:
+            print("No ID token in response")
+            return RedirectResponse(url="/login?error=no_id_token")
+        
+        try:
+            # Decode ID token without signature verification (already validated by OAuth flow)
+            userinfo = jwt.decode(id_token, options={"verify_signature": False})
+            print(f"Replit user claims: {userinfo}")
+        except Exception as e:
+            print(f"ID token decode error: {e}")
+            return RedirectResponse(url="/login?error=token_decode_error")
+    else:
+        # For Google, use userinfo endpoint
+        async with httpx.AsyncClient() as client:
+            try:
+                userinfo_response = await client.get(
+                    oauth_config["userinfo_endpoint"],
+                    headers={"Authorization": f"Bearer {access_token}"}
+                )
+                
+                if userinfo_response.status_code != 200:
+                    print(f"Userinfo failed: {userinfo_response.text}")
+                    return RedirectResponse(url="/login?error=userinfo_failed")
+                
+                userinfo = userinfo_response.json()
+            except Exception as e:
+                print(f"Userinfo request error: {e}")
+                return RedirectResponse(url="/login?error=userinfo_error")
+    
+    # Extract user data (handle differences between Google and Replit)
     if provider == "google":
         oauth_user_id = userinfo.get("sub")
         email = userinfo.get("email")
