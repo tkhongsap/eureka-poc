@@ -34,7 +34,7 @@ def get_oauth_config():
             "issuer_url": REPLIT_ISSUER_URL,
             "auth_endpoint": f"{REPLIT_ISSUER_URL}/auth",
             "token_endpoint": f"{REPLIT_ISSUER_URL}/token",
-            "userinfo_endpoint": f"{REPLIT_ISSUER_URL}/me",  # Replit uses /me not /userinfo
+            "userinfo_endpoint": f"{REPLIT_ISSUER_URL}/userinfo",
             "scopes": "openid profile email offline_access",
             "use_pkce": True,
         }
