@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell
@@ -8,13 +8,15 @@ import {
   PlayCircle, 
   PauseCircle, 
   CheckCircle2, 
-  XCircle,
   Timer,
   Calendar,
   TrendingUp,
   BarChart3,
   AlertCircle,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Lock,
+  RefreshCw,
+  Users
 } from 'lucide-react';
 import { useLanguage } from '../lib/i18n';
 
@@ -24,93 +26,42 @@ interface StatusCounts {
   inProgress: number;
   pending: number;
   completed: number;
-  canceled: number;
+  closed: number;
 }
 
-type PeriodType = 'today' | '7days' | '30days' | '120days' | '180days' | '1year';
+interface AverageCompletionTime {
+  hours: number;
+  formattedText: string;
+}
 
-interface ChartDataPoint {
+interface DailyWorkOrderPoint {
   date: string;
+  dayName: string;
   created: number;
   completed: number;
 }
 
-interface PriorityCounts {
+interface PriorityDistribution {
   critical: number;
   high: number;
   medium: number;
   low: number;
+  other?: number;
 }
 
-interface DashboardStats {
+interface WorkOrdersByAssignee {
+  name: string;
+  count: number;
+}
+
+interface DashboardStatsAPI {
   statusCounts: StatusCounts;
-  priorityCounts: PriorityCounts;
-  avgCompletionTime: number | null; // in hours
-  chartData: Record<PeriodType, ChartDataPoint[]>;
+  averageCompletionTime: AverageCompletionTime | null;
+  dailyWorkOrders: DailyWorkOrderPoint[];
+  priorityDistribution: PriorityDistribution;
+  overdueCount: number;
+  workOrdersByAssignee: WorkOrdersByAssignee[];
 }
-
-// ============== Generate Empty Chart Data ==============
-const generateEmptyChartData = (days: number): ChartDataPoint[] => {
-  const data: ChartDataPoint[] = [];
-  const today = new Date();
-  
-  // For today - show hourly data
-  if (days === 1) {
-    const hours = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'];
-    hours.forEach(hour => {
-      data.push({
-        date: hour,
-        created: 0,
-        completed: 0
-      });
-    });
-  } else if (days <= 7) {
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      data.push({
-        date: date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }),
-        created: 0,
-        completed: 0
-      });
-    }
-  } else if (days <= 30) {
-    // Group by 3 days
-    for (let i = Math.floor(days / 3) - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - (i * 3));
-      data.push({
-        date: date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }),
-        created: 0,
-        completed: 0
-      });
-    }
-  } else if (days <= 120) {
-    // Group by week
-    for (let i = Math.floor(days / 7) - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - (i * 7));
-      data.push({
-        date: date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }),
-        created: 0,
-        completed: 0
-      });
-    }
-  } else {
-    // Group by month
-    for (let i = Math.floor(days / 30) - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setMonth(date.getMonth() - i);
-      data.push({
-        date: date.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' }),
-        created: 0,
-        completed: 0
-      });
-    }
-  }
-  
-  return data;
-};
 
 // ============== Priority Colors ==============
 const PRIORITY_COLORS = {
@@ -120,31 +71,18 @@ const PRIORITY_COLORS = {
   low: '#22c55e'       // green-500
 };
 
-// ============== Empty Stats (Will be replaced with API data) ==============
-const emptyStats: DashboardStats = {
-  statusCounts: {
-    open: 0,
-    inProgress: 0,
-    pending: 0,
-    completed: 0,
-    canceled: 0
-  },
-  priorityCounts: {
-    critical: 0,
-    high: 0,
-    medium: 0,
-    low: 0
-  },
-  avgCompletionTime: null,
-  chartData: {
-    'today': generateEmptyChartData(1),
-    '7days': generateEmptyChartData(7),
-    '30days': generateEmptyChartData(30),
-    '120days': generateEmptyChartData(120),
-    '180days': generateEmptyChartData(180),
-    '1year': generateEmptyChartData(365)
-  }
-};
+// ============== Period Options ==============
+type PeriodType = 1 | 7 | 14 | 30 | 90 | 180 | 365;
+
+const periodOptions: { value: PeriodType; label: { th: string; en: string } }[] = [
+  { value: 1, label: { th: 'วันนี้', en: 'Today' } },
+  { value: 7, label: { th: '7 วัน', en: '7 Days' } },
+  { value: 14, label: { th: '14 วัน', en: '14 Days' } },
+  { value: 30, label: { th: '30 วัน', en: '30 Days' } },
+  { value: 90, label: { th: '90 วัน', en: '90 Days' } },
+  { value: 180, label: { th: '180 วัน', en: '180 Days' } },
+  { value: 365, label: { th: '1 ปี', en: '1 Year' } },
+];
 
 // ============== Components ==============
 const StatusCard: React.FC<{
@@ -170,40 +108,85 @@ const StatusCard: React.FC<{
 
 const Dashboard: React.FC = () => {
   const { t, language } = useLanguage();
-  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('7days');
-  
-  // TODO: Replace with actual API call
-  const stats: DashboardStats = emptyStats;
+  const [stats, setStats] = useState<DashboardStatsAPI | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>(7);
 
-  const periodOptions: { value: PeriodType; label: { th: string; en: string } }[] = [
-    { value: 'today', label: { th: 'วันนี้', en: 'Today' } },
-    { value: '7days', label: { th: '7 วัน', en: '7 Days' } },
-    { value: '30days', label: { th: '30 วัน', en: '30 Days' } },
-    { value: '120days', label: { th: '120 วัน', en: '120 Days' } },
-    { value: '180days', label: { th: '180 วัน', en: '180 Days' } },
-    { value: '1year', label: { th: '1 ปี', en: '1 Year' } },
-  ];
-
-  const formatDuration = (hours: number | null): string => {
-    if (hours === null) return '-';
-    if (hours < 1) {
-      const minutes = Math.round(hours * 60);
-      return `${minutes} ${language === 'th' ? 'นาที' : 'min'}`;
+  // Fetch dashboard stats from API
+  const fetchDashboardStats = async (days: number = selectedPeriod) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(`/api/dashboard/stats?days=${days}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard stats');
+      }
+      const data: DashboardStatsAPI = await response.json();
+      setStats(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
     }
-    if (hours < 24) {
-      return `${hours.toFixed(1)} ${language === 'th' ? 'ชม.' : 'hr'}`;
-    }
-    const days = Math.floor(hours / 24);
-    const remainingHours = Math.round(hours % 24);
-    return `${days} ${language === 'th' ? 'วัน' : 'd'} ${remainingHours} ${language === 'th' ? 'ชม.' : 'hr'}`;
   };
 
+  useEffect(() => {
+    fetchDashboardStats(selectedPeriod);
+    // Refresh every 30 seconds
+    const interval = setInterval(() => fetchDashboardStats(selectedPeriod), 30000);
+    return () => clearInterval(interval);
+  }, [selectedPeriod]);
+
+  // Handle period change
+  const handlePeriodChange = (period: PeriodType) => {
+    setSelectedPeriod(period);
+  };
+
+  // Loading state
+  if (loading && !stats) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <RefreshCw size={48} className="mx-auto mb-4 text-teal-600 animate-spin" />
+          <p className="text-stone-600">{language === 'th' ? 'กำลังโหลดข้อมูล...' : 'Loading dashboard...'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && !stats) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <AlertCircle size={48} className="mx-auto mb-4 text-red-500" />
+          <p className="text-stone-600 mb-4">{language === 'th' ? 'ไม่สามารถโหลดข้อมูลได้' : 'Failed to load dashboard'}</p>
+          <button 
+            onClick={fetchDashboardStats}
+            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+          >
+            {language === 'th' ? 'ลองใหม่' : 'Retry'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Use stats data
+  const statusCounts = stats?.statusCounts || { open: 0, inProgress: 0, pending: 0, completed: 0, closed: 0 };
+  const priorityDistribution = stats?.priorityDistribution || { critical: 0, high: 0, medium: 0, low: 0 };
+  const avgCompletionTime = stats?.averageCompletionTime;
+  const dailyWorkOrders = stats?.dailyWorkOrders || [];
+  const overdueCount = stats?.overdueCount || 0;
+  const workOrdersByAssignee = stats?.workOrdersByAssignee || [];
+
   const totalOrders = 
-    stats.statusCounts.open + 
-    stats.statusCounts.inProgress + 
-    stats.statusCounts.pending + 
-    stats.statusCounts.completed + 
-    stats.statusCounts.canceled;
+    statusCounts.open + 
+    statusCounts.inProgress + 
+    statusCounts.pending + 
+    statusCounts.completed + 
+    statusCounts.closed;
 
   return (
     <div className="p-8 space-y-8">
@@ -239,10 +222,10 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <StatusCard
             title={language === 'th' ? 'เปิด' : 'Open'}
-            value={stats.statusCounts.open}
+            value={statusCounts.open}
             icon={Clock}
             color="text-blue-600"
             bgColor="bg-blue-50"
@@ -250,15 +233,15 @@ const Dashboard: React.FC = () => {
           />
           <StatusCard
             title={language === 'th' ? 'กำลังดำเนินการ' : 'In Progress'}
-            value={stats.statusCounts.inProgress}
+            value={statusCounts.inProgress}
             icon={PlayCircle}
             color="text-amber-600"
             bgColor="bg-amber-50"
             borderColor="border-amber-100"
           />
           <StatusCard
-            title={language === 'th' ? 'รอดำเนินการ' : 'Pending'}
-            value={stats.statusCounts.pending}
+            title={language === 'th' ? 'รอตรวจสอบ' : 'Pending'}
+            value={statusCounts.pending}
             icon={PauseCircle}
             color="text-purple-600"
             bgColor="bg-purple-50"
@@ -266,16 +249,24 @@ const Dashboard: React.FC = () => {
           />
           <StatusCard
             title={language === 'th' ? 'เสร็จสิ้น' : 'Completed'}
-            value={stats.statusCounts.completed}
+            value={statusCounts.completed}
             icon={CheckCircle2}
             color="text-emerald-600"
             bgColor="bg-emerald-50"
             borderColor="border-emerald-100"
           />
           <StatusCard
-            title={language === 'th' ? 'ยกเลิก' : 'Canceled'}
-            value={stats.statusCounts.canceled}
-            icon={XCircle}
+            title={language === 'th' ? 'ปิดแล้ว' : 'Closed'}
+            value={statusCounts.closed}
+            icon={Lock}
+            color="text-stone-600"
+            bgColor="bg-stone-50"
+            borderColor="border-stone-200"
+          />
+          <StatusCard
+            title={language === 'th' ? 'เลยกำหนด' : 'Overdue'}
+            value={overdueCount}
+            icon={AlertCircle}
             color="text-red-600"
             bgColor="bg-red-50"
             borderColor="border-red-100"
@@ -293,10 +284,10 @@ const Dashboard: React.FC = () => {
           </h3>
           {(() => {
             const priorityData = [
-              { name: language === 'th' ? 'วิกฤต' : 'Critical', value: stats.priorityCounts.critical, color: PRIORITY_COLORS.critical },
-              { name: language === 'th' ? 'สูง' : 'High', value: stats.priorityCounts.high, color: PRIORITY_COLORS.high },
-              { name: language === 'th' ? 'ปานกลาง' : 'Medium', value: stats.priorityCounts.medium, color: PRIORITY_COLORS.medium },
-              { name: language === 'th' ? 'ต่ำ' : 'Low', value: stats.priorityCounts.low, color: PRIORITY_COLORS.low },
+              { name: language === 'th' ? 'วิกฤต' : 'Critical', value: priorityDistribution.critical, color: PRIORITY_COLORS.critical },
+              { name: language === 'th' ? 'สูง' : 'High', value: priorityDistribution.high, color: PRIORITY_COLORS.high },
+              { name: language === 'th' ? 'ปานกลาง' : 'Medium', value: priorityDistribution.medium, color: PRIORITY_COLORS.medium },
+              { name: language === 'th' ? 'ต่ำ' : 'Low', value: priorityDistribution.low, color: PRIORITY_COLORS.low },
             ];
             const totalPriority = priorityData.reduce((sum, item) => sum + item.value, 0);
             
@@ -374,14 +365,14 @@ const Dashboard: React.FC = () => {
               {language === 'th' ? '(จากเปิดงาน ถึง เสร็จสิ้น)' : '(From Open to Completed)'}
             </p>
             <p className="text-4xl font-bold">
-              {formatDuration(stats.avgCompletionTime)}
+              {avgCompletionTime ? avgCompletionTime.formattedText : '-'}
             </p>
           </div>
           <div className="p-4 bg-white/20 rounded-2xl">
             <Timer size={40} className="text-white" />
           </div>
         </div>
-        {stats.avgCompletionTime === null && (
+        {!avgCompletionTime && (
           <p className="text-teal-100 text-sm mt-4 flex items-center gap-2">
             <AlertCircle size={16} />
             {language === 'th' 
@@ -394,23 +385,25 @@ const Dashboard: React.FC = () => {
 
       {/* Work Orders Trend Chart Section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
             <Calendar size={20} />
-            {language === 'th' ? 'แนวโน้มใบงานตามช่วงเวลา' : 'Work Orders Trend'}
+            {language === 'th' ? 'แนวโน้มใบงาน' : 'Work Orders Trend'}
           </h3>
-          <div className="flex gap-2">
+          
+          {/* Period Selector Buttons */}
+          <div className="flex flex-wrap gap-2">
             {periodOptions.map((option) => (
               <button
                 key={option.value}
-                onClick={() => setSelectedPeriod(option.value)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                onClick={() => handlePeriodChange(option.value)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                   selectedPeriod === option.value
                     ? 'bg-teal-600 text-white shadow-sm'
                     : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                 }`}
               >
-                {language === 'th' ? option.label.th : option.label.en}
+                {option.label[language]}
               </button>
             ))}
           </div>
@@ -418,12 +411,12 @@ const Dashboard: React.FC = () => {
         
         <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
           <div className="h-80">
-            {stats.chartData[selectedPeriod].some(d => d.created > 0 || d.completed > 0) ? (
+            {dailyWorkOrders.length > 0 && dailyWorkOrders.some(d => d.created > 0 || d.completed > 0) ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stats.chartData[selectedPeriod]} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <LineChart data={dailyWorkOrders} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
                   <XAxis 
-                    dataKey="date" 
+                    dataKey="dayName" 
                     tick={{ fontSize: 12, fill: '#78716c' }}
                     tickLine={false}
                     axisLine={{ stroke: '#d6d3d1' }}
@@ -442,6 +435,12 @@ const Dashboard: React.FC = () => {
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                     }}
                     labelStyle={{ fontWeight: 600, marginBottom: 4 }}
+                    labelFormatter={(label, payload) => {
+                      if (payload && payload.length > 0) {
+                        return payload[0].payload.date;
+                      }
+                      return label;
+                    }}
                   />
                   <Legend 
                     verticalAlign="top" 
@@ -491,6 +490,26 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Work Orders by Assignee */}
+      {workOrdersByAssignee.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
+            <Users size={20} />
+            {language === 'th' ? 'ใบงานตามช่างเทคนิค' : 'Work Orders by Technician'}
+          </h3>
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {workOrdersByAssignee.map((assignee) => (
+                <div key={assignee.name} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl">
+                  <span className="text-sm text-stone-700 font-medium truncate">{assignee.name}</span>
+                  <span className="text-lg font-bold text-teal-600 ml-2">{assignee.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

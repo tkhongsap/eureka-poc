@@ -1,10 +1,10 @@
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
-from typing import List
+from typing import List, Optional
 
 from db import get_db
 from db.models import WorkOrder as WorkOrderModel
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
@@ -21,7 +21,10 @@ router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
 
 @router.get("/stats", response_model=DashboardStats)
-async def get_dashboard_stats(db: Session = Depends(get_db)) -> DashboardStats:
+async def get_dashboard_stats(
+    days: int = Query(default=7, ge=1, le=365, description="Number of days for trend data"),
+    db: Session = Depends(get_db)
+) -> DashboardStats:
     """Return aggregated statistics for the operations dashboard."""
     # --- Status counts ---
     status_rows = (
@@ -74,9 +77,9 @@ async def get_dashboard_stats(db: Session = Depends(get_db)) -> DashboardStats:
             formattedText=" ".join(formatted_parts) or "0h",
         )
 
-    # --- Daily work orders for last 7 days ---
+    # --- Daily work orders for specified days ---
     today = date.today()
-    start_date = today - timedelta(days=6)
+    start_date = today - timedelta(days=days - 1)
 
     created_rows = (
         db.query(func.date(WorkOrderModel.created_at), func.count(WorkOrderModel.id))
@@ -123,7 +126,7 @@ async def get_dashboard_stats(db: Session = Depends(get_db)) -> DashboardStats:
         completed_map[key] = count
 
     daily_points: List[DailyWorkOrderPoint] = []
-    for i in range(7):
+    for i in range(days):
         d = start_date + timedelta(days=i)
         daily_points.append(
             DailyWorkOrderPoint(
