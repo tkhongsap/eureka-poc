@@ -112,13 +112,23 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>(7);
+  const selectedPeriodRef = React.useRef(selectedPeriod);
+
+  // Keep ref in sync with state
+  React.useEffect(() => {
+    selectedPeriodRef.current = selectedPeriod;
+  }, [selectedPeriod]);
 
   // Fetch dashboard stats from API
-  const fetchDashboardStats = async (days: number = selectedPeriod) => {
+  const fetchDashboardStats = async (days?: number) => {
+    const daysToFetch = days ?? selectedPeriodRef.current;
     try {
-      setLoading(true);
+      // Only show loading on initial load, not on period change
+      if (!stats) {
+        setLoading(true);
+      }
       setError(null);
-      const response = await fetch(`/api/dashboard/stats?days=${days}`);
+      const response = await fetch(`/api/dashboard/stats?days=${daysToFetch}`);
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard stats');
       }
@@ -133,8 +143,8 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardStats(selectedPeriod);
-    // Refresh every 30 seconds
-    const interval = setInterval(() => fetchDashboardStats(selectedPeriod), 30000);
+    // Refresh every 30 seconds using ref for latest value
+    const interval = setInterval(() => fetchDashboardStats(), 30000);
     return () => clearInterval(interval);
   }, [selectedPeriod]);
 
@@ -222,7 +232,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <StatusCard
             title={language === 'th' ? 'เปิด' : 'Open'}
             value={statusCounts.open}
@@ -248,22 +258,6 @@ const Dashboard: React.FC = () => {
             borderColor="border-purple-100"
           />
           <StatusCard
-            title={language === 'th' ? 'เสร็จสิ้น' : 'Completed'}
-            value={statusCounts.completed}
-            icon={CheckCircle2}
-            color="text-emerald-600"
-            bgColor="bg-emerald-50"
-            borderColor="border-emerald-100"
-          />
-          <StatusCard
-            title={language === 'th' ? 'ปิดแล้ว' : 'Closed'}
-            value={statusCounts.closed}
-            icon={Lock}
-            color="text-stone-600"
-            bgColor="bg-stone-50"
-            borderColor="border-stone-200"
-          />
-          <StatusCard
             title={language === 'th' ? 'เลยกำหนด' : 'Overdue'}
             value={overdueCount}
             icon={AlertCircle}
@@ -271,12 +265,26 @@ const Dashboard: React.FC = () => {
             bgColor="bg-red-50"
             borderColor="border-red-100"
           />
+          {/* Average Completion Time Card */}
+          <div className="bg-gradient-to-br from-teal-500 to-teal-600 p-4 rounded-xl border border-teal-400 shadow-sm flex items-center">
+            <div className="flex items-center justify-between w-full">
+              <div>
+                <p className="text-teal-100 text-xs font-medium mb-1">
+                  {language === 'th' ? 'เวลาเฉลี่ย' : 'Average Time'}
+                </p>
+                <p className="text-2xl font-bold text-white">
+                  {avgCompletionTime ? avgCompletionTime.formattedText : '-'}
+                </p>
+              </div>
+              <Timer size={24} className="text-white/80" />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Priority Distribution and Average Completion Time */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Priority Pie Chart */}
+      {/* Priority Distribution & Work Orders Trend - Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Priority Pie Chart - Left Side (1/5) */}
         <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
           <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2 mb-4">
             <PieChartIcon size={20} />
@@ -292,16 +300,16 @@ const Dashboard: React.FC = () => {
             const totalPriority = priorityData.reduce((sum, item) => sum + item.value, 0);
             
             return totalPriority > 0 ? (
-              <div className="flex items-center">
-                <div className="w-48 h-48">
+              <div className="flex flex-col items-center">
+                <div className="w-52 h-52">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={priorityData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={45}
-                        outerRadius={70}
+                        innerRadius={50}
+                        outerRadius={80}
                         paddingAngle={2}
                         dataKey="value"
                       >
@@ -321,7 +329,7 @@ const Dashboard: React.FC = () => {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="flex-1 space-y-3 ml-4">
+                <div className="w-full space-y-2 mt-4">
                   {priorityData.map((item) => (
                     <div key={item.name} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -354,72 +362,51 @@ const Dashboard: React.FC = () => {
           })()}
         </div>
 
-        {/* Average Completion Time */}
-        <div className="bg-gradient-to-br from-teal-500 to-teal-600 p-6 rounded-2xl text-white shadow-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-teal-100 text-sm font-medium mb-1">
-              {language === 'th' ? 'ระยะเวลาเฉลี่ยในการทำงาน' : 'Average Completion Time'}
-            </p>
-            <p className="text-white/70 text-xs mb-3">
-              {language === 'th' ? '(จากเปิดงาน ถึง เสร็จสิ้น)' : '(From Open to Completed)'}
-            </p>
-            <p className="text-4xl font-bold">
-              {avgCompletionTime ? avgCompletionTime.formattedText : '-'}
-            </p>
+        {/* Work Orders Trend Chart - Right Side (4/5) */}
+        <div className="lg:col-span-4 bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
+              <Calendar size={20} />
+              {language === 'th' ? 'แนวโน้มใบงาน' : 'Work Orders Trend'}
+            </h3>
+            
+            {/* Period Selector Buttons */}
+            <div className="flex flex-wrap gap-2">
+              {periodOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => handlePeriodChange(option.value)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    selectedPeriod === option.value
+                      ? 'bg-teal-600 text-white shadow-sm'
+                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  }`}
+                >
+                  {option.label[language]}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="p-4 bg-white/20 rounded-2xl">
-            <Timer size={40} className="text-white" />
-          </div>
-        </div>
-        {!avgCompletionTime && (
-          <p className="text-teal-100 text-sm mt-4 flex items-center gap-2">
-            <AlertCircle size={16} />
-            {language === 'th' 
-              ? 'ยังไม่มีข้อมูล - จะคำนวณเมื่อมีใบงานที่เสร็จสิ้น' 
-              : 'No data yet - will calculate when work orders are completed'}
-          </p>
-        )}
-        </div>
-      </div>
-
-      {/* Work Orders Trend Chart Section */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
-            <Calendar size={20} />
-            {language === 'th' ? 'แนวโน้มใบงาน' : 'Work Orders Trend'}
-          </h3>
           
-          {/* Period Selector Buttons */}
-          <div className="flex flex-wrap gap-2">
-            {periodOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => handlePeriodChange(option.value)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  selectedPeriod === option.value
-                    ? 'bg-teal-600 text-white shadow-sm'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                }`}
-              >
-                {option.label[language]}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
           <div className="h-80">
             {dailyWorkOrders.length > 0 && dailyWorkOrders.some(d => d.created > 0 || d.completed > 0) ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dailyWorkOrders} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <LineChart key={`chart-${selectedPeriod}-${dailyWorkOrders.length}`} data={dailyWorkOrders} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
                   <XAxis 
-                    dataKey="dayName" 
-                    tick={{ fontSize: 12, fill: '#78716c' }}
+                    dataKey="date" 
+                    tick={{ fontSize: 11, fill: '#78716c' }}
                     tickLine={false}
                     axisLine={{ stroke: '#d6d3d1' }}
+                    interval={selectedPeriod <= 14 ? 0 : selectedPeriod <= 30 ? 2 : selectedPeriod <= 90 ? 6 : selectedPeriod <= 180 ? 13 : 29}
+                    angle={selectedPeriod > 14 ? -45 : 0}
+                    textAnchor={selectedPeriod > 14 ? 'end' : 'middle'}
+                    height={selectedPeriod > 14 ? 60 : 30}
+                    tickFormatter={(value) => {
+                      if (selectedPeriod <= 7) return value; // Show full date for 7 days
+                      const d = new Date(value);
+                      return `${d.getDate()}/${d.getMonth() + 1}`;
+                    }}
                   />
                   <YAxis 
                     tick={{ fontSize: 12, fill: '#78716c' }}

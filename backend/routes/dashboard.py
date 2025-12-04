@@ -60,16 +60,16 @@ async def get_dashboard_stats(
     if durations:
         avg_hours = sum(durations) / len(durations)
         total_minutes = int(avg_hours * 60)
-        days = total_minutes // (24 * 60)
+        completion_days = total_minutes // (24 * 60)
         remainder_minutes = total_minutes % (24 * 60)
         hours = remainder_minutes // 60
         minutes = remainder_minutes % 60
         formatted_parts = []
-        if days:
-            formatted_parts.append(f"{days}d")
-        if hours or (days and minutes):
+        if completion_days:
+            formatted_parts.append(f"{completion_days}d")
+        if hours or (completion_days and minutes):
             formatted_parts.append(f"{hours}h")
-        if minutes and not days:
+        if minutes and not completion_days:
             formatted_parts.append(f"{minutes}m")
 
         average_completion = AverageCompletionTime(
