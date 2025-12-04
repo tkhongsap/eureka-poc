@@ -27,7 +27,7 @@ interface StatusCounts {
   canceled: number;
 }
 
-type PeriodType = '7days' | '30days' | '120days' | '180days' | '1year';
+type PeriodType = 'today' | '7days' | '30days' | '120days' | '180days' | '1year';
 
 interface ChartDataPoint {
   date: string;
@@ -54,8 +54,17 @@ const generateEmptyChartData = (days: number): ChartDataPoint[] => {
   const data: ChartDataPoint[] = [];
   const today = new Date();
   
-  // For longer periods, group by week or month
-  if (days <= 7) {
+  // For today - show hourly data
+  if (days === 1) {
+    const hours = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'];
+    hours.forEach(hour => {
+      data.push({
+        date: hour,
+        created: 0,
+        completed: 0
+      });
+    });
+  } else if (days <= 7) {
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
@@ -128,6 +137,7 @@ const emptyStats: DashboardStats = {
   },
   avgCompletionTime: null,
   chartData: {
+    'today': generateEmptyChartData(1),
     '7days': generateEmptyChartData(7),
     '30days': generateEmptyChartData(30),
     '120days': generateEmptyChartData(120),
@@ -166,6 +176,7 @@ const Dashboard: React.FC = () => {
   const stats: DashboardStats = emptyStats;
 
   const periodOptions: { value: PeriodType; label: { th: string; en: string } }[] = [
+    { value: 'today', label: { th: 'วันนี้', en: 'Today' } },
     { value: '7days', label: { th: '7 วัน', en: '7 Days' } },
     { value: '30days', label: { th: '30 วัน', en: '30 Days' } },
     { value: '120days', label: { th: '120 วัน', en: '120 Days' } },
