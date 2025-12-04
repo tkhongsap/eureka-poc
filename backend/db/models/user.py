@@ -26,7 +26,8 @@ class User(Base):
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    # Replit Auth fields
+    # OAuth provider IDs
+    google_user_id = Column(String(100), nullable=True, unique=True, index=True)
     replit_user_id = Column(String(100), nullable=True, unique=True, index=True)
     first_name = Column(String(255), nullable=True)
     last_name = Column(String(255), nullable=True)
