@@ -150,6 +150,7 @@ const App: React.FC = () => {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(MOCK_WOS);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Check for logged in user from server session on mount
   useEffect(() => {
@@ -502,9 +503,11 @@ const App: React.FC = () => {
         userRole={currentUser.userRole}
         currentUser={currentUser}
         onLogout={handleLogout}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
       
-      <div className="flex-1 ml-64 flex flex-col h-screen">
+      <div className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} flex flex-col h-screen transition-all duration-300`}>
         <Header 
           user={currentUser} 
           notifications={notifications}

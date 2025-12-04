@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  PieChart, Pie, Cell,
+  PieChart, Pie, Cell, Sector,
   BarChart, Bar
 } from 'recharts';
 import { 
@@ -108,6 +108,54 @@ const StatusCard: React.FC<{
   </div>
 );
 
+// Active shape renderer for Pie chart hover effect with smooth pop out
+const renderActiveShape = (props: any) => {
+  const {
+    cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value, percent
+  } = props;
+
+  return (
+    <g>
+      {/* Main sector - popped out */}
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius - 2}
+        outerRadius={outerRadius + 12}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        style={{
+          filter: 'drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.15))',
+          transition: 'all 0.3s ease-out'
+        }}
+      />
+      {/* Center text */}
+      <text 
+        x={cx} 
+        y={cy - 8} 
+        textAnchor="middle" 
+        fill="#333" 
+        fontSize={14}
+        fontWeight={600}
+        style={{ transition: 'all 0.2s ease-out' }}
+      >
+        {payload.name}
+      </text>
+      <text 
+        x={cx} 
+        y={cy + 12} 
+        textAnchor="middle" 
+        fill="#666" 
+        fontSize={12}
+        style={{ transition: 'all 0.2s ease-out' }}
+      >
+        {`${value} (${(percent * 100).toFixed(0)}%)`}
+      </text>
+    </g>
+  );
+};
+
 const Dashboard: React.FC = () => {
   const { t, language } = useLanguage();
   const [stats, setStats] = useState<DashboardStatsAPI | null>(null);
@@ -115,11 +163,16 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>(7);
   const selectedPeriodRef = React.useRef(selectedPeriod);
+  const [activePriorityIndex, setActivePriorityIndex] = useState<number>(0);
 
   // Keep ref in sync with state
   React.useEffect(() => {
     selectedPeriodRef.current = selectedPeriod;
   }, [selectedPeriod]);
+
+  const onPieEnter = useCallback((_: any, index: number) => {
+    setActivePriorityIndex(index);
+  }, []);
 
   // Fetch dashboard stats from API
   const fetchDashboardStats = async (days?: number) => {
@@ -240,16 +293,16 @@ const Dashboard: React.FC = () => {
             value={statusCounts.open}
             icon={FilePlus}
             color="text-blue-600"
-            bgColor="bg-blue-50"
-            borderColor="border-blue-100"
+            bgColor="bg-blue-100"
+            borderColor="border-blue-200"
           />
           <StatusCard
             title={language === 'th' ? 'กำลังดำเนินการ' : 'In Progress'}
             value={statusCounts.inProgress}
             icon={PlayCircle}
-            color="text-amber-600"
-            bgColor="bg-amber-50"
-            borderColor="border-amber-100"
+            color="text-orange-600"
+            bgColor="bg-orange-100"
+            borderColor="border-orange-200"
           />
           <StatusCard
             title={language === 'th' ? 'รอตรวจสอบ' : 'Pending'}
@@ -264,8 +317,8 @@ const Dashboard: React.FC = () => {
             value={overdueCount}
             icon={AlertCircle}
             color="text-red-600"
-            bgColor="bg-red-50"
-            borderColor="border-red-100"
+            bgColor="bg-red-100"
+            borderColor="border-red-200"
           />
           {/* Average Completion Time Card */}
           <div className="bg-gradient-to-br from-teal-500 to-teal-600 p-4 rounded-xl border border-teal-400 shadow-sm flex items-center">
@@ -307,6 +360,8 @@ const Dashboard: React.FC = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
+                        activeIndex={activePriorityIndex}
+                        activeShape={renderActiveShape}
                         data={priorityData}
                         cx="50%"
                         cy="50%"
@@ -314,20 +369,23 @@ const Dashboard: React.FC = () => {
                         outerRadius={80}
                         paddingAngle={2}
                         dataKey="value"
+                        onMouseEnter={onPieEnter}
+                        animationBegin={0}
+                        animationDuration={400}
+                        animationEasing="ease-out"
                       >
                         {priorityData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.color} 
+                            style={{ 
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease-out',
+                              filter: activePriorityIndex === index ? 'brightness(1.1)' : 'brightness(1)'
+                            }} 
+                          />
                         ))}
                       </Pie>
-                      <Tooltip 
-                        formatter={(value: number) => [`${value} (${((value / totalPriority) * 100).toFixed(1)}%)`, '']}
-                        contentStyle={{ 
-                          backgroundColor: '#fff', 
-                          border: '1px solid #e5e5e5',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                        }}
-                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
