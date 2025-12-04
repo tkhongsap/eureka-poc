@@ -17,7 +17,8 @@ import {
   PieChart as PieChartIcon,
   Lock,
   RefreshCw,
-  Users
+  Users,
+  FilePlus
 } from 'lucide-react';
 import { useLanguage } from '../lib/i18n';
 
@@ -237,7 +238,7 @@ const Dashboard: React.FC = () => {
           <StatusCard
             title={language === 'th' ? 'เปิด' : 'Open'}
             value={statusCounts.open}
-            icon={Clock}
+            icon={FilePlus}
             color="text-blue-600"
             bgColor="bg-blue-50"
             borderColor="border-blue-100"
@@ -253,10 +254,10 @@ const Dashboard: React.FC = () => {
           <StatusCard
             title={language === 'th' ? 'รอตรวจสอบ' : 'Pending'}
             value={statusCounts.pending}
-            icon={PauseCircle}
-            color="text-purple-600"
-            bgColor="bg-purple-50"
-            borderColor="border-purple-100"
+            icon={Clock}
+            color="text-violet-600"
+            bgColor="bg-violet-100"
+            borderColor="border-violet-200"
           />
           <StatusCard
             title={language === 'th' ? 'เลยกำหนด' : 'Overdue'}
