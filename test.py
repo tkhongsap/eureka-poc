@@ -129,4 +129,4 @@ async def handle_replit_callback(
 if __name__ == "__main__":
   import uvicorn
   # รันบนพอร์ต 8000 ซึ่งตรงกับ REDIRECT_URI ด้านบน
-  uvicorn.run(app, host="0.0.0.0", port=8001)
+  uvicorn.run(app, host="0.0.0.0", port=8000)
