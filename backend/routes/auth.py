@@ -427,3 +427,20 @@ async def get_provider():
         "provider": oauth_config["provider"],
         "configured": bool(oauth_config["client_id"]),
     }
+
+
+@router.get("/debug")
+async def debug_auth():
+    """Debug endpoint to check OAuth configuration"""
+    oauth_config = get_oauth_config()
+    return {
+        "provider": oauth_config["provider"],
+        "client_id_set": bool(oauth_config["client_id"]),
+        "client_id_preview": oauth_config["client_id"][:15] + "..." if oauth_config["client_id"] else None,
+        "auth_endpoint": oauth_config["auth_endpoint"],
+        "token_endpoint": oauth_config["token_endpoint"],
+        "userinfo_endpoint": oauth_config["userinfo_endpoint"],
+        "use_pkce": oauth_config["use_pkce"],
+        "is_production": IS_PRODUCTION,
+        "pending_states": len(OAUTH_STATES),
+    }
