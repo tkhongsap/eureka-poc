@@ -4,12 +4,14 @@ from .workorders import router as workorders_router
 from .notifications import router as notifications_router
 from .users import router as users_router
 from .auth import router as auth_router
+from .dashboard import router as dashboard_router
 
 __all__ = [
     "images_router",
-    "requests_router", 
+    "requests_router",
     "workorders_router",
     "notifications_router",
     "users_router",
     "auth_router",
+    "dashboard_router",
 ]
