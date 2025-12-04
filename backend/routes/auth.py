@@ -22,13 +22,10 @@ from config import (
     IS_PRODUCTION, get_oauth_config
 )
 from db import get_db
-from db.models import User as UserModel, OAuth as OAuthModel
+from db.models import User as UserModel, OAuth as OAuthModel, OAuthState as OAuthStateModel
 from utils import generate_id
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
-
-# Store for PKCE verifiers and OAuth state (in production, use Redis)
-OAUTH_STATES = {}
 
 session_serializer = URLSafeTimedSerializer(SESSION_SECRET)
 
@@ -61,39 +58,81 @@ def verify_session_token(token: str) -> Optional[dict]:
         return None
 
 
-def cleanup_old_states():
-    """Clean up expired OAuth states (older than 10 minutes)"""
-    now = datetime.now()
-    expired = [
-        state for state, data in OAUTH_STATES.items()
-        if (now - data["created_at"]).seconds > 600
-    ]
-    for state in expired:
-        del OAUTH_STATES[state]
+def cleanup_old_states(db: Session):
+    """Clean up expired OAuth states from database"""
+    try:
+        db.query(OAuthStateModel).filter(
+            OAuthStateModel.expires_at < datetime.now()
+        ).delete()
+        db.commit()
+    except Exception as e:
+        print(f"[Auth] Failed to cleanup old states: {e}")
+        db.rollback()
 
 
 def get_redirect_uri(request: Request) -> str:
-    """Build the OAuth callback URI based on request"""
-    from config import IS_REPLIT, REPLIT_DEV_DOMAIN, REPLIT_DOMAINS
+    """Build the OAuth callback URI based on request
+    
+    For Replit deployments, we MUST use the correct public domain because:
+    1. The Host header might be an internal .sisko.replit.dev domain
+    2. Replit OIDC validates redirect_uri against registered domains
+    3. The .replit.app domain is the public domain that OIDC accepts
+    
+    Priority order:
+    1. OAUTH_REDIRECT_DOMAIN env var (manual override)
+    2. .replit.app domain from REPLIT_DOMAINS
+    3. REPLIT_DEV_DOMAIN (for dev environment)
+    4. Host header (fallback)
+    """
+    from config import IS_REPLIT, IS_DEPLOYMENT, REPLIT_DOMAINS, REPLIT_DEV_DOMAIN, OAUTH_REDIRECT_DOMAIN
     
     host = request.headers.get("host", "localhost:8000")
-    forwarded_proto = request.headers.get("x-forwarded-proto")
+    forwarded_proto = request.headers.get("x-forwarded-proto", "https")
     
-    # On Replit, use the REPLIT_DEV_DOMAIN or REPLIT_DOMAINS environment variable
+    # On Replit, determine the correct domain for OAuth redirect
     if IS_REPLIT:
-        # Prefer REPLIT_DEV_DOMAIN, fallback to first domain in REPLIT_DOMAINS
-        replit_host = REPLIT_DEV_DOMAIN or (REPLIT_DOMAINS.split(",")[0] if REPLIT_DOMAINS else host)
-        return f"https://{replit_host}/api/auth/callback"
+        replit_host = None
+        
+        # Priority 1: Manual override via OAUTH_REDIRECT_DOMAIN
+        if OAUTH_REDIRECT_DOMAIN:
+            replit_host = OAUTH_REDIRECT_DOMAIN
+            print(f"[Auth] Using OAUTH_REDIRECT_DOMAIN: {replit_host}")
+        
+        # Priority 2: Find .replit.app domain from REPLIT_DOMAINS
+        if not replit_host and REPLIT_DOMAINS:
+            domains = [d.strip() for d in REPLIT_DOMAINS.split(",") if d.strip()]
+            for domain in domains:
+                if ".replit.app" in domain:
+                    replit_host = domain
+                    print(f"[Auth] Found .replit.app domain: {replit_host}")
+                    break
+            # Fallback to first domain
+            if not replit_host and domains:
+                replit_host = domains[0]
+                print(f"[Auth] Using first domain from REPLIT_DOMAINS: {replit_host}")
+        
+        # Priority 3: Use REPLIT_DEV_DOMAIN for dev
+        if not replit_host and REPLIT_DEV_DOMAIN:
+            replit_host = REPLIT_DEV_DOMAIN
+            print(f"[Auth] Using REPLIT_DEV_DOMAIN: {replit_host}")
+            
+        if replit_host:
+            redirect_uri = f"https://{replit_host}/api/auth/callback"
+            print(f"[Auth] Final Redirect URI: {redirect_uri}")
+            return redirect_uri
+        else:
+            print(f"[Auth] Warning: No Replit domain found! Host header: {host}")
+            print(f"[Auth] REPLIT_DOMAINS={REPLIT_DOMAINS}, REPLIT_DEV_DOMAIN={REPLIT_DEV_DOMAIN}")
     
+    # Determine protocol for non-Replit environments
     if forwarded_proto:
         protocol = forwarded_proto
-    elif "replit" in host or "localhost" not in host:
-        protocol = "https"
-    else:
+    elif "localhost" in host:
         protocol = "http"
+    else:
+        protocol = "https"
     
     # For local development, use frontend port for callback
-    # so the SPA can handle the /auth-success route
     if "localhost:8000" in host:
         host = "localhost:5000"
     
@@ -101,7 +140,7 @@ def get_redirect_uri(request: Request) -> str:
 
 
 @router.get("/login")
-async def login(request: Request):
+async def login(request: Request, db: Session = Depends(get_db)):
     """Initiate OAuth login flow (Google or Replit based on config)"""
     oauth_config = get_oauth_config()
     
@@ -118,20 +157,26 @@ async def login(request: Request):
     # Generate state and nonce for security
     state = secrets.token_urlsafe(32)
     nonce = secrets.token_urlsafe(32)
-    
-    state_data = {
-        "nonce": nonce,
-        "created_at": datetime.now(),
-        "provider": oauth_config["provider"],
-    }
+    code_verifier = None
+    code_challenge = None
     
     # Generate PKCE if required (Replit uses PKCE)
     if oauth_config["use_pkce"]:
         code_verifier, code_challenge = generate_pkce_pair()
-        state_data["verifier"] = code_verifier
     
-    OAUTH_STATES[state] = state_data
-    cleanup_old_states()
+    # Store state in database (survives autoscale instances)
+    oauth_state = OAuthStateModel(
+        state=state,
+        nonce=nonce,
+        code_verifier=code_verifier,
+        provider=oauth_config["provider"],
+        expires_at=datetime.now() + timedelta(minutes=10)
+    )
+    db.add(oauth_state)
+    db.commit()
+    
+    # Cleanup old states periodically
+    cleanup_old_states(db)
     
     redirect_uri = get_redirect_uri(request)
     print(f"[Auth] Redirect URI: {redirect_uri}")
@@ -183,11 +228,22 @@ async def callback(
         print(f"[Auth Callback] Missing params - code: {bool(code)}, state: {bool(state)}")
         return RedirectResponse(url="/login?error=missing_params")
     
-    if state not in OAUTH_STATES:
-        print(f"[Auth Callback] Invalid state - state not found in OAUTH_STATES")
+    # Look up state from database (works across autoscale instances)
+    state_record = db.query(OAuthStateModel).filter(
+        OAuthStateModel.state == state,
+        OAuthStateModel.expires_at > datetime.now()
+    ).first()
+    
+    if not state_record:
+        print(f"[Auth Callback] Invalid state - state not found in database or expired")
         return RedirectResponse(url="/login?error=invalid_state")
     
-    state_data = OAUTH_STATES.pop(state)
+    # Extract state data and delete the record
+    code_verifier = state_record.code_verifier
+    provider = state_record.provider
+    db.delete(state_record)
+    db.commit()
+    
     oauth_config = get_oauth_config()
     
     redirect_uri = get_redirect_uri(request)
@@ -206,8 +262,8 @@ async def callback(
         token_data["client_secret"] = oauth_config["client_secret"]
     
     # Add PKCE verifier if used
-    if oauth_config["use_pkce"] and "verifier" in state_data:
-        token_data["code_verifier"] = state_data["verifier"]
+    if oauth_config["use_pkce"] and code_verifier:
+        token_data["code_verifier"] = code_verifier
         print(f"[Auth Callback] Using PKCE verifier")
     
     print(f"[Auth Callback] Exchanging code for tokens at: {oauth_config['token_endpoint']}")
@@ -472,12 +528,15 @@ async def logout(request: Request, db: Session = Depends(get_db)):
 async def get_provider():
     """Get current OAuth provider configuration"""
     oauth_config = get_oauth_config()
-    from config import IS_REPLIT, REPLIT_DEV_DOMAIN, REPLIT_DOMAINS
+    from config import IS_REPLIT, IS_DEPLOYMENT, REPLIT_DOMAINS, REPL_ID, get_replit_domain
     
     return {
         "provider": oauth_config["provider"],
         "configured": bool(oauth_config["client_id"]),
         "is_replit": IS_REPLIT,
-        "replit_domain": REPLIT_DEV_DOMAIN or REPLIT_DOMAINS.split(",")[0] if REPLIT_DOMAINS else None,
+        "is_deployment": IS_DEPLOYMENT,
+        "client_id": REPL_ID[:20] + "..." if REPL_ID and len(REPL_ID) > 20 else REPL_ID,
+        "replit_domains": REPLIT_DOMAINS,
+        "redirect_domain": get_replit_domain(),
         "auth_endpoint": oauth_config["auth_endpoint"],
     }

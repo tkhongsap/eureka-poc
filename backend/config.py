@@ -22,10 +22,29 @@ REPLIT_ISSUER_URL = "https://replit.com/oidc"
 REPL_ID = os.environ.get("REPL_ID", "")
 REPLIT_DOMAINS = os.environ.get("REPLIT_DOMAINS", "")
 REPLIT_DEV_DOMAIN = os.environ.get("REPLIT_DEV_DOMAIN", "")
+REPLIT_DEPLOYMENT = os.environ.get("REPLIT_DEPLOYMENT", "")  # "1" when running in deployment
+
+# OAuth Redirect Domain - can be set manually in Secrets to override auto-detection
+# Set this to your .replit.app domain (e.g., "eureka-poc-tcctlumpini001.replit.app")
+OAUTH_REDIRECT_DOMAIN = os.environ.get("OAUTH_REDIRECT_DOMAIN", "")
 
 # Environment Detection
-IS_PRODUCTION = os.environ.get("REPL_SLUG") is not None or os.environ.get("REPLIT_DEPLOYMENT") is not None
+IS_DEPLOYMENT = REPLIT_DEPLOYMENT == "1"  # Running as deployed app
+IS_PRODUCTION = os.environ.get("REPL_SLUG") is not None or IS_DEPLOYMENT
 IS_REPLIT = bool(REPL_ID)  # Running on Replit platform
+
+def get_replit_domain():
+    """Get the appropriate domain for redirect URI"""
+    # For deployments, use the first domain from REPLIT_DOMAINS (usually the .replit.app domain)
+    # For dev, use REPLIT_DEV_DOMAIN
+    if REPLIT_DOMAINS:
+        domains = REPLIT_DOMAINS.split(",")
+        # Prefer .replit.app domain for deployments
+        for domain in domains:
+            if ".replit.app" in domain:
+                return domain
+        return domains[0]
+    return REPLIT_DEV_DOMAIN
 
 # Auto-detect provider based on environment
 def get_oauth_config():
@@ -42,6 +61,7 @@ def get_oauth_config():
             "userinfo_endpoint": f"{REPLIT_ISSUER_URL}/me",  # Correct endpoint
             "scopes": "openid profile email offline_access",
             "use_pkce": True,
+            "is_deployment": IS_DEPLOYMENT,
         }
     else:
         return {
@@ -54,4 +74,5 @@ def get_oauth_config():
             "userinfo_endpoint": "https://www.googleapis.com/oauth2/v3/userinfo",
             "scopes": "openid email profile",
             "use_pkce": False,
+            "is_deployment": False,
         }

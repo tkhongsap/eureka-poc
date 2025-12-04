@@ -49,3 +49,15 @@ class OAuth(Base):
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class OAuthState(Base):
+    """OAuth state storage for PKCE flow - persisted in database for autoscale deployments"""
+    __tablename__ = "oauth_states"
+
+    state = Column(String(100), primary_key=True)
+    nonce = Column(String(100), nullable=False)
+    code_verifier = Column(Text, nullable=True)  # For PKCE
+    provider = Column(String(50), nullable=False, default="replit")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=False)
