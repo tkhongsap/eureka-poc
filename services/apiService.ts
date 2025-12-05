@@ -194,6 +194,26 @@ export const deleteRequest = async (requestId: string): Promise<void> => {
   }
 };
 
+// --- Work Order Reject History ---
+export interface RejectHistoryItem {
+  id: string;
+  message: string;
+  createdAt: string | null;
+  triggeredBy: string;
+  recipientRole: string;
+  recipientName?: string;
+}
+
+export const getWorkOrderRejectHistory = async (workOrderId: string): Promise<RejectHistoryItem[]> => {
+  const response = await fetch(`${API_BASE_URL}/workorders/${workOrderId}/reject-history`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch reject history');
+  }
+  return response.json();
+};
+
 export const convertRequestToWorkOrder = async (requestId: string): Promise<WorkOrderItem> => {
   const response = await fetch(`${API_BASE_URL}/requests/${requestId}/convert`, {
     method: 'POST',
