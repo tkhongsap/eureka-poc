@@ -15,6 +15,8 @@ from schemas.dashboard import (
     PriorityDistribution,
     StatusCounts,
     WorkOrdersByAssignee,
+    RecentWorkOrder,
+    Alert,
 )
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
@@ -187,6 +189,85 @@ async def get_dashboard_stats(
             continue
         assignees.append(WorkOrdersByAssignee(name=name, count=count))
 
+    # --- Recent work orders (last 8) ---
+    recent_wo_rows = (
+        db.query(WorkOrderModel)
+        .order_by(WorkOrderModel.created_at.desc())
+        .limit(8)
+        .all()
+    )
+    recent_work_orders: List[RecentWorkOrder] = []
+    for wo in recent_wo_rows:
+        recent_work_orders.append(
+            RecentWorkOrder(
+                id=wo.id,
+                title=wo.title or f"WO-{wo.id}",
+                description=wo.description,
+                status=wo.status or "Open",
+                priority=wo.priority or "Medium",
+                assignedTo=wo.assigned_to,
+                createdAt=wo.created_at.isoformat() if wo.created_at else "",
+                dueDate=wo.due_date if wo.due_date else None,
+            )
+        )
+
+    # --- Alerts (overdue, high priority unassigned, etc.) ---
+    alerts: List[Alert] = []
+    alert_id = 1
+
+    # Overdue work orders
+    overdue_wos = (
+        db.query(WorkOrderModel)
+        .filter(
+            WorkOrderModel.due_date.isnot(None),
+            WorkOrderModel.due_date < today.isoformat(),
+            WorkOrderModel.status.notin_(["Completed", "Closed"]),
+        )
+        .order_by(WorkOrderModel.due_date.asc())
+        .limit(10)
+        .all()
+    )
+    for wo in overdue_wos:
+        alerts.append(
+            Alert(
+                id=alert_id,
+                type="overdue",
+                title=f"Overdue: {wo.title or f'WO-{wo.id}'}",
+                message=f"Due date was {wo.due_date}",
+                workOrderId=wo.id,
+                priority=wo.priority or "Medium",
+                createdAt=wo.created_at.isoformat() if wo.created_at else "",
+                assignedTo=wo.assigned_to,
+            )
+        )
+        alert_id += 1
+
+    # High/Critical priority unassigned
+    unassigned_high = (
+        db.query(WorkOrderModel)
+        .filter(
+            WorkOrderModel.priority.in_(["Critical", "High"]),
+            WorkOrderModel.assigned_to.is_(None),
+            WorkOrderModel.status.notin_(["Completed", "Closed"]),
+        )
+        .limit(5)
+        .all()
+    )
+    for wo in unassigned_high:
+        alerts.append(
+            Alert(
+                id=alert_id,
+                type="unassigned",
+                title=f"Unassigned: {wo.title or f'WO-{wo.id}'}",
+                message=f"{wo.priority} priority work order needs assignment",
+                workOrderId=wo.id,
+                priority=wo.priority or "High",
+                createdAt=wo.created_at.isoformat() if wo.created_at else "",
+                assignedTo=wo.assigned_to,
+            )
+        )
+        alert_id += 1
+
     return DashboardStats(
         statusCounts=status_counts,
         averageCompletionTime=average_completion,
@@ -194,4 +275,6 @@ async def get_dashboard_stats(
         priorityDistribution=priority_distribution,
         overdueCount=overdue_count,
         workOrdersByAssignee=assignees,
+        recentWorkOrders=recent_work_orders,
+        alerts=alerts,
     )
