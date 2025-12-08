@@ -5,6 +5,7 @@ from .notifications import router as notifications_router
 from .users import router as users_router
 from .auth import router as auth_router
 from .dashboard import router as dashboard_router
+from .audit import router as audit_router
 
 __all__ = [
     "images_router",
@@ -14,4 +15,5 @@ __all__ = [
     "users_router",
     "auth_router",
     "dashboard_router",
+    "audit_router",
 ]

@@ -50,6 +50,7 @@ const translations = {
     'nav.inventory': 'Inventory',
     'nav.team': 'Team',
     'nav.settings': 'Settings',
+    'nav.userManagement': 'User Management',
     'nav.logout': 'Logout',
     'nav.notifications': 'Notifications',
 
@@ -610,6 +611,7 @@ const translations = {
     'nav.inventory': 'คลังสินค้า',
     'nav.team': 'ทีมงาน',
     'nav.settings': 'ตั้งค่า',
+    'nav.userManagement': 'จัดการสิทธิ์ผู้ใช้',
     'nav.logout': 'ออกจากระบบ',
     'nav.notifications': 'การแจ้งเตือน',
 

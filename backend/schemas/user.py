@@ -40,6 +40,11 @@ class UserUpdate(BaseModel):
     settings: Optional[dict] = None
 
 
+class RoleUpdateRequest(BaseModel):
+    userRole: str
+    reason: Optional[str] = None
+
+
 class User(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -10,6 +10,7 @@ import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
 import NotificationCenter from './components/NotificationCenter';
 import LanguageSwitcher from './components/LanguageSwitcher';
+import UserRoleManagement from './components/UserRoleManagement';
 import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
 import { UserCircle2 } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
@@ -450,6 +451,8 @@ const App: React.FC = () => {
         return <Inventory />;
       case 'team':
         return <TeamSchedule />;
+      case 'user-management':
+        return <UserRoleManagement currentUser={currentUser} />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full text-slate-400">
@@ -465,7 +468,7 @@ const App: React.FC = () => {
   if (currentUser.userRole === 'Requester') {
     return (
       <div className="h-screen bg-slate-50 font-sans flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shadow-sm flex-shrink-0">
+        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shadow-sm shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
             <span className="font-bold text-slate-800">Eureka <span className="text-brand-600">{t('requestor.requestPortal')}</span></span>

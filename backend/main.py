@@ -16,6 +16,7 @@ from routes import (
     users_router,
     auth_router,
     dashboard_router,
+    audit_router,
 )
 
 from utils import PICTURES_DIR
@@ -69,6 +70,7 @@ app.include_router(notifications_router)
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(dashboard_router)
+app.include_router(audit_router)
 
 
 @app.get("/api/health", tags=["Health"])
@@ -93,7 +95,9 @@ if DIST_DIR.exists():
         if file_path.exists() and file_path.is_file():
             return FileResponse(file_path)
         return FileResponse(DIST_DIR / "index.html")
+
 else:
+
     @app.get("/", tags=["Root"])
     async def root():
         """Root endpoint with API info"""

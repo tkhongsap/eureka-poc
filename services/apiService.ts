@@ -609,13 +609,25 @@ export interface UpdateUserData {
   employeeId?: string;
   jobTitle?: string;
   role?: string; // Display role
-  userRole?: string; // System role for permissions
   status?: string;
+}
+
+export interface AuditLogItem {
+  id: string;
+  action: string;
+  actorId: string;
+  targetUserId?: string;
+  oldValue?: string;
+  newValue?: string;
+  reason?: string;
+  ipAddress?: string;
+  createdAt?: string;
 }
 
 export const listUsers = async (): Promise<UserItem[]> => {
   const response = await fetch(`${API_BASE_URL}/users`, {
     headers: getAuthHeaders(),
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -646,6 +658,7 @@ export const listUsers = async (): Promise<UserItem[]> => {
 export const getUser = async (userId: string): Promise<UserItem> => {
   const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
     headers: getAuthHeaders(),
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -693,6 +706,7 @@ export const createUser = async (data: CreateUserData): Promise<UserItem> => {
   const response = await fetch(`${API_BASE_URL}/users`, {
     method: 'POST',
     headers: getAuthHeaders(),
+    credentials: 'include',
     body: JSON.stringify(payload),
   });
 
@@ -734,12 +748,12 @@ export const updateUser = async (userId: string, data: UpdateUserData): Promise<
   if (data.employeeId !== undefined) payload.employee_id = data.employeeId;
   if (data.jobTitle !== undefined) payload.job_title = data.jobTitle;
   if (data.role !== undefined) payload.role = data.role;
-  if (data.userRole !== undefined) payload.userRole = data.userRole;
   if (data.status !== undefined) payload.status = data.status;
 
   const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
+    credentials: 'include',
     body: JSON.stringify(payload),
   });
 
@@ -767,6 +781,68 @@ export const updateUser = async (userId: string, data: UpdateUserData): Promise<
     firstName: u.first_name,
     lastName: u.last_name,
   };
+};
+
+export const updateUserRole = async (
+  userId: string,
+  userRole: string,
+  reason?: string
+): Promise<UserItem> => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/role`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+    body: JSON.stringify({ userRole, reason }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to update user role');
+  }
+
+  const u = await response.json();
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    phone: u.phone,
+    avatarUrl: u.avatar_url,
+    employeeId: u.employee_id,
+    jobTitle: u.job_title,
+    role: u.role,
+    userRole: u.userRole || u.user_role,
+    status: u.status,
+    createdAt: u.created_at,
+    updatedAt: u.updated_at,
+    lastLoginAt: u.last_login_at,
+    firstName: u.first_name,
+    lastName: u.last_name,
+  };
+};
+
+export const getAuditLogs = async (): Promise<AuditLogItem[]> => {
+  const response = await fetch(`${API_BASE_URL}/audit/logs`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to fetch audit logs');
+  }
+
+  const logs = await response.json();
+  return logs.map((log: any) => ({
+    id: log.id,
+    action: log.action,
+    actorId: log.actor_id,
+    targetUserId: log.target_user_id,
+    oldValue: log.old_value,
+    newValue: log.new_value,
+    reason: log.reason,
+    ipAddress: log.ip_address,
+    createdAt: log.created_at,
+  }));
 };
 
 export const deleteUser = async (userId: string): Promise<void> => {

@@ -48,6 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'requests', labelKey: 'nav.requests' as const, icon: FileText, roles: ['Admin', 'Head Technician', 'Technician'] },
     { id: 'inventory', labelKey: 'inventory.title' as const, icon: Package, roles: ['Admin', 'Head Technician', 'Technician'] },
     { id: 'team', labelKey: 'team.title' as const, icon: Users, roles: ['Admin', 'Head Technician'] },
+    { id: 'user-management', labelKey: 'nav.userManagement' as const, icon: Settings, roles: ['Admin'] },
   ];
 
   const filteredItems = allMenuItems.filter(item => item.roles.includes(userRole));
@@ -82,8 +83,8 @@ const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => onChangeView(item.id)}
               title={isCollapsed ? t(item.labelKey) : undefined}
               className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-xl transition-all duration-200 ${isActive
-                  ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20'
-                  : 'text-stone-400 hover:bg-stone-800 hover:text-white'
+                ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20'
+                : 'text-stone-400 hover:bg-stone-800 hover:text-white'
                 }`}
             >
               <Icon size={20} className="flex-shrink-0" />
