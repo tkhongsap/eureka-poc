@@ -263,16 +263,16 @@ export const DateInputSmall: React.FC<Omit<DateInputProps, 'size' | 'showIcon'>>
         placeholder="DD/MM/YYYY"
         title={props.title}
         disabled={props.disabled}
-        className={`px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none text-[11px] w-[72px] ${props.className || ''}`}
+        className={`px-2 py-1 rounded border border-stone-200 bg-white focus:outline-none text-sm w-[90px] ${props.className || ''}`}
       />
       <button
         type="button"
         onClick={handleCalendarClick}
         disabled={props.disabled}
-        className="ml-0.5 text-stone-400 hover:text-stone-600 cursor-pointer"
+        className="ml-1 text-stone-400 hover:text-stone-600 cursor-pointer"
         title={t('dateInput.openCalendar')}
       >
-        <Calendar size={10} />
+        <Calendar size={14} />
       </button>
     </div>
   );

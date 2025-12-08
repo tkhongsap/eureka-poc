@@ -46,7 +46,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-blue-50 to-purple-50 flex items-center justify-center p-4">
       {/* Language Switcher */}
       <div className="absolute top-4 right-4">
-        <LanguageSwitcher variant="toggle" />
+        <LanguageSwitcher variant="minimal" />
       </div>
       
       <div className="w-full max-w-md">

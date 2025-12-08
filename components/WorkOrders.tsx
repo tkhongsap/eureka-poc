@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, Filter, Download, MoreHorizontal, BrainCircuit, X, AlertTriangle, CheckSquare, Clock, ArrowRight, Zap,
   LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, HardHat, UserPlus,
-  Loader2, CheckCircle2, XCircle, Navigation, MapPin
+  Loader2, CheckCircle2, XCircle, Navigation, MapPin, UserCircle2, ChevronDown, ChevronRight, Settings, Users, Layers
 } from 'lucide-react';
 import { DateInputSmall } from './DateInput';
 import { useLanguage } from '../lib/i18n';
@@ -67,6 +67,31 @@ const AVAILABLE_PARTS = [
 
 const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, currentUser, technicians = [] }) => {
   const { t, language } = useLanguage();
+
+  // Helper function to translate priority using i18n
+  const translatePriority = (priority: Priority): string => {
+    const priorityKeyMap: Record<Priority, 'priority.critical' | 'priority.high' | 'priority.medium' | 'priority.low'> = {
+      [Priority.CRITICAL]: 'priority.critical',
+      [Priority.HIGH]: 'priority.high',
+      [Priority.MEDIUM]: 'priority.medium',
+      [Priority.LOW]: 'priority.low',
+    };
+    return t(priorityKeyMap[priority]) || priority;
+  };
+
+  // Helper function to translate status using i18n
+  const translateStatus = (status: Status): string => {
+    const statusKeyMap: Record<Status, 'status.open' | 'status.inProgress' | 'status.pending' | 'status.completed' | 'status.closed' | 'status.canceled'> = {
+      [Status.OPEN]: 'status.open',
+      [Status.IN_PROGRESS]: 'status.inProgress',
+      [Status.PENDING]: 'status.pending',
+      [Status.COMPLETED]: 'status.completed',
+      [Status.CLOSED]: 'status.closed',
+      [Status.CANCELED]: 'status.canceled',
+    };
+    return t(statusKeyMap[status]) || status;
+  };
+
   const [viewMode, setViewMode] = useState<'list' | 'board'>('board');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(initialWorkOrders);
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
@@ -79,6 +104,44 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [isLoadingRejectHistory, setIsLoadingRejectHistory] = useState<boolean>(false);
   const [draggedWoId, setDraggedWoId] = useState<string | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  
+  // Collapsible columns state for Kanban board
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<Status>>(new Set());
+  
+  // Column visibility customization
+  const [visibleColumns, setVisibleColumns] = useState<Set<Status>>(new Set([Status.OPEN, Status.IN_PROGRESS, Status.PENDING, Status.COMPLETED, Status.CANCELED]));
+  const [showColumnSettings, setShowColumnSettings] = useState(false);
+  
+  // Swimlane grouping
+  type SwimlaneMode = 'none' | 'priority' | 'technician';
+  const [swimlaneMode, setSwimlaneMode] = useState<SwimlaneMode>('none');
+  
+  const toggleColumnVisibility = (status: Status) => {
+    setVisibleColumns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(status)) {
+        // Don't allow hiding all columns
+        if (newSet.size > 1) {
+          newSet.delete(status);
+        }
+      } else {
+        newSet.add(status);
+      }
+      return newSet;
+    });
+  };
+  
+  const toggleColumnCollapse = (status: Status) => {
+    setCollapsedColumns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(status)) {
+        newSet.delete(status);
+      } else {
+        newSet.add(status);
+      }
+      return newSet;
+    });
+  };
   
   // Filter for technicians
   const [showOnlyMyJobs, setShowOnlyMyJobs] = useState(false);
@@ -682,7 +745,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         
         // Check if transition is allowed
         if (!canDragToStatus(wo.status, newStatus, currentUser.userRole)) {
-          alert(`You cannot move this work order from "${wo.status}" to "${newStatus}"`);
+          alert(`${t('workOrders.cannotMoveFrom')} "${translateStatus(wo.status)}" ${t('workOrders.to')} "${translateStatus(newStatus)}"`);
           setDraggedWoId(null);
           return;
         }
@@ -737,6 +800,64 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               </button>
             </div>
 
+            {/* Board Settings - Only show in board view */}
+            {viewMode === 'board' && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowColumnSettings(!showColumnSettings)}
+                  title={t('workOrders.boardSettings')}
+                  className={`p-1.5 rounded-lg border transition-all duration-200 ${showColumnSettings ? 'bg-teal-50 text-teal-600 border-teal-200' : 'bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100'}`}
+                >
+                  <Settings size={16} />
+                </button>
+                
+                {/* Settings Dropdown */}
+                {showColumnSettings && (
+                  <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-lg border border-stone-200 p-3 z-20 min-w-[220px]">
+                    {/* Visible Columns */}
+                    <div className="mb-3">
+                      <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-stone-600">
+                        <Layers size={12} />
+                        {t('workOrders.visibleColumns')}
+                      </div>
+                      <div className="space-y-1">
+                        {[Status.OPEN, Status.IN_PROGRESS, Status.PENDING, Status.COMPLETED, Status.CANCELED].map(status => (
+                          <label key={status} className="flex items-center gap-2 cursor-pointer hover:bg-stone-50 px-2 py-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={visibleColumns.has(status)}
+                              onChange={() => toggleColumnVisibility(status)}
+                              className="w-3.5 h-3.5 rounded border-stone-300 text-teal-600 focus:ring-teal-500"
+                            />
+                            <div className={`w-2 h-2 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
+                            <span className="text-xs text-stone-700">{translateStatus(status)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Swimlane Grouping */}
+                    <div className="pt-3 border-t border-stone-100">
+                      <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-stone-600">
+                        <Users size={12} />
+                        {t('workOrders.swimlaneGroup')}
+                      </div>
+                      <select
+                        value={swimlaneMode}
+                        onChange={(e) => setSwimlaneMode(e.target.value as SwimlaneMode)}
+                        title={t('workOrders.swimlaneGroup')}
+                        className="w-full text-xs px-2 py-1.5 rounded-lg border border-stone-200 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      >
+                        <option value="none">{t('workOrders.swimlaneNone')}</option>
+                        <option value="priority">{t('workOrders.swimlanePriority')}</option>
+                        <option value="technician">{t('workOrders.swimlaneTechnician')}</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Text search */}
             <div className="relative">
               <input
@@ -744,9 +865,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 placeholder={t('common.search')}
-                className="text-xs pl-8 pr-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-40 lg:w-52 transition-all"
+                className="text-sm pl-8 pr-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-40 lg:w-52 transition-all"
               />
-              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -762,7 +883,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         {/* Row 2: Filters */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Date range filter */}
-          <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100 text-xs">
+          <div className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-100 text-sm">
             <DateInputSmall
               value={startDate}
               onChange={(newStartDate) => {
@@ -784,13 +905,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           </div>
 
           {/* Priority filter */}
-          <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100">
-            <span className="text-[10px] font-semibold text-stone-500 uppercase">{t('workOrders.priority')}</span>
+          <div className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-100">
+            <span className="text-xs font-semibold text-stone-500">{t('workOrders.priority')}</span>
             <select
               value={selectedPriority}
               onChange={(e) => setSelectedPriority(e.target.value as Priority | 'ALL')}
               title={t('workOrders.filterByPriority')}
-              className="text-[11px] px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none cursor-pointer"
+              className="text-sm px-2 py-1 rounded border border-stone-200 bg-white focus:outline-none cursor-pointer"
             >
               <option value="ALL">{t('common.all')}</option>
               <option value={Priority.CRITICAL}>{t('priority.critical')}</option>
@@ -802,13 +923,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
           {/* AssignedTo filter - Admin only */}
           {currentUser?.userRole === 'Admin' && (
-            <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100">
-              <span className="text-[10px] font-semibold text-stone-500 uppercase">{language === 'th' ? 'ช่าง' : 'Tech'}</span>
+            <div className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-100">
+              <span className="text-xs font-semibold text-stone-500">{t('workOrders.techLabel')}</span>
               <select
                 value={selectedAssignedTo}
                 onChange={(e) => setSelectedAssignedTo(e.target.value)}
                 title={t('workOrders.filterByTechnician')}
-                className="text-[11px] px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none min-w-[80px] cursor-pointer"
+                className="text-sm px-2 py-1 rounded border border-stone-200 bg-white focus:outline-none min-w-[80px] cursor-pointer"
               >
                 <option value="">{t('common.all')}</option>
                 {technicians.map(tech => (
@@ -823,9 +944,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             type="button"
             onClick={() => { setStartDate(''); setEndDate(''); setSelectedMonth(''); setSelectedPriority('ALL'); setSearchText(''); setSelectedAssignedTo(''); }}
             title={t('workOrders.clearAllFilters')}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 border border-stone-200 hover:border-red-200 transition-all ml-auto"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 border border-stone-200 hover:border-red-200 transition-all ml-auto"
           >
-            <X size={12} />
+            <X size={14} />
             {t('workOrders.clearFilters')}
           </button>
         </div>
@@ -865,7 +986,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         <td className="px-6 py-4 text-sm text-stone-600">{wo.assetName}</td>
                         <td className="px-6 py-4">
                             <span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${priorityColors[wo.priority]}`}>
-                            {wo.priority}
+                            {translatePriority(wo.priority)}
                             </span>
                         </td>
                         <td className="px-6 py-4">
@@ -882,7 +1003,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         </td>
                         <td className="px-6 py-4">
                             <span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${statusColors[wo.status]}`}>
-                            {wo.status}
+                            {translateStatus(wo.status)}
                             </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-stone-600">
@@ -904,21 +1025,55 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         {/* BOARD VIEW */}
         {viewMode === 'board' && (
             <div className="h-full overflow-x-auto pb-2">
-                <div className="grid grid-cols-5 gap-3 h-full min-w-[900px]">
-                    {columns.map(status => {
+              {/* Swimlane Mode: None - Standard Kanban */}
+              {swimlaneMode === 'none' && (
+                <div className="flex gap-3 h-full min-w-[900px]">
+                    {columns.filter(status => visibleColumns.has(status)).map(status => {
                         const columnWos = filteredWorkOrders.filter(wo => wo.status === status);
+                        const isCollapsed = collapsedColumns.has(status);
+                        
+                        // Collapsed column view
+                        if (isCollapsed) {
+                            return (
+                                <div
+                                    key={status}
+                                    className="bg-stone-100/70 rounded-xl flex flex-col min-h-0 border border-stone-200/60 w-12 flex-shrink-0 cursor-pointer hover:bg-stone-200/50 transition-colors"
+                                    onClick={() => toggleColumnCollapse(status)}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, status)}
+                                >
+                                    <div className="p-2 flex flex-col items-center gap-2">
+                                        <ChevronRight size={14} className="text-stone-500" />
+                                        <div className={`w-2.5 h-2.5 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
+                                        <span className="bg-stone-200 text-stone-600 text-[10px] px-1.5 py-0.5 rounded-full font-medium">{columnWos.length}</span>
+                                        <span className="writing-vertical text-[10px] font-semibold text-stone-600 whitespace-nowrap">
+                                            {translateStatus(status)}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        }
+                        
+                        // Expanded column view
                         return (
                             <div
                                 key={status}
-                                className="bg-stone-100/70 rounded-xl flex flex-col min-h-0 border border-stone-200/60"
+                                className="bg-stone-100/70 rounded-xl flex flex-col min-h-0 border border-stone-200/60 flex-1 min-w-[200px]"
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDrop(e, status)}
                             >
                                 {/* Column Header */}
                                 <div className="p-3 flex items-center justify-between bg-stone-100/70 rounded-t-xl border-b border-stone-200/40">
                                     <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => toggleColumnCollapse(status)}
+                                            className="text-stone-400 hover:text-stone-600 transition-colors"
+                                            title={t('workOrders.collapseColumn')}
+                                        >
+                                            <ChevronDown size={14} />
+                                        </button>
                                         <div className={`w-2 h-2 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
-                                        <h3 className="font-semibold text-stone-700 text-xs">{status}</h3>
+                                        <h3 className="font-semibold text-stone-700 text-xs">{translateStatus(status)}</h3>
                                         <span className="bg-stone-200 text-stone-600 text-[10px] px-1.5 py-0.5 rounded-full">{columnWos.length}</span>
                                     </div>
                                 </div>
@@ -963,7 +1118,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className={`px-1.5 py-0.5 rounded border text-[9px] uppercase font-bold ${priorityColors[wo.priority]}`}>
-                                                    {wo.priority}
+                                                    {translatePriority(wo.priority)}
                                                 </span>
                                             </div>
 
@@ -1018,6 +1173,136 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         );
                     })}
                 </div>
+              )}
+
+              {/* Swimlane Mode: Priority */}
+              {swimlaneMode === 'priority' && (
+                <div className="space-y-4 h-full overflow-y-auto">
+                  {[Priority.CRITICAL, Priority.HIGH, Priority.MEDIUM, Priority.LOW].map(priority => {
+                    const priorityWos = filteredWorkOrders.filter(wo => wo.priority === priority);
+                    if (priorityWos.length === 0) return null;
+                    
+                    return (
+                      <div key={priority} className="bg-white rounded-xl border border-stone-200/60 shadow-sm">
+                        {/* Swimlane Header */}
+                        <div className={`px-4 py-2 border-b border-stone-100 flex items-center gap-2 ${priorityColors[priority].split(' ').slice(1).join(' ')}`}>
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${priorityColors[priority]}`}>
+                            {translatePriority(priority)}
+                          </span>
+                          <span className="text-xs text-stone-500">({priorityWos.length})</span>
+                        </div>
+                        
+                        {/* Horizontal scroll cards */}
+                        <div className="p-3 overflow-x-auto">
+                          <div className="flex gap-3 min-w-max">
+                            {columns.filter(status => visibleColumns.has(status)).map(status => {
+                              const statusWos = priorityWos.filter(wo => wo.status === status);
+                              return (
+                                <div key={status} className="w-[220px] flex-shrink-0">
+                                  <div className="flex items-center gap-1.5 mb-2 px-1">
+                                    <div className={`w-2 h-2 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
+                                    <span className="text-[10px] font-semibold text-stone-600">{translateStatus(status)}</span>
+                                    <span className="text-[10px] text-stone-400">({statusWos.length})</span>
+                                  </div>
+                                  <div 
+                                    className="space-y-2 min-h-[60px] bg-stone-50/50 rounded-lg p-2"
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, status)}
+                                  >
+                                    {statusWos.map(wo => (
+                                      <div
+                                        key={wo.id}
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, wo.id)}
+                                        onClick={() => setSelectedWO(wo)}
+                                        className="bg-white p-2 rounded-lg shadow-sm border border-stone-200/60 cursor-grab active:cursor-grabbing hover:shadow-md transition-all text-xs"
+                                      >
+                                        <div className="font-medium text-stone-800 line-clamp-1 mb-1">{wo.title}</div>
+                                        <div className="flex items-center justify-between text-[10px] text-stone-500">
+                                          <span>{wo.assignedTo || t('workOrders.unassigned')}</span>
+                                          <span>{formatDateShort(wo.dueDate)}</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Swimlane Mode: Technician */}
+              {swimlaneMode === 'technician' && (
+                <div className="space-y-4 h-full overflow-y-auto">
+                  {/* Get unique technicians */}
+                  {(() => {
+                    const unassignedLabel = t('workOrders.unassigned');
+                    const techNames: string[] = Array.from(new Set(filteredWorkOrders.map(wo => wo.assignedTo || unassignedLabel)));
+                    return techNames.map(techName => {
+                      const techWos = filteredWorkOrders.filter(wo => (wo.assignedTo || unassignedLabel) === techName);
+                      
+                      return (
+                        <div key={techName} className="bg-white rounded-xl border border-stone-200/60 shadow-sm">
+                          {/* Swimlane Header */}
+                          <div className="px-4 py-2 border-b border-stone-100 flex items-center gap-2 bg-stone-50/50">
+                            <div className="w-6 h-6 rounded-lg bg-teal-100 flex items-center justify-center text-xs font-bold text-teal-700">
+                              {techName.charAt(0)}
+                            </div>
+                            <span className="text-sm font-medium text-stone-700">{techName}</span>
+                            <span className="text-xs text-stone-500">({techWos.length})</span>
+                          </div>
+                          
+                          {/* Horizontal scroll cards */}
+                          <div className="p-3 overflow-x-auto">
+                            <div className="flex gap-3 min-w-max">
+                              {columns.filter(status => visibleColumns.has(status)).map(status => {
+                                const statusWos = techWos.filter(wo => wo.status === status);
+                                return (
+                                  <div key={status} className="w-[220px] flex-shrink-0">
+                                    <div className="flex items-center gap-1.5 mb-2 px-1">
+                                      <div className={`w-2 h-2 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
+                                      <span className="text-[10px] font-semibold text-stone-600">{translateStatus(status)}</span>
+                                      <span className="text-[10px] text-stone-400">({statusWos.length})</span>
+                                    </div>
+                                    <div 
+                                      className="space-y-2 min-h-[60px] bg-stone-50/50 rounded-lg p-2"
+                                      onDragOver={handleDragOver}
+                                      onDrop={(e) => handleDrop(e, status)}
+                                    >
+                                      {statusWos.map(wo => (
+                                        <div
+                                          key={wo.id}
+                                          draggable
+                                          onDragStart={(e) => handleDragStart(e, wo.id)}
+                                          onClick={() => setSelectedWO(wo)}
+                                          className="bg-white p-2 rounded-lg shadow-sm border border-stone-200/60 cursor-grab active:cursor-grabbing hover:shadow-md transition-all text-xs"
+                                        >
+                                          <div className="font-medium text-stone-800 line-clamp-1 mb-1">{wo.title}</div>
+                                          <div className="flex items-center justify-between text-[10px]">
+                                            <span className={`px-1.5 py-0.5 rounded border ${priorityColors[wo.priority]}`}>
+                                              {translatePriority(wo.priority)}
+                                            </span>
+                                            <span className="text-stone-500">{formatDateShort(wo.dueDate)}</span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
             </div>
         )}
       </div>
@@ -1031,9 +1316,18 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             {/* Modal Header */}
             <div className="p-6 border-b border-stone-100 bg-white sticky top-0 z-20 flex justify-between items-start">
               <div className="flex-1">
+                {/* Requester Info - Show at top */}
+                {selectedWO.createdBy && (
+                  <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <UserCircle2 size={16} className="text-blue-600" />
+                    <span className="text-sm text-blue-700">
+                      <span className="font-medium">{t('workOrders.requestedBy')}:</span> {selectedWO.createdBy}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-3 mb-2 flex-wrap">
                    <h2 className="font-serif text-xl text-stone-900">{selectedWO.id}: {selectedWO.title}</h2>
-                   <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${statusColors[selectedWO.status]}`}>{selectedWO.status}</span>
+                   <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${statusColors[selectedWO.status]}`}>{translateStatus(selectedWO.status)}</span>
                    {selectedWOPermissions && (
                      <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${
                        selectedWOPermissions.canEdit 
