@@ -88,7 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <Icon size={20} className="flex-shrink-0" />
-              {!isCollapsed && <span className="font-medium text-sm">{t(item.labelKey)}</span>}
+              {!isCollapsed && <span className="font-medium text-base">{t(item.labelKey)}</span>}
             </button>
           );
         })}
@@ -102,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} text-stone-400 hover:text-red-400 hover:bg-stone-800 w-full px-4 py-3 rounded-xl transition-all duration-200`}
         >
           <LogOut size={20} className="flex-shrink-0" />
-          {!isCollapsed && <span className="font-medium text-sm">{t('nav.logout')}</span>}
+          {!isCollapsed && <span className="font-medium text-base">{t('nav.logout')}</span>}
         </button>
         {!isCollapsed && (
           <div className="mt-4 px-4 text-xs text-stone-500 text-center">
