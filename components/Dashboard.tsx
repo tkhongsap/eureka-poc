@@ -18,7 +18,11 @@ import {
   Lock,
   RefreshCw,
   Users,
-  FilePlus
+  FilePlus,
+  AlertTriangle,
+  FileText,
+  ChevronRight,
+  UserX
 } from 'lucide-react';
 import { useLanguage } from '../lib/i18n';
 
@@ -56,6 +60,27 @@ interface WorkOrdersByAssignee {
   count: number;
 }
 
+interface RecentWorkOrder {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  assignedTo: string | null;
+  createdAt: string;
+  dueDate: string | null;
+}
+
+interface Alert {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  workOrderId: string | null;
+  priority: string;
+  createdAt: string;
+  assignedTo: string | null;
+}
+
 interface DashboardStatsAPI {
   statusCounts: StatusCounts;
   averageCompletionTime: AverageCompletionTime | null;
@@ -63,6 +88,8 @@ interface DashboardStatsAPI {
   priorityDistribution: PriorityDistribution;
   overdueCount: number;
   workOrdersByAssignee: WorkOrdersByAssignee[];
+  recentWorkOrders: RecentWorkOrder[];
+  alerts: Alert[];
 }
 
 // ============== Priority Colors ==============
@@ -245,6 +272,8 @@ const Dashboard: React.FC = () => {
   const dailyWorkOrders = stats?.dailyWorkOrders || [];
   const overdueCount = stats?.overdueCount || 0;
   const workOrdersByAssignee = stats?.workOrdersByAssignee || [];
+  const recentWorkOrders = stats?.recentWorkOrders || [];
+  const alerts = stats?.alerts || [];
 
   const totalOrders = 
     statusCounts.open + 
@@ -596,6 +625,156 @@ const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Recent Work Orders & Alerts Panel - Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Recent Work Orders - Left Side (3/5) */}
+        <div className="lg:col-span-3 bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
+              <FileText size={20} />
+              {language === 'th' ? 'ใบงานล่าสุด' : 'Recent Work Orders'}
+            </h3>
+          </div>
+          
+          {recentWorkOrders.length > 0 ? (
+            <div className="space-y-3">
+              {recentWorkOrders.slice(0, 6).map((wo) => {
+                const priorityColor = {
+                  'Critical': 'bg-red-100 text-red-700 border-red-200',
+                  'High': 'bg-orange-100 text-orange-700 border-orange-200',
+                  'Medium': 'bg-blue-100 text-blue-700 border-blue-200',
+                  'Low': 'bg-green-100 text-green-700 border-green-200',
+                }[wo.priority] || 'bg-stone-100 text-stone-700 border-stone-200';
+                
+                const statusColor = {
+                  'Open': 'bg-blue-500',
+                  'In Progress': 'bg-orange-500',
+                  'Pending': 'bg-violet-500',
+                  'Completed': 'bg-green-500',
+                  'Closed': 'bg-stone-500',
+                }[wo.status] || 'bg-stone-400';
+
+                return (
+                  <div 
+                    key={wo.id} 
+                    className="flex items-center justify-between p-3 bg-stone-50 rounded-xl hover:bg-stone-100 transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className={`w-2 h-2 rounded-full ${statusColor} flex-shrink-0`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-stone-800 truncate group-hover:text-teal-700 transition-colors">
+                          {wo.title}
+                        </p>
+                        <p className="text-xs text-stone-500">
+                          {wo.id} • {wo.assignedTo || (language === 'th' ? 'ยังไม่มอบหมาย' : 'Unassigned')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${priorityColor}`}>
+                        {wo.priority}
+                      </span>
+                      <ChevronRight size={16} className="text-stone-400 group-hover:text-teal-600 transition-colors" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="h-48 flex flex-col items-center justify-center text-stone-400">
+              <FileText size={48} className="mb-3 opacity-50" />
+              <p className="text-sm font-medium">
+                {language === 'th' ? 'ยังไม่มีใบงาน' : 'No work orders yet'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Alerts Panel - Right Side (2/5) */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-stone-200 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
+              <AlertTriangle size={20} className="text-amber-500" />
+              {language === 'th' ? 'การแจ้งเตือน' : 'Alerts'}
+            </h3>
+            {alerts.length > 0 && (
+              <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-600 rounded-full">
+                {alerts.length}
+              </span>
+            )}
+          </div>
+          
+          {alerts.length > 0 ? (
+            <div className="space-y-3 overflow-y-auto max-h-[420px] pr-1 -mr-1">
+              {alerts.map((alert) => {
+                const alertConfig = {
+                  'overdue': {
+                    icon: Clock,
+                    bgColor: 'bg-red-50',
+                    borderColor: 'border-red-200',
+                    iconColor: 'text-red-500',
+                  },
+                  'unassigned': {
+                    icon: UserX,
+                    bgColor: 'bg-amber-50',
+                    borderColor: 'border-amber-200',
+                    iconColor: 'text-amber-500',
+                  },
+                  'high_priority': {
+                    icon: AlertTriangle,
+                    bgColor: 'bg-orange-50',
+                    borderColor: 'border-orange-200',
+                    iconColor: 'text-orange-500',
+                  },
+                }[alert.type] || {
+                  icon: AlertCircle,
+                  bgColor: 'bg-stone-50',
+                  borderColor: 'border-stone-200',
+                  iconColor: 'text-stone-500',
+                };
+                
+                const AlertIcon = alertConfig.icon;
+
+                return (
+                  <div 
+                    key={alert.id}
+                    className={`p-3 rounded-xl border ${alertConfig.bgColor} ${alertConfig.borderColor} hover:shadow-sm transition-all cursor-pointer`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <AlertIcon size={18} className={`${alertConfig.iconColor} flex-shrink-0 mt-0.5`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-stone-800 truncate">
+                          {alert.title}
+                        </p>
+                        <p className="text-xs text-stone-500 mt-0.5">
+                          {alert.message}
+                        </p>
+                        {alert.assignedTo && (
+                          <p className="text-xs text-stone-600 mt-1 flex items-center gap-1">
+                            <Users size={12} />
+                            {alert.assignedTo}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="h-48 flex flex-col items-center justify-center text-stone-400">
+              <CheckCircle2 size={48} className="mb-3 opacity-50 text-green-400" />
+              <p className="text-sm font-medium text-green-600">
+                {language === 'th' ? 'ไม่มีการแจ้งเตือน' : 'No alerts'}
+              </p>
+              <p className="text-xs mt-1">
+                {language === 'th' ? 'ทุกอย่างเรียบร้อยดี!' : 'Everything looks good!'}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
