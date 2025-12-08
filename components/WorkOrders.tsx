@@ -25,7 +25,7 @@ const formatDateShort = (dateString: string): string => {
 };
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageDataUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, adminCloseWorkOrder, createNotification } from '../services/apiService';
+import { getImageDataUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, adminCloseWorkOrder, createNotification, getWorkOrderRejectHistory, type RejectHistoryItem } from '../services/apiService';
 import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules';
 import { 
   createWOAssignedNotification, 
@@ -75,6 +75,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [checklist, setChecklist] = useState<string[]>([]);
+  const [rejectHistory, setRejectHistory] = useState<RejectHistoryItem[] | null>(null);
+  const [isLoadingRejectHistory, setIsLoadingRejectHistory] = useState<boolean>(false);
   const [draggedWoId, setDraggedWoId] = useState<string | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   
@@ -174,6 +176,24 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     }
     // Clear admin review fields
     setRejectionReason('');
+    // Fetch reject history for the selected work order
+    const fetchRejectHistory = async () => {
+      if (!selectedWO?.id) {
+        setRejectHistory(null);
+        return;
+      }
+      setIsLoadingRejectHistory(true);
+      try {
+        const items = await getWorkOrderRejectHistory(String(selectedWO.id));
+        setRejectHistory(items);
+      } catch (err) {
+        console.error('Failed to fetch reject history', err);
+        setRejectHistory([]);
+      } finally {
+        setIsLoadingRejectHistory(false);
+      }
+    };
+    fetchRejectHistory();
   }, [selectedWO]);
 
   // Build preview URLs for technicianImages (avoid async in render)
@@ -1058,6 +1078,29 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 <p className="text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100">
                   {selectedWO.description}
                 </p>
+                {/* Reject History Section (visible to all roles, fetched from backend) */}
+                <div className="mt-3">
+                  <h4 className="text-xs font-bold text-red-700 uppercase tracking-wide mb-1 flex items-center gap-2">
+                    <X size={14} className="text-red-500" /> Reject History
+                  </h4>
+                  {isLoadingRejectHistory ? (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">Loading history...</div>
+                  ) : rejectHistory && rejectHistory.length > 0 ? (
+                    <ul className="space-y-2">
+                      {rejectHistory.map(item => (
+                        <li key={item.id} className="bg-red-50 border border-red-200 rounded-xl p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-red-800 font-medium">{item.message}</span>
+                            <span className="text-xs text-red-600">{item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}</span>
+                          </div>
+                          <div className="text-xs text-red-700 mt-1">By: {item.triggeredBy}{item.recipientName ? ` → ${item.recipientName}` : ''} ({item.recipientRole})</div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm text-stone-600">No rejection history</div>
+                  )}
+                </div>
                 {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.PENDING && (
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('workOrders.review')}</label>

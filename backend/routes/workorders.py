@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from db import get_db
-from db.models import WorkOrder as WorkOrderModel
+from db.models import WorkOrder as WorkOrderModel, Notification as NotificationModel
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
 from schemas import TechnicianUpdate, WorkOrder, WorkOrderCreate, WorkOrderUpdate
@@ -106,6 +106,33 @@ async def get_workorder(wo_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Work order not found")
 
     return WorkOrder.model_validate(wo)
+
+
+@router.get("/{wo_id}/reject-history")
+async def get_reject_history(wo_id: str, db: Session = Depends(get_db)):
+    """Return rejection history using fields from the workorders table (rejection_reason, rejected_by, rejected_at).
+
+    This provides a simple history entry based on the last rejection stored on the work order.
+    """
+    wo = db.query(WorkOrderModel).filter(WorkOrderModel.id == wo_id).first()
+    if not wo:
+        raise HTTPException(status_code=404, detail="Work order not found")
+
+    # If there's no recorded rejection, return an empty list
+    if not getattr(wo, "rejection_reason", None) and not getattr(wo, "rejected_by", None):
+        return []
+
+    item = {
+        "id": f"{wo.id}-reject",
+        "message": wo.rejection_reason or "Rejected",
+        "createdAt": wo.rejected_at.isoformat() if getattr(wo, "rejected_at", None) else None,
+        "triggeredBy": wo.rejected_by or "",
+        # Keep response shape consistent with frontend expectations
+        "recipientRole": "Technician",  # role context not stored on WO; provide generic
+        "recipientName": wo.assigned_to or None,
+    }
+
+    return [item]
 
 
 @router.put("/{wo_id}", response_model=WorkOrder)
