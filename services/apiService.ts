@@ -2,15 +2,15 @@
 const getBackendUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    
+
     const replitDomains = ['replit.dev', 'repl.co', 'replit.app'];
     const isReplitHosted = replitDomains.some(domain => hostname.includes(domain));
-    
+
     if (isReplitHosted) {
       const protocol = window.location.protocol;
       const parts = hostname.split('.');
       const slugWithPort = parts[0];
-      
+
       // Check if we're on port 5000 (development) or production
       if (slugWithPort.endsWith('-5000')) {
         // Development mode - use port 8000 backend
@@ -46,14 +46,14 @@ const getAuthHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  
+
   if (currentUserRole) {
     headers['X-User-Role'] = currentUserRole;
   }
   if (currentUserName) {
     headers['X-User-Name'] = currentUserName;
   }
-  
+
   return headers;
 };
 
@@ -565,6 +565,219 @@ export const checkAndCreateReminders = async (): Promise<{ message: string; noti
   }
 
   return response.json();
+};
+
+// --- User API ---
+export interface UserItem {
+  id: string;
+  email?: string;
+  name: string;
+  phone?: string;
+  avatarUrl?: string;
+  employeeId?: string;
+  jobTitle?: string;
+  role?: string; // Display role
+  userRole: string; // System role for permissions
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface CreateUserData {
+  email?: string;
+  passwordHash?: string;
+  name: string;
+  phone?: string;
+  avatarUrl?: string;
+  employeeId?: string;
+  jobTitle?: string;
+  role?: string; // Display role
+  userRole: string; // System role for permissions
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface UpdateUserData {
+  email?: string;
+  passwordHash?: string;
+  name?: string;
+  phone?: string;
+  avatarUrl?: string;
+  employeeId?: string;
+  jobTitle?: string;
+  role?: string; // Display role
+  userRole?: string; // System role for permissions
+  status?: string;
+}
+
+export const listUsers = async (): Promise<UserItem[]> => {
+  const response = await fetch(`${API_BASE_URL}/users`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch users');
+  }
+
+  const users = await response.json();
+  // Map backend field names to frontend field names
+  return users.map((u: any) => ({
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    phone: u.phone,
+    avatarUrl: u.avatar_url,
+    employeeId: u.employee_id,
+    jobTitle: u.job_title,
+    role: u.role,
+    userRole: u.userRole || u.user_role,
+    status: u.status,
+    createdAt: u.created_at,
+    updatedAt: u.updated_at,
+    lastLoginAt: u.last_login_at,
+    firstName: u.first_name,
+    lastName: u.last_name,
+  }));
+};
+
+export const getUser = async (userId: string): Promise<UserItem> => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch user');
+  }
+
+  const u = await response.json();
+  // Map backend field names to frontend field names
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    phone: u.phone,
+    avatarUrl: u.avatar_url,
+    employeeId: u.employee_id,
+    jobTitle: u.job_title,
+    role: u.role,
+    userRole: u.userRole || u.user_role,
+    status: u.status,
+    createdAt: u.created_at,
+    updatedAt: u.updated_at,
+    lastLoginAt: u.last_login_at,
+    firstName: u.first_name,
+    lastName: u.last_name,
+  };
+};
+
+export const createUser = async (data: CreateUserData): Promise<UserItem> => {
+  // Map frontend field names to backend field names
+  const payload: any = {
+    name: data.name,
+    userRole: data.userRole,
+  };
+
+  if (data.email) payload.email = data.email;
+  if (data.passwordHash) payload.password_hash = data.passwordHash;
+  if (data.phone) payload.phone = data.phone;
+  if (data.avatarUrl) payload.avatar_url = data.avatarUrl;
+  if (data.employeeId) payload.employee_id = data.employeeId;
+  if (data.jobTitle) payload.job_title = data.jobTitle;
+  if (data.role) payload.role = data.role;
+  if (data.firstName) payload.first_name = data.firstName;
+  if (data.lastName) payload.last_name = data.lastName;
+
+  const response = await fetch(`${API_BASE_URL}/users`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to create user');
+  }
+
+  const u = await response.json();
+  // Map backend field names to frontend field names
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    phone: u.phone,
+    avatarUrl: u.avatar_url,
+    employeeId: u.employee_id,
+    jobTitle: u.job_title,
+    role: u.role,
+    userRole: u.userRole || u.user_role,
+    status: u.status,
+    createdAt: u.created_at,
+    updatedAt: u.updated_at,
+    lastLoginAt: u.last_login_at,
+    firstName: u.first_name,
+    lastName: u.last_name,
+  };
+};
+
+export const updateUser = async (userId: string, data: UpdateUserData): Promise<UserItem> => {
+  // Map frontend field names to backend field names
+  const payload: any = {};
+
+  if (data.email !== undefined) payload.email = data.email;
+  if (data.passwordHash !== undefined) payload.password_hash = data.passwordHash;
+  if (data.name !== undefined) payload.name = data.name;
+  if (data.phone !== undefined) payload.phone = data.phone;
+  if (data.avatarUrl !== undefined) payload.avatar_url = data.avatarUrl;
+  if (data.employeeId !== undefined) payload.employee_id = data.employeeId;
+  if (data.jobTitle !== undefined) payload.job_title = data.jobTitle;
+  if (data.role !== undefined) payload.role = data.role;
+  if (data.userRole !== undefined) payload.userRole = data.userRole;
+  if (data.status !== undefined) payload.status = data.status;
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to update user');
+  }
+
+  const u = await response.json();
+  // Map backend field names to frontend field names
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    phone: u.phone,
+    avatarUrl: u.avatar_url,
+    employeeId: u.employee_id,
+    jobTitle: u.job_title,
+    role: u.role,
+    userRole: u.userRole || u.user_role,
+    status: u.status,
+    createdAt: u.created_at,
+    updatedAt: u.updated_at,
+    lastLoginAt: u.last_login_at,
+    firstName: u.first_name,
+    lastName: u.last_name,
+  };
+};
+
+export const deleteUser = async (userId: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete user');
+  }
 };
 
 // --- Health Check ---

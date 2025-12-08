@@ -26,11 +26,21 @@ export type UserRole = 'Admin' | 'Technician' | 'Requester' | 'Head Technician';
 
 export interface User {
   id: string;
+  email?: string;
   name: string;
-  role: string; // Display title
+  phone?: string;
+  avatarUrl?: string;
+  employeeId?: string;
+  jobTitle?: string;
+  role?: string; // Display title
   userRole: UserRole; // System role for permissions
-  avatarUrl: string;
   teamId?: string; // Team ID for technician grouping
+  status?: 'active' | 'inactive' | 'suspended';
+  createdAt?: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface PartUsage {
@@ -101,7 +111,7 @@ export interface TeamMember {
   id: string;
   name: string;
   role: string;
-  status: 'Available' | 'Busy' | 'Off-Shift' | 'On-Leave';
+  status: 'Available' | 'Busy' | 'Off-Shift' | 'On-Leave' | string;
   currentTask?: string; // WO ID
   skills: string[];
   avatarUrl: string;

@@ -159,11 +159,11 @@ const App: React.FC = () => {
         const response = await fetch('/api/auth/me', {
           credentials: 'include',
         });
-        
+
         if (response.ok) {
           const userData = await response.json();
           console.log('Server session verified:', userData);
-          
+
           const user: User = {
             id: userData.id,
             name: userData.name || userData.email || 'User',
@@ -171,7 +171,7 @@ const App: React.FC = () => {
             userRole: (userData.user_role || 'Requester') as UserRole,
             avatarUrl: userData.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.id}`,
           };
-          
+
           sessionStorage.setItem('authUser', JSON.stringify(userData));
           setCurrentUser(user);
           setIsLoggedIn(true);
@@ -181,14 +181,14 @@ const App: React.FC = () => {
       } catch (e) {
         console.log('No active server session');
       }
-      
+
       const storedUser = sessionStorage.getItem('loggedInUser');
       if (storedUser) {
         try {
           const parsed = JSON.parse(storedUser);
           const role = parsed.role;
           console.log('Loading user from sessionStorage:', role);
-          
+
           if (role && USERS[role as UserRole]) {
             const user = USERS[role as UserRole];
             console.log('User loaded:', user);
@@ -201,22 +201,22 @@ const App: React.FC = () => {
         }
       }
     };
-    
+
     verifySession();
   }, []);
 
   // Handle logout
   const handleLogout = async () => {
     const authUser = sessionStorage.getItem('authUser');
-    
+
     sessionStorage.removeItem('loggedInUser');
     sessionStorage.removeItem('authUser');
     setIsLoggedIn(false);
     setCurrentView('dashboard');
-    
+
     if (authUser) {
       try {
-        const response = await fetch('/api/auth/logout', { 
+        const response = await fetch('/api/auth/logout', {
           method: 'POST',
           credentials: 'include',
         });
@@ -229,7 +229,7 @@ const App: React.FC = () => {
         console.error('Logout error:', e);
       }
     }
-    
+
     window.location.href = '/';
   };
 
@@ -275,7 +275,7 @@ const App: React.FC = () => {
   // Load notifications from backend
   const loadNotifications = async () => {
     if (!currentUser) return;
-    
+
     try {
       const allNotifications = await getNotifications();
       // Map NotificationItem to Notification and filter for current user
@@ -291,7 +291,7 @@ const App: React.FC = () => {
         createdAt: item.createdAt,
         triggeredBy: item.triggeredBy,
       }));
-      
+
       const userNotifications = filterNotificationsForUser(
         mappedNotifications,
         currentUser.userRole,
@@ -316,7 +316,7 @@ const App: React.FC = () => {
         }
         loadNotifications();
       };
-      
+
       initNotifications();
       // Poll for new notifications every 10 seconds
       const interval = setInterval(loadNotifications, 10000);
@@ -438,8 +438,8 @@ const App: React.FC = () => {
       case 'work-orders':
         return <WorkOrders workOrders={workOrders} currentUser={currentUser} technicians={TECHNICIANS} />;
       case 'requests':
-        return <WorkRequestPortal 
-          onSubmitRequest={handleNewRequest} 
+        return <WorkRequestPortal
+          onSubmitRequest={handleNewRequest}
           currentUser={currentUser}
           technicians={TECHNICIANS}
           workOrders={workOrders}
@@ -466,36 +466,36 @@ const App: React.FC = () => {
     return (
       <div className="h-screen bg-slate-50 font-sans flex flex-col overflow-hidden">
         <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shadow-sm flex-shrink-0">
-           <div className="flex items-center gap-2">
-             <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
-             <span className="font-bold text-slate-800">Eureka <span className="text-brand-600">{t('requestor.requestPortal')}</span></span>
-           </div>
-           <div className="flex items-center gap-4">
-             {/* Notification Center for Requester */}
-             <NotificationCenter 
-               notifications={notifications}
-               onNotificationsUpdate={loadNotifications}
-             />
-             <LanguageSwitcher variant="minimal" />
-             <button
-               onClick={handleLogout}
-               className="min-w-[100px] flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-stone-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-             >
-               {t('nav.logout')}
-             </button>
-             <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full">
-               <UserCircle2 size={20} />
-               <span className="text-sm font-medium">{currentUser.name}</span>
-             </div>
-           </div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
+            <span className="font-bold text-slate-800">Eureka <span className="text-brand-600">{t('requestor.requestPortal')}</span></span>
+          </div>
+          <div className="flex items-center gap-4">
+            {/* Notification Center for Requester */}
+            <NotificationCenter
+              notifications={notifications}
+              onNotificationsUpdate={loadNotifications}
+            />
+            <LanguageSwitcher variant="minimal" />
+            <button
+              onClick={handleLogout}
+              className="min-w-[100px] flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-stone-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              {t('nav.logout')}
+            </button>
+            <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full">
+              <UserCircle2 size={20} />
+              <span className="text-sm font-medium">{currentUser.name}</span>
+            </div>
+          </div>
         </header>
         <main className="flex-1 overflow-y-auto">
-           <WorkRequestPortal 
-             onSubmitRequest={handleNewRequest} 
-             currentUser={currentUser}
-             technicians={TECHNICIANS}
-             workOrders={workOrders}
-           />
+          <WorkRequestPortal
+            onSubmitRequest={handleNewRequest}
+            currentUser={currentUser}
+            technicians={TECHNICIANS}
+            workOrders={workOrders}
+          />
         </main>
       </div>
     );
@@ -503,25 +503,25 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
-      <Sidebar 
-        currentView={currentView} 
-        onChangeView={setCurrentView} 
+      <Sidebar
+        currentView={currentView}
+        onChangeView={setCurrentView}
         userRole={currentUser.userRole}
         currentUser={currentUser}
         onLogout={handleLogout}
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
-      
+
       <div className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} flex flex-col h-screen transition-all duration-300`}>
-        <Header 
-          user={currentUser} 
+        <Header
+          user={currentUser}
           notifications={notifications}
           onNotificationsUpdate={loadNotifications}
         />
-        
+
         <main className="flex-1 pt-16 overflow-y-auto scroll-smooth relative">
-           {renderContent()}
+          {renderContent()}
         </main>
       </div>
     </div>

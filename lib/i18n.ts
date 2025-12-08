@@ -1134,14 +1134,14 @@ export const useLanguage = create<LanguageState>()(
       t: (key: TranslationKeys, params?: Record<string, string>): string => {
         const lang = get().language;
         let text: string = translations[lang][key] || key;
-        
+
         // Replace {param} placeholders with actual values
         if (params) {
           Object.entries(params).forEach(([paramKey, paramValue]) => {
             text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), paramValue || '');
           });
         }
-        
+
         return text;
       }
     }),

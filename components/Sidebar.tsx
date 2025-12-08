@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  Wrench, 
-  FileText, 
-  Factory, 
-  Users, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Wrench,
+  FileText,
+  Factory,
+  Users,
+  Settings,
   BarChart3,
   LogOut,
   Package,
@@ -25,22 +25,22 @@ interface SidebarProps {
   onToggleCollapse?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ 
-  currentView, 
-  onChangeView, 
-  userRole, 
-  currentUser, 
+const Sidebar: React.FC<SidebarProps> = ({
+  currentView,
+  onChangeView,
+  userRole,
+  currentUser,
   onLogout,
   isCollapsed: externalCollapsed,
   onToggleCollapse: externalToggle
 }) => {
   const { t } = useLanguage();
   const [internalCollapsed, setInternalCollapsed] = useState(false);
-  
+
   // Use external state if provided, otherwise use internal state
   const isCollapsed = externalCollapsed ?? internalCollapsed;
   const toggleCollapse = externalToggle ?? (() => setInternalCollapsed(!internalCollapsed));
-  
+
   // Define all possible items with translation keys
   const allMenuItems = [
     { id: 'dashboard', labelKey: 'nav.dashboard' as const, icon: LayoutDashboard, roles: ['Admin'] },
@@ -81,11 +81,10 @@ const Sidebar: React.FC<SidebarProps> = ({
               key={item.id}
               onClick={() => onChangeView(item.id)}
               title={isCollapsed ? t(item.labelKey) : undefined}
-              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-xl transition-all duration-200 ${
-                isActive
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-xl transition-all duration-200 ${isActive
                   ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20'
                   : 'text-stone-400 hover:bg-stone-800 hover:text-white'
-              }`}
+                }`}
             >
               <Icon size={20} className="flex-shrink-0" />
               {!isCollapsed && <span className="font-medium text-base">{t(item.labelKey)}</span>}
@@ -96,8 +95,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="p-4 border-t border-stone-700">
         {/* Sign Out Button */}
-        <button 
-          onClick={onLogout} 
+        <button
+          onClick={onLogout}
           title={isCollapsed ? t('nav.logout') : undefined}
           className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} text-stone-400 hover:text-red-400 hover:bg-stone-800 w-full px-4 py-3 rounded-xl transition-all duration-200`}
         >

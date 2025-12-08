@@ -418,15 +418,15 @@ Update the file after completing each sub-task, not just after completing an ent
 
 - [ ] 22.0 User & Workforce Management
   - [ ] 22.1 Implement user CRUD operations
-    - [ ] 22.1.1 Create user with role assignment
+    - [x] 22.1.1 Create user with role assignment
     - [ ] 22.1.2 Validate license availability before user creation
-    - [ ] 22.1.3 Update user profile and roles
-    - [ ] 22.1.4 Deactivate users and release licenses
+    - [x] 22.1.3 Update user profile and roles
+    - [x] 22.1.4 Deactivate users and release licenses
   - [ ] 22.2 Implement technician profile management
     - [ ] 22.2.1 Store skills and certifications
     - [ ] 22.2.2 Define proficiency levels
     - [ ] 22.2.3 Track certification expiration dates
-    - [ ] 22.2.4 Link technicians to work orders
+    - [x] 22.2.4 Link technicians to work orders
   - [ ] 22.3 Implement shift scheduling
     - [ ] 22.3.1 Define shift templates (start/end times)
     - [ ] 22.3.2 Create shift assignments for technicians
