@@ -202,6 +202,7 @@ async def get_dashboard_stats(
             RecentWorkOrder(
                 id=wo.id,
                 title=wo.title or f"WO-{wo.id}",
+                description=wo.description,
                 status=wo.status or "Open",
                 priority=wo.priority or "Medium",
                 assignedTo=wo.assigned_to,

@@ -464,9 +464,9 @@
 | Work orders by technician | ✅ | |
 | Average completion time | ✅ | |
 | Real-time refresh | ✅ | 30 seconds polling |
-| Recent work orders | ❌ | |
-| Alerts panel | ❌ | |
-| Quick actions | ❌ | |
+| Recent work orders | ✅ | 8 รายการล่าสุด พร้อม popup details |
+| Alerts panel | ✅ | Overdue + High priority unassigned |
+| Quick actions | 🔄 | UI พร้อม, รอเชื่อมต่อ API |
 
 ---
 
@@ -557,10 +557,10 @@
 | Integrations | 0 | 0 | 6 | 6 | 0% |
 | Top Navigation | 5 | 0 | 8 | 13 | 38% |
 | Sidebar | 9 | 0 | 10 | 19 | 47% |
-| Dashboard | 8 | 0 | 3 | 11 | 73% |
+| Dashboard | 10 | 1 | 0 | 11 | 91% |
 | Design System | 11 | 1 | 2 | 14 | 79% |
 | เพิ่มเติมจาก PRD | 7 | 0 | 0 | 7 | 100% |
-| **รวมทั้งหมด** | **80** | **5** | **206** | **291** | **28%** |
+| **รวมทั้งหมด** | **82** | **6** | **203** | **291** | **30%** |
 
 ---
 

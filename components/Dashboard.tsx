@@ -22,7 +22,13 @@ import {
   AlertTriangle,
   FileText,
   ChevronRight,
-  UserX
+  UserX,
+  Plus,
+  ClipboardList,
+  Bell,
+  Package,
+  Wrench,
+  ChevronDown
 } from 'lucide-react';
 import { useLanguage } from '../lib/i18n';
 
@@ -63,6 +69,7 @@ interface WorkOrdersByAssignee {
 interface RecentWorkOrder {
   id: string;
   title: string;
+  description: string | null;
   status: string;
   priority: string;
   assignedTo: string | null;
@@ -191,6 +198,9 @@ const Dashboard: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>(7);
   const selectedPeriodRef = React.useRef(selectedPeriod);
   const [activePriorityIndex, setActivePriorityIndex] = useState<number>(0);
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState<RecentWorkOrder | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
 
   // Keep ref in sync with state
   React.useEffect(() => {
@@ -294,8 +304,122 @@ const Dashboard: React.FC = () => {
             {language === 'th' ? 'ภาพรวมสถานะใบงานและประสิทธิภาพ' : 'Work order status and performance overview'}
           </p>
         </div>
-        <div className="text-sm text-stone-500 bg-stone-100 px-3 py-1.5 rounded-lg">
-          {t('dashboard.lastUpdated')}: {t('dashboard.justNow')}
+        <div className="flex items-center gap-3">
+          {/* Quick Actions Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowQuickActions(!showQuickActions)}
+              className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm"
+            >
+              <Plus size={18} />
+              <span className="font-medium">{language === 'th' ? 'สร้างใหม่' : 'Create New'}</span>
+              <ChevronDown size={16} className={`transition-transform ${showQuickActions ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {showQuickActions && (
+              <>
+                {/* Backdrop */}
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setShowQuickActions(false)}
+                />
+                {/* Dropdown Menu */}
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-stone-200 py-2 z-20">
+                  <button
+                    onClick={() => {
+                      setShowQuickActions(false);
+                      // TODO: Open create work order modal
+                      alert(language === 'th' ? 'สร้างใบงานใหม่ (Coming soon)' : 'Create Work Order (Coming soon)');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-stone-50 transition-colors"
+                  >
+                    <div className="p-1.5 bg-blue-100 rounded-lg">
+                      <ClipboardList size={16} className="text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-stone-800">
+                        {language === 'th' ? 'สร้างใบงาน' : 'New Work Order'}
+                      </p>
+                      <p className="text-xs text-stone-500">
+                        {language === 'th' ? 'สร้างใบงานใหม่' : 'Create a new work order'}
+                      </p>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setShowQuickActions(false);
+                      // TODO: Navigate to request portal
+                      alert(language === 'th' ? 'สร้างการแจ้งซ่อม (Coming soon)' : 'Create Work Notification (Coming soon)');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-stone-50 transition-colors"
+                  >
+                    <div className="p-1.5 bg-amber-100 rounded-lg">
+                      <Bell size={16} className="text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-stone-800">
+                        {language === 'th' ? 'แจ้งซ่อม' : 'Work Notification'}
+                      </p>
+                      <p className="text-xs text-stone-500">
+                        {language === 'th' ? 'แจ้งปัญหาใหม่' : 'Report a new issue'}
+                      </p>
+                    </div>
+                  </button>
+                  
+                  <div className="my-2 border-t border-stone-100" />
+                  
+                  <button
+                    onClick={() => {
+                      setShowQuickActions(false);
+                      // TODO: Navigate to assets
+                      alert(language === 'th' ? 'เพิ่มอุปกรณ์ (Coming soon)' : 'Add Asset (Coming soon)');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-stone-50 transition-colors opacity-60"
+                    disabled
+                  >
+                    <div className="p-1.5 bg-green-100 rounded-lg">
+                      <Wrench size={16} className="text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-stone-800">
+                        {language === 'th' ? 'เพิ่มอุปกรณ์' : 'New Asset'}
+                      </p>
+                      <p className="text-xs text-stone-500">
+                        {language === 'th' ? 'เร็วๆ นี้' : 'Coming soon'}
+                      </p>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setShowQuickActions(false);
+                      // TODO: Navigate to inventory
+                      alert(language === 'th' ? 'เบิกอะไหล่ (Coming soon)' : 'Issue Parts (Coming soon)');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-stone-50 transition-colors opacity-60"
+                    disabled
+                  >
+                    <div className="p-1.5 bg-violet-100 rounded-lg">
+                      <Package size={16} className="text-violet-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-stone-800">
+                        {language === 'th' ? 'เบิกอะไหล่' : 'Issue Parts'}
+                      </p>
+                      <p className="text-xs text-stone-500">
+                        {language === 'th' ? 'เร็วๆ นี้' : 'Coming soon'}
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+          
+          <div className="text-sm text-stone-500 bg-stone-100 px-3 py-1.5 rounded-lg">
+            {t('dashboard.lastUpdated')}: {t('dashboard.justNow')}
+          </div>
         </div>
       </div>
 
@@ -660,6 +784,7 @@ const Dashboard: React.FC = () => {
                 return (
                   <div 
                     key={wo.id} 
+                    onClick={() => setSelectedWorkOrder(wo)}
                     className="flex items-center justify-between p-3 bg-stone-50 rounded-xl hover:bg-stone-100 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -741,6 +866,7 @@ const Dashboard: React.FC = () => {
                 return (
                   <div 
                     key={alert.id}
+                    onClick={() => setSelectedAlert(alert)}
                     className={`p-3 rounded-xl border ${alertConfig.bgColor} ${alertConfig.borderColor} hover:shadow-sm transition-all cursor-pointer`}
                   >
                     <div className="flex items-start gap-3">
@@ -793,6 +919,221 @@ const Dashboard: React.FC = () => {
                   <span className="text-lg font-bold text-teal-600 ml-2">{assignee.count}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Work Order Detail Modal */}
+      {selectedWorkOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setSelectedWorkOrder(null)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-teal-100 text-xs font-medium">{selectedWorkOrder.id}</p>
+                  <h3 className="text-white text-lg font-semibold mt-0.5">{selectedWorkOrder.title}</h3>
+                </div>
+                <button 
+                  onClick={() => setSelectedWorkOrder(null)}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              {/* Description */}
+              {selectedWorkOrder.description && (
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'รายละเอียด' : 'Description'}</p>
+                  <p className="text-sm text-stone-700 leading-relaxed">{selectedWorkOrder.description}</p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'สถานะ' : 'Status'}</p>
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                    {
+                      'Open': 'bg-blue-100 text-blue-700',
+                      'In Progress': 'bg-orange-100 text-orange-700',
+                      'Pending': 'bg-violet-100 text-violet-700',
+                      'Completed': 'bg-green-100 text-green-700',
+                      'Closed': 'bg-stone-100 text-stone-700',
+                    }[selectedWorkOrder.status] || 'bg-stone-100 text-stone-700'
+                  }`}>
+                    {selectedWorkOrder.status}
+                  </span>
+                </div>
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ความสำคัญ' : 'Priority'}</p>
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                    {
+                      'Critical': 'bg-red-100 text-red-700',
+                      'High': 'bg-orange-100 text-orange-700',
+                      'Medium': 'bg-blue-100 text-blue-700',
+                      'Low': 'bg-green-100 text-green-700',
+                    }[selectedWorkOrder.priority] || 'bg-stone-100 text-stone-700'
+                  }`}>
+                    {selectedWorkOrder.priority}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="bg-stone-50 p-3 rounded-xl">
+                <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ผู้รับผิดชอบ' : 'Assigned To'}</p>
+                <p className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                  <Users size={16} className="text-stone-400" />
+                  {selectedWorkOrder.assignedTo || (language === 'th' ? 'ยังไม่มอบหมาย' : 'Unassigned')}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'วันที่สร้าง' : 'Created'}</p>
+                  <p className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                    <Calendar size={16} className="text-stone-400" />
+                    {selectedWorkOrder.createdAt ? new Date(selectedWorkOrder.createdAt).toLocaleDateString() : '-'}
+                  </p>
+                </div>
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'กำหนดเสร็จ' : 'Due Date'}</p>
+                  <p className={`text-sm font-medium flex items-center gap-2 ${
+                    selectedWorkOrder.dueDate && new Date(selectedWorkOrder.dueDate) < new Date() 
+                      ? 'text-red-600' 
+                      : 'text-stone-800'
+                  }`}>
+                    <Clock size={16} className="text-stone-400" />
+                    {selectedWorkOrder.dueDate || '-'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="px-6 py-4 bg-stone-50 border-t border-stone-100">
+              <button
+                onClick={() => setSelectedWorkOrder(null)}
+                className="w-full py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
+              >
+                {language === 'th' ? 'ปิด' : 'Close'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alert Detail Modal */}
+      {selectedAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setSelectedAlert(null)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+            {/* Header */}
+            <div className={`px-6 py-4 ${
+              selectedAlert.type === 'overdue' 
+                ? 'bg-gradient-to-r from-red-500 to-red-600' 
+                : 'bg-gradient-to-r from-amber-500 to-amber-600'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {selectedAlert.type === 'overdue' ? (
+                    <Clock size={24} className="text-white/80" />
+                  ) : (
+                    <UserX size={24} className="text-white/80" />
+                  )}
+                  <div>
+                    <p className="text-white/80 text-xs font-medium uppercase">
+                      {selectedAlert.type === 'overdue' 
+                        ? (language === 'th' ? 'เลยกำหนด' : 'Overdue')
+                        : (language === 'th' ? 'ยังไม่มอบหมาย' : 'Unassigned')
+                      }
+                    </p>
+                    <h3 className="text-white text-lg font-semibold mt-0.5">{selectedAlert.title.replace(/^(Overdue|Unassigned): /, '')}</h3>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setSelectedAlert(null)}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <div className={`p-4 rounded-xl border ${
+                selectedAlert.type === 'overdue' 
+                  ? 'bg-red-50 border-red-200' 
+                  : 'bg-amber-50 border-amber-200'
+              }`}>
+                <p className={`text-sm ${
+                  selectedAlert.type === 'overdue' ? 'text-red-700' : 'text-amber-700'
+                }`}>
+                  {selectedAlert.message}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'รหัสใบงาน' : 'Work Order ID'}</p>
+                  <p className="text-sm font-medium text-stone-800">
+                    {selectedAlert.workOrderId || '-'}
+                  </p>
+                </div>
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ความสำคัญ' : 'Priority'}</p>
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                    {
+                      'Critical': 'bg-red-100 text-red-700',
+                      'High': 'bg-orange-100 text-orange-700',
+                      'Medium': 'bg-blue-100 text-blue-700',
+                      'Low': 'bg-green-100 text-green-700',
+                    }[selectedAlert.priority] || 'bg-stone-100 text-stone-700'
+                  }`}>
+                    {selectedAlert.priority}
+                  </span>
+                </div>
+              </div>
+              
+              {selectedAlert.assignedTo && (
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ผู้รับผิดชอบ' : 'Assigned To'}</p>
+                  <p className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                    <Users size={16} className="text-stone-400" />
+                    {selectedAlert.assignedTo}
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            {/* Footer */}
+            <div className="px-6 py-4 bg-stone-50 border-t border-stone-100">
+              <button
+                onClick={() => setSelectedAlert(null)}
+                className={`w-full py-2.5 text-white rounded-lg transition-colors font-medium ${
+                  selectedAlert.type === 'overdue'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-amber-600 hover:bg-amber-700'
+                }`}
+              >
+                {language === 'th' ? 'ปิด' : 'Close'}
+              </button>
             </div>
           </div>
         </div>

@@ -40,6 +40,7 @@ class WorkOrdersByAssignee(BaseModel):
 class RecentWorkOrder(BaseModel):
     id: str
     title: str
+    description: Optional[str]
     status: str
     priority: str
     assignedTo: Optional[str]
