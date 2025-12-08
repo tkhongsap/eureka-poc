@@ -214,7 +214,7 @@ const Dashboard: React.FC = () => {
       <div className="p-8 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <RefreshCw size={48} className="mx-auto mb-4 text-teal-600 animate-spin" />
-          <p className="text-stone-600">{language === 'th' ? 'กำลังโหลดข้อมูล...' : 'Loading dashboard...'}</p>
+          <p className="text-stone-600">{t('dashboard.loading')}</p>
         </div>
       </div>
     );
@@ -226,12 +226,12 @@ const Dashboard: React.FC = () => {
       <div className="p-8 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <AlertCircle size={48} className="mx-auto mb-4 text-red-500" />
-          <p className="text-stone-600 mb-4">{language === 'th' ? 'ไม่สามารถโหลดข้อมูลได้' : 'Failed to load dashboard'}</p>
+          <p className="text-stone-600 mb-4">{t('dashboard.loadFailed')}</p>
           <button 
             onClick={fetchDashboardStats}
             className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
           >
-            {language === 'th' ? 'ลองใหม่' : 'Retry'}
+            {t('dashboard.retry')}
           </button>
         </div>
       </div>
@@ -259,10 +259,10 @@ const Dashboard: React.FC = () => {
       <div className="flex justify-between items-end">
         <div>
           <h2 className="font-serif text-3xl text-stone-900">
-            {language === 'th' ? 'แดชบอร์ด' : 'Dashboard'}
+            {t('dashboard.title')}
           </h2>
           <p className="text-stone-500 mt-1">
-            {language === 'th' ? 'ภาพรวมสถานะใบงานและประสิทธิภาพ' : 'Work order status and performance overview'}
+            {t('dashboard.subtitle')}
           </p>
         </div>
         <div className="text-sm text-stone-500 bg-stone-100 px-3 py-1.5 rounded-lg">
@@ -275,13 +275,13 @@ const Dashboard: React.FC = () => {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
             <BarChart3 size={20} />
-            {language === 'th' ? 'สถานะใบงาน' : 'Work Order Status'}
+            {t('dashboard.woStatus')}
           </h3>
           <div className="flex items-center gap-3 bg-stone-100 px-4 py-2 rounded-xl">
             <TrendingUp size={20} className="text-stone-600" />
             <div>
               <p className="text-xs text-stone-500">
-                {language === 'th' ? 'ใบงานทั้งหมด' : 'Total'}
+                {t('dashboard.total')}
               </p>
               <p className="text-xl font-bold text-stone-900">{totalOrders}</p>
             </div>
@@ -289,7 +289,7 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <StatusCard
-            title={language === 'th' ? 'เปิด' : 'Open'}
+            title={t('status.open')}
             value={statusCounts.open}
             icon={FilePlus}
             color="text-blue-600"
@@ -297,7 +297,7 @@ const Dashboard: React.FC = () => {
             borderColor="border-blue-200"
           />
           <StatusCard
-            title={language === 'th' ? 'กำลังดำเนินการ' : 'In Progress'}
+            title={t('status.inProgress')}
             value={statusCounts.inProgress}
             icon={PlayCircle}
             color="text-orange-600"
@@ -305,7 +305,7 @@ const Dashboard: React.FC = () => {
             borderColor="border-orange-200"
           />
           <StatusCard
-            title={language === 'th' ? 'รอตรวจสอบ' : 'Pending'}
+            title={t('status.pending')}
             value={statusCounts.pending}
             icon={Clock}
             color="text-violet-600"
@@ -313,7 +313,7 @@ const Dashboard: React.FC = () => {
             borderColor="border-violet-200"
           />
           <StatusCard
-            title={language === 'th' ? 'เลยกำหนด' : 'Overdue'}
+            title={t('dashboard.overdue')}
             value={overdueCount}
             icon={AlertCircle}
             color="text-red-600"
@@ -325,7 +325,7 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between w-full">
               <div>
                 <p className="text-teal-100 text-xs font-medium mb-1">
-                  {language === 'th' ? 'เวลาเฉลี่ย' : 'Average Time'}
+                  {t('dashboard.averageTime')}
                 </p>
                 <p className="text-2xl font-bold text-white">
                   {avgCompletionTime ? avgCompletionTime.formattedText : '-'}
@@ -343,14 +343,14 @@ const Dashboard: React.FC = () => {
         <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
           <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2 mb-4">
             <PieChartIcon size={20} />
-            {language === 'th' ? 'สัดส่วนตามความสำคัญ' : 'Priority Distribution'}
+            {t('dashboard.priorityDistribution')}
           </h3>
           {(() => {
             const priorityData = [
-              { name: language === 'th' ? 'วิกฤต' : 'Critical', value: priorityDistribution.critical, color: PRIORITY_COLORS.critical },
-              { name: language === 'th' ? 'สูง' : 'High', value: priorityDistribution.high, color: PRIORITY_COLORS.high },
-              { name: language === 'th' ? 'ปานกลาง' : 'Medium', value: priorityDistribution.medium, color: PRIORITY_COLORS.medium },
-              { name: language === 'th' ? 'ต่ำ' : 'Low', value: priorityDistribution.low, color: PRIORITY_COLORS.low },
+              { name: t('priority.critical'), value: priorityDistribution.critical, color: PRIORITY_COLORS.critical },
+              { name: t('priority.high'), value: priorityDistribution.high, color: PRIORITY_COLORS.high },
+              { name: t('priority.medium'), value: priorityDistribution.medium, color: PRIORITY_COLORS.medium },
+              { name: t('priority.low'), value: priorityDistribution.low, color: PRIORITY_COLORS.low },
             ];
             const totalPriority = priorityData.reduce((sum, item) => sum + item.value, 0);
             
@@ -410,12 +410,10 @@ const Dashboard: React.FC = () => {
               <div className="h-48 flex flex-col items-center justify-center text-stone-400">
                 <PieChartIcon size={48} className="mb-3 opacity-50" />
                 <p className="text-sm font-medium">
-                  {language === 'th' ? 'ยังไม่มีข้อมูล' : 'No data available yet'}
+                  {t('dashboard.noDataYet')}
                 </p>
                 <p className="text-xs mt-1">
-                  {language === 'th' 
-                    ? 'กราฟจะแสดงเมื่อมีใบงานในระบบ' 
-                    : 'Chart will appear when work orders are created'}
+                  {t('dashboard.createWOToSee')}
                 </p>
               </div>
             );
@@ -427,7 +425,7 @@ const Dashboard: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
               <Calendar size={20} />
-              {language === 'th' ? 'แนวโน้มใบงาน' : 'Work Orders Trend'}
+              {t('dashboard.woTrend')}
             </h3>
             
             {/* Period Selector Buttons */}
@@ -487,8 +485,8 @@ const Dashboard: React.FC = () => {
                       formatter={(value) => (
                         <span className="text-sm text-stone-600">
                           {value === 'created' 
-                            ? (language === 'th' ? 'สร้างใหม่' : 'Created')
-                            : (language === 'th' ? 'เสร็จสิ้น' : 'Completed')
+                            ? t('dashboard.created')
+                            : t('dashboard.completed')
                           }
                         </span>
                       )}
@@ -555,8 +553,8 @@ const Dashboard: React.FC = () => {
                       formatter={(value) => (
                         <span className="text-sm text-stone-600">
                           {value === 'created' 
-                            ? (language === 'th' ? 'สร้างใหม่' : 'Created')
-                            : (language === 'th' ? 'เสร็จสิ้น' : 'Completed')
+                            ? t('dashboard.created')
+                            : t('dashboard.completed')
                           }
                         </span>
                       )}
@@ -586,12 +584,10 @@ const Dashboard: React.FC = () => {
               <div className="h-full flex flex-col items-center justify-center text-stone-400">
                 <BarChart3 size={48} className="mb-3 opacity-50" />
                 <p className="text-sm font-medium">
-                  {language === 'th' ? 'ยังไม่มีข้อมูล' : 'No data available yet'}
+                  {t('dashboard.noDataYet')}
                 </p>
                 <p className="text-xs mt-1">
-                  {language === 'th' 
-                    ? 'กราฟจะแสดงเมื่อมีใบงานในระบบ' 
-                    : 'Chart will appear when work orders are created'}
+                  {t('dashboard.createWOToSee')}
                 </p>
               </div>
             )}
@@ -604,7 +600,7 @@ const Dashboard: React.FC = () => {
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
             <Users size={20} />
-            {language === 'th' ? 'ใบงานตามช่างเทคนิค' : 'Work Orders by Technician'}
+            {t('dashboard.woByTechnician')}
           </h3>
           <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
