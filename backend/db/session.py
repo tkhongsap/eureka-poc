@@ -68,3 +68,46 @@ def init_db():
                 print("[Database] Added column images.base64_data")
     except Exception as e:
         print(f"[Database] Warning: could not verify/add base64_data column: {e}")
+
+    # Ensure users table has team_id column (for existing databases)
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(
+                text(
+                    """
+                SELECT EXISTS (
+                  SELECT 1 FROM information_schema.columns 
+                  WHERE table_name='users' AND column_name='team_id'
+                )
+                """
+                )
+            )
+            exists = result.scalar()
+            if not exists:
+                conn.execute(text("ALTER TABLE users ADD COLUMN team_id VARCHAR(100)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_users_team_id ON users (team_id)"))
+                conn.commit()
+                print("[Database] Added column users.team_id with index")
+    except Exception as e:
+        print(f"[Database] Warning: could not verify/add team_id column: {e}")
+
+    # Ensure workorders table has managed_by column (for existing databases)
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(
+                text(
+                    """
+                SELECT EXISTS (
+                  SELECT 1 FROM information_schema.columns 
+                  WHERE table_name='workorders' AND column_name='managed_by'
+                )
+                """
+                )
+            )
+            exists = result.scalar()
+            if not exists:
+                conn.execute(text("ALTER TABLE workorders ADD COLUMN managed_by VARCHAR(255)"))
+                conn.commit()
+                print("[Database] Added column workorders.managed_by")
+    except Exception as e:
+        print(f"[Database] Warning: could not verify/add managed_by column: {e}")

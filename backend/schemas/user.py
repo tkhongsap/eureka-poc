@@ -19,6 +19,7 @@ class UserCreate(BaseModel):
     job_title: Optional[str] = None
     role: Optional[str] = None  # Display role for show
     userRole: str  # System role for permissions
+    teamId: Optional[str] = None  # Team ID for technician grouping
     replit_user_id: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -34,6 +35,7 @@ class UserUpdate(BaseModel):
     job_title: Optional[str] = None
     role: Optional[str] = None  # Display role for show
     userRole: Optional[str] = None  # System role for permissions
+    teamId: Optional[str] = None  # Team ID for technician grouping
     status: Optional[str] = None
     settings: Optional[dict] = None
 
@@ -51,6 +53,7 @@ class User(BaseModel):
     job_title: Optional[str] = None
     role: Optional[str] = None  # Display role for show
     userRole: str = Field(validation_alias="user_role")  # System role for permissions
+    teamId: Optional[str] = Field(default=None, validation_alias="team_id")  # Team ID for technician grouping
     status: Optional[str] = None
     settings: Optional[dict] = None
     last_login_at: Optional[datetime] = None

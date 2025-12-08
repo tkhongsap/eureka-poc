@@ -22,10 +22,26 @@ async def get_notifications(
     x_user_name: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
-    """Get all notifications"""
-    notifications = (
-        db.query(NotificationModel).order_by(NotificationModel.created_at.desc()).all()
-    )
+    """Get notifications filtered by user role and name"""
+    query = db.query(NotificationModel)
+    
+    # Filter by recipient role if provided
+    if x_user_role:
+        query = query.filter(NotificationModel.recipient_role == x_user_role)
+    
+    # Filter by recipient name - only show notifications:
+    # 1. Specifically for this user (recipient_name matches)
+    # 2. Or notifications without specific recipient (recipient_name is NULL)
+    if x_user_name:
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(
+                NotificationModel.recipient_name == x_user_name,
+                NotificationModel.recipient_name.is_(None)
+            )
+        )
+    
+    notifications = query.order_by(NotificationModel.created_at.desc()).all()
     return [Notification.model_validate(n) for n in notifications]
 
 

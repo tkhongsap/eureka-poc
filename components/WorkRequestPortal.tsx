@@ -19,11 +19,12 @@ import {
   RequestItem as ApiRequestItem,
   ImageInfo,
   createNotification,
-  LocationData
+  LocationData,
+  getUsersByRole
 } from '../services/apiService';
 import { User, UserRole, WorkOrder } from '../types';
 import RequestorWorkOrders from './RequestorWorkOrders';
-import { createWOCreatedNotification } from '../services/notificationService';
+import { createWOCreatedNotifications } from '../services/notificationService';
 import LocationPicker, { LocationDisplay, InlineLocationPicker } from './LocationPicker';
 
 interface RequestItem {
@@ -319,14 +320,29 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
         });
       }
 
-      // Create notification for Admin (WO_CREATED)
+      // Create notifications for all Admins (WO_CREATED)
       if (currentUser) {
-        const notification = createWOCreatedNotification(
-          createdRequest.id,
-          createdRequest.location, // Using location as title
-          currentUser.name
-        );
-        await createNotification(notification);
+        try {
+          // Fetch all admins from API
+          const admins = await getUsersByRole('Admin');
+          const adminNames = admins.map(a => a.name);
+          
+          if (adminNames.length > 0) {
+            const notifications = createWOCreatedNotifications(
+              createdRequest.id,
+              createdRequest.location, // Using location as title
+              currentUser.name,
+              adminNames
+            );
+            
+            // Send notifications to all admins
+            for (const notification of notifications) {
+              await createNotification(notification);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to create notifications for admins:', error);
+        }
       }
 
       // Update UI

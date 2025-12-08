@@ -188,6 +188,7 @@ async def update_workorder(
         "priority": "priority",
         "status": "status",
         "assignedTo": "assigned_to",
+        "managedBy": "managed_by",
         "dueDate": "due_date",
         "imageIds": "image_ids",
         "adminReview": "admin_review",
@@ -201,6 +202,11 @@ async def update_workorder(
             if api_key == "locationData" and value is not None:
                 value = value.dict() if hasattr(value, "dict") else value
             setattr(wo, db_key, value)
+    
+    # Auto-set managedBy when Admin assigns a technician
+    if "assignedTo" in update_data and update_data["assignedTo"] and user_role == "Admin":
+        if not wo.managed_by:  # Only set if not already set
+            wo.managed_by = user_name
 
     db.commit()
     db.refresh(wo)

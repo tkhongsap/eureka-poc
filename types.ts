@@ -30,6 +30,7 @@ export interface User {
   role: string; // Display title
   userRole: UserRole; // System role for permissions
   avatarUrl: string;
+  teamId?: string; // Team ID for technician grouping
 }
 
 export interface PartUsage {
@@ -54,6 +55,7 @@ export interface WorkOrder {
   imageIds?: string[];  // Reference to attached images
   requestId?: string;   // Original request ID if created from request
   createdBy?: string;   // Name of the requester who created this WO
+  managedBy?: string;   // Name of the admin who assigned/manages this WO
   technicianNotes?: string;  // Notes added by technician
   technicianImages?: string[];  // Images added by technician
   adminReview?: string; // Review/approval notes by admin
@@ -127,6 +129,7 @@ export enum NotificationType {
   WO_APPROVED = 'wo_approved',
   WO_REJECTED = 'wo_rejected',
   WO_CLOSED = 'wo_closed',
+  WO_CANCELED = 'wo_canceled',
   WO_REMINDER_7_DAYS = 'wo_reminder_7_days',
   WO_REMINDER_3_DAYS = 'wo_reminder_3_days',
   WO_DUE_7_DAYS = 'wo_due_7_days',

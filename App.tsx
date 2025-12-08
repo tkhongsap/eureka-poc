@@ -254,6 +254,8 @@ const App: React.FC = () => {
           partsUsed: [],
           imageIds: wo.imageIds || [],
           requestId: wo.requestId,
+          createdBy: wo.createdBy,
+          managedBy: wo.managedBy,
           adminReview: wo.adminReview,
           locationData: wo.locationData,
           technicianNotes: wo.technicianNotes,
