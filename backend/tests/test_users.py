@@ -1,4 +1,20 @@
+from datetime import datetime
+
+from config import SESSION_COOKIE_NAME, SESSION_SECRET
 from fastapi.testclient import TestClient
+from itsdangerous import URLSafeTimedSerializer
+
+session_serializer = URLSafeTimedSerializer(SESSION_SECRET)
+
+
+def create_session_token(user_id: str) -> str:
+    """Create a session token for testing authentication"""
+    session_data = {
+        "user_id": user_id,
+        "user_data": {},
+        "created_at": datetime.now().isoformat(),
+    }
+    return session_serializer.dumps(session_data)
 
 
 def test_create_user(client: TestClient):
@@ -113,7 +129,7 @@ def test_get_user_not_found(client: TestClient):
     assert "User not found" in resp.json()["detail"]
 
 
-def test_update_user(client: TestClient):
+def test_update_user(client: TestClient, auth_user: dict):
     """Test updating a user"""
     # Create a user first
     create_resp = client.post(
@@ -132,7 +148,7 @@ def test_update_user(client: TestClient):
     assert create_resp.status_code == 200
     user_id = create_resp.json()["id"]
 
-    # Update the user
+    # Update the user (userRole changes must use /role endpoint)
     update_resp = client.put(
         f"/api/users/{user_id}",
         json={
@@ -141,10 +157,11 @@ def test_update_user(client: TestClient):
             "avatar_url": "new-avatar.jpg",
             "job_title": "New Title",
             "role": "New Display Role",
-            "userRole": "Admin",
             "status": "suspended",
         },
+        cookies=auth_user["cookies"],
     )
+
     assert update_resp.status_code == 200
     data = update_resp.json()
     assert data["name"] == "New Name"
@@ -152,13 +169,13 @@ def test_update_user(client: TestClient):
     assert data["avatar_url"] == "new-avatar.jpg"
     assert data["job_title"] == "New Title"
     assert data["role"] == "New Display Role"
-    assert data["userRole"] == "Admin"
     assert data["status"] == "suspended"
-    # Email should remain unchanged (not in update payload)
+    # Email and userRole should remain unchanged (not in update payload)
     assert data["email"] == "update@example.com"
+    assert data["userRole"] == "Technician"  # Should remain unchanged
 
 
-def test_update_user_partial(client: TestClient):
+def test_update_user_partial(client: TestClient, auth_user: dict):
     """Test updating only some fields of a user"""
     # Create a user
     create_resp = client.post(
@@ -172,11 +189,13 @@ def test_update_user_partial(client: TestClient):
     )
     assert create_resp.status_code == 200
     user_id = create_resp.json()["id"]
+    token = create_session_token(user_id)
 
     # Update only the name
     update_resp = client.put(
         f"/api/users/{user_id}",
         json={"name": "Updated Name Only"},
+        cookies={SESSION_COOKIE_NAME: token},
     )
     assert update_resp.status_code == 200
     data = update_resp.json()
@@ -186,11 +205,12 @@ def test_update_user_partial(client: TestClient):
     assert data["userRole"] == "Technician"
 
 
-def test_update_user_not_found(client: TestClient):
+def test_update_user_not_found(client: TestClient, auth_user: dict):
     """Test updating a non-existent user returns 404"""
     resp = client.put(
         "/api/users/USR-non-existent",
         json={"name": "New Name"},
+        cookies=auth_user["cookies"],
     )
     assert resp.status_code == 404
     assert "User not found" in resp.json()["detail"]
@@ -262,6 +282,7 @@ def test_user_optional_fields(client: TestClient):
     assert data["role"] is None
 
     # Update with optional fields
+    token = create_session_token(user_id)
     update_resp = client.put(
         f"/api/users/{user_id}",
         json={
@@ -271,6 +292,7 @@ def test_user_optional_fields(client: TestClient):
             "job_title": "Developer",
             "role": "Senior Developer",
         },
+        cookies={SESSION_COOKIE_NAME: token},
     )
     assert update_resp.status_code == 200
     updated_data = update_resp.json()
