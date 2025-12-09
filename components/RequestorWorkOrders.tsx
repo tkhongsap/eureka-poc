@@ -84,6 +84,33 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
   // Match by createdBy field which stores the requester's name
   const myWorkOrders = workOrders.filter(wo => wo.createdBy === requestorName);
 
+  // Listen for openWorkOrder event from notification click
+  useEffect(() => {
+    const handleOpenWorkOrder = (event: CustomEvent<string>) => {
+      const workOrderId = event.detail;
+      // Search by both id and requestId
+      const woToOpen = myWorkOrders.find(wo => wo.id === workOrderId || wo.requestId === workOrderId);
+      if (woToOpen) {
+        setSelectedWO(woToOpen);
+      }
+    };
+
+    // Also check sessionStorage on mount
+    const storedWoId = sessionStorage.getItem('openWorkOrderId');
+    if (storedWoId && myWorkOrders.length > 0) {
+      sessionStorage.removeItem('openWorkOrderId');
+      const woToOpen = myWorkOrders.find(wo => wo.id === storedWoId || wo.requestId === storedWoId);
+      if (woToOpen) {
+        setSelectedWO(woToOpen);
+      }
+    }
+
+    window.addEventListener('openWorkOrder', handleOpenWorkOrder as EventListener);
+    return () => {
+      window.removeEventListener('openWorkOrder', handleOpenWorkOrder as EventListener);
+    };
+  }, [myWorkOrders]);
+
   // Calculate permissions for selected work order
   const permissions = selectedWO
     ? getWorkOrderPermissions(selectedWO.status, 'Requester', selectedWO.assignedTo, requestorName)

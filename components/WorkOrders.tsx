@@ -278,17 +278,50 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     fetchRejectHistory();
   }, [selectedWO?.id]);
 
-  // Check if there's a work order to open from navigation (e.g., from Dashboard)
+  // Check if there's a work order to open from navigation (e.g., from Dashboard or Notification)
   useEffect(() => {
-    const openWorkOrderId = sessionStorage.getItem('openWorkOrderId');
-    if (openWorkOrderId) {
-      sessionStorage.removeItem('openWorkOrderId');
-      const woToOpen = workOrders.find(wo => wo.id === openWorkOrderId);
+    const checkAndOpenWorkOrder = () => {
+      const openWorkOrderId = sessionStorage.getItem('openWorkOrderId');
+      if (openWorkOrderId && workOrders.length > 0) {
+        sessionStorage.removeItem('openWorkOrderId');
+        // Search by both id and requestId (notifications may use requestId)
+        const woToOpen = workOrders.find(wo => wo.id === openWorkOrderId || wo.requestId === openWorkOrderId);
+        if (woToOpen) {
+          setSelectedWO(woToOpen);
+          return true;
+        }
+      }
+      return false;
+    };
+    
+    // Check immediately
+    if (!checkAndOpenWorkOrder()) {
+      // If not found immediately, try again after a short delay (data might still be loading)
+      const retryTimeout = setTimeout(() => {
+        checkAndOpenWorkOrder();
+      }, 300);
+      return () => clearTimeout(retryTimeout);
+    }
+  }, [workOrders]);
+
+  // Listen for custom event from notification click (separate useEffect to ensure listener is always active)
+  useEffect(() => {
+    const handleOpenWorkOrder = (event: CustomEvent<string>) => {
+      const workOrderId = event.detail;
+      // Use initialWorkOrders as fallback since workOrders state might not be updated yet
+      const allWOs = workOrders.length > 0 ? workOrders : initialWorkOrders;
+      // Search by both id and requestId (notifications may use requestId)
+      const woToOpen = allWOs.find(wo => wo.id === workOrderId || wo.requestId === workOrderId);
       if (woToOpen) {
         setSelectedWO(woToOpen);
       }
-    }
-  }, [workOrders]);
+    };
+    
+    window.addEventListener('openWorkOrder', handleOpenWorkOrder as EventListener);
+    return () => {
+      window.removeEventListener('openWorkOrder', handleOpenWorkOrder as EventListener);
+    };
+  }, [workOrders, initialWorkOrders]);
 
   // Base technician scoping: technicians only ever see their own jobs
   const scopedWorkOrders = currentUser?.userRole === 'Technician'

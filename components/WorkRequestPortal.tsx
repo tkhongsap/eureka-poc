@@ -154,6 +154,33 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
     }
   }, [showSuccessToast]);
 
+  // Listen for openWorkOrder event from notification click
+  useEffect(() => {
+    const handleOpenWorkOrder = (event: CustomEvent<string>) => {
+      const workOrderId = event.detail;
+      // Find the request that matches this work order ID
+      const matchingRequest = requests.find(r => r.id === workOrderId);
+      if (matchingRequest) {
+        setSelectedRequest(matchingRequest);
+      }
+    };
+
+    // Also check sessionStorage on mount
+    const storedWoId = sessionStorage.getItem('openWorkOrderId');
+    if (storedWoId) {
+      sessionStorage.removeItem('openWorkOrderId');
+      const matchingRequest = requests.find(r => r.id === storedWoId);
+      if (matchingRequest) {
+        setSelectedRequest(matchingRequest);
+      }
+    }
+
+    window.addEventListener('openWorkOrder', handleOpenWorkOrder as EventListener);
+    return () => {
+      window.removeEventListener('openWorkOrder', handleOpenWorkOrder as EventListener);
+    };
+  }, [requests]);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
