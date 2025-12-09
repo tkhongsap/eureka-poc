@@ -34,7 +34,11 @@ class PriorityDistribution(BaseModel):
 
 class WorkOrdersByAssignee(BaseModel):
     name: str
-    count: int
+    count: int  # Total assigned
+    inProgress: int  # Currently working
+    completed: int  # Finished
+    open: int  # Not started yet
+    pending: int  # Waiting for approval
 
 
 class RecentWorkOrder(BaseModel):
