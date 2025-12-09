@@ -1,14 +1,19 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from schemas import UserCreate, User, UserUpdate
+from schemas import UserCreate, User, UserUpdate, RoleUpdateRequest
 from db import get_db
 from db.models import User as UserModel
+from db.models import AuditLog
 from utils import generate_id
+from utils.auth import require_admin, get_current_user
+from utils.workflow_rules import UserRole
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
+
+VALID_ROLES = {role.value for role in UserRole}
 
 
 @router.post("", response_model=User)
@@ -104,8 +109,27 @@ async def get_user(user_id: str, db: Session = Depends(get_db)):
 
 
 @router.put("/{user_id}", response_model=User)
-async def update_user(user_id: str, updates: UserUpdate, db: Session = Depends(get_db)):
-    """Update user"""
+async def update_user(
+    user_id: str,
+    updates: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """Update user profile (role changes use /role endpoint)"""
+
+    # Only allow self-updates unless Admin
+    if user_id != current_user.id and current_user.user_role != "Admin":
+        raise HTTPException(
+            status_code=403, detail="You can only update your own profile"
+        )
+
+    # Route all role changes to the dedicated endpoint
+    if updates.userRole is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="Use PUT /api/users/{user_id}/role to change roles",
+        )
+
     user = db.query(UserModel).filter(UserModel.id == user_id).first()
 
     if not user:
@@ -146,6 +170,57 @@ async def update_user(user_id: str, updates: UserUpdate, db: Session = Depends(g
                 status_code=400, detail="User with this email already exists"
             )
         raise HTTPException(status_code=400, detail="Database integrity error")
+
+    return User.model_validate(user)
+
+
+@router.put("/{user_id}/role", response_model=User)
+async def update_user_role(
+    user_id: str,
+    payload: RoleUpdateRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(require_admin),
+):
+    """Update user's permission role - Admin only"""
+
+    if payload.userRole not in VALID_ROLES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid role. Must be one of: {', '.join(sorted(VALID_ROLES))}",
+        )
+
+    if user_id == current_user.id and payload.userRole != "Admin":
+        raise HTTPException(
+            status_code=400,
+            detail="You cannot demote yourself. Ask another Admin to change your role.",
+        )
+
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    old_role = user.user_role
+    user.user_role = payload.userRole
+
+    audit = AuditLog(
+        id=generate_id("AUD"),
+        action="role_change",
+        actor_id=current_user.id,
+        target_user_id=user_id,
+        old_value=old_role,
+        new_value=payload.userRole,
+        reason=payload.reason,
+        ip_address=request.client.host if request.client else None,
+    )
+    db.add(audit)
+
+    try:
+        db.commit()
+        db.refresh(user)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Failed to update role")
 
     return User.model_validate(user)
 

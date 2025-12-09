@@ -2,7 +2,7 @@ from .request import RequestCreate, RequestItem, RequestUpdate, LocationData
 from .workorder import WorkOrderCreate, WorkOrder, WorkOrderUpdate, TechnicianUpdate
 from .image import ImageInfo
 from .notification import NotificationCreate, Notification
-from .user import User, UserCreate, UserUpdate, UserSettings
+from .user import User, UserCreate, UserUpdate, UserSettings, RoleUpdateRequest
 
 __all__ = [
     "LocationData",
@@ -20,4 +20,5 @@ __all__ = [
     "UserCreate",
     "UserUpdate",
     "UserSettings",
+    "RoleUpdateRequest",
 ]

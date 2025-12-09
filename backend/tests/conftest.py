@@ -1,30 +1,39 @@
 import os
 import shutil
 import tempfile
+from datetime import datetime
 from typing import Generator
 
 import pytest
+from config import SESSION_COOKIE_NAME, SESSION_SECRET
+from db import get_db as real_get_db
+from db.base import Base
 from fastapi.testclient import TestClient
+from itsdangerous import URLSafeTimedSerializer
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from db.base import Base
-from db import get_db as real_get_db
+from main import app
 from utils import PICTURES_DIR
 
-from main import app
+session_serializer = URLSafeTimedSerializer(SESSION_SECRET)
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 # Use StaticPool so all sessions share the same in-memory database connection.
 # Otherwise each connection would see its own empty database, causing "no such table" errors.
+# IMPORTANT: This is an in-memory database that is destroyed when tests complete.
+# It should NEVER write to the real database.
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Verify we're using in-memory database, not the real one
+assert ":memory:" in str(engine.url), "Test database must use in-memory SQLite!"
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -99,14 +108,105 @@ def clean_db(create_test_db):
     cleanup()  # Clean after test
 
 
+def create_session_token(user_id: str) -> str:
+    """Create a session token for testing authentication"""
+    session_data = {
+        "user_id": user_id,
+        "user_data": {},
+        "created_at": datetime.now().isoformat(),
+    }
+    return session_serializer.dumps(session_data)
+
+
+def create_authenticated_user(client, **user_data) -> dict:
+    """
+    Create a user and return user data with session token.
+    Useful for tests that need an authenticated user.
+
+    Args:
+        client: TestClient instance
+        **user_data: User data to override defaults (email, password_hash, name, userRole, etc.)
+
+    Returns:
+        dict with user data and 'token' key containing the session token
+    """
+    default_user = {
+        "email": "auth@example.com",
+        "password_hash": "hash",
+        "name": "Auth User",
+        "userRole": "Admin",
+    }
+    default_user.update(user_data)
+
+    resp = client.post("/api/users", json=default_user)
+    assert resp.status_code == 200
+    user = resp.json()
+    token = create_session_token(user["id"])
+    return {**user, "token": token, "cookies": {SESSION_COOKIE_NAME: token}}
+
+
 @pytest.fixture(scope="session")
 def client(
     create_test_db: None, temp_pictures_dir: str
 ) -> Generator[TestClient, None, None]:
     """
     Provide a TestClient with the test database and temporary pictures directory.
+
+    IMPORTANT: This fixture overrides the database dependency to use an in-memory
+    SQLite database. All tests MUST use this client fixture to ensure they don't
+    write to the real database.
     """
+    # Ensure we're using the test database override
     app.dependency_overrides[real_get_db] = override_get_db
+
+    # Verify the override is in place
+    assert (
+        real_get_db in app.dependency_overrides
+    ), "Database dependency override not set!"
+    assert (
+        app.dependency_overrides[real_get_db] == override_get_db
+    ), "Wrong database override!"
+
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def auth_user(client: TestClient) -> dict:
+    """
+    Create an authenticated user (Admin role by default) and return user data with token.
+
+    Returns:
+        dict with user data and 'token' key containing the session token
+
+    Usage:
+        def test_something(client: TestClient, auth_user: dict):
+            resp = client.get("/api/protected", cookies={SESSION_COOKIE_NAME: auth_user["token"]})
+    """
+
+    return create_authenticated_user(client, userRole="Admin")
+
+
+@pytest.fixture
+def auth_technician(client: TestClient) -> dict:
+    """
+    Create an authenticated user with Technician role and return user data with token.
+
+    Returns:
+        dict with user data and 'token' key containing the session token
+    """
+
+    return create_authenticated_user(client, userRole="Technician")
+
+
+@pytest.fixture
+def auth_head_technician(client: TestClient) -> dict:
+    """
+    Create an authenticated user with Head Technician role and return user data with token.
+
+    Returns:
+        dict with user data and 'token' key containing the session token
+    """
+
+    return create_authenticated_user(client, userRole="Head Technician")

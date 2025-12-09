@@ -4,6 +4,7 @@ from db.models.workorder import WorkOrder
 from db.models.image import Image
 from db.models.notification import Notification
 from db.models.user import User, OAuth, OAuthState
+from db.models.audit import AuditLog
 
 __all__ = [
     "Base",
@@ -14,6 +15,5 @@ __all__ = [
     "User",
     "OAuth",
     "OAuthState",
+    "AuditLog",
 ]
-
-

@@ -50,6 +50,7 @@ const translations = {
     'nav.inventory': 'Inventory',
     'nav.team': 'Team',
     'nav.settings': 'Settings',
+    'nav.userManagement': 'User Management',
     'nav.logout': 'Logout',
     'nav.notifications': 'Notifications',
 
@@ -610,6 +611,7 @@ const translations = {
     'nav.inventory': 'คลังสินค้า',
     'nav.team': 'ทีมงาน',
     'nav.settings': 'ตั้งค่า',
+    'nav.userManagement': 'จัดการสิทธิ์ผู้ใช้',
     'nav.logout': 'ออกจากระบบ',
     'nav.notifications': 'การแจ้งเตือน',
 
@@ -1134,14 +1136,14 @@ export const useLanguage = create<LanguageState>()(
       t: (key: TranslationKeys, params?: Record<string, string>): string => {
         const lang = get().language;
         let text: string = translations[lang][key] || key;
-        
+
         // Replace {param} placeholders with actual values
         if (params) {
           Object.entries(params).forEach(([paramKey, paramValue]) => {
             text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), paramValue || '');
           });
         }
-        
+
         return text;
       }
     }),

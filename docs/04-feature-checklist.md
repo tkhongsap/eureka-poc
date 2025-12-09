@@ -38,7 +38,7 @@
 | Role-based access control (RBAC) | ✅ | Phase 1 - 4 roles: Admin, Head Technician, Technician, Requester |
 | User session management | ✅ | ใช้ sessionStorage |
 | Password reset/change | ❌ | Phase 1 |
-| User management | 🔄 | Phase 1 - มี API แต่ยังไม่มี UI จัดการ |
+| User management | ✅ | Phase 1 |
 | Two-Factor Authentication | ❌ | |
 | Keycloak integration | ❌ | Phase 2 |
 | User profile | ❌ | |
@@ -543,7 +543,7 @@
 | หมวดหมู่ | เสร็จแล้ว | กำลังทำ | ยังไม่ได้ทำ | รวม | % |
 |----------|-----------|---------|-------------|-----|---|
 | Tenant & Site Management | 0 | 0 | 11 | 11 | 0% |
-| Authentication | 5 | 1 | 5 | 11 | 45% |
+| Authentication | 6 | 0 | 5 | 11 | 54% |
 | Work Notifications | 12 | 0 | 2 | 14 | 86% |
 | Work Order Management | 25 | 1 | 20 | 46 | 54% |
 | Technician Features | 3 | 0 | 12 | 15 | 20% |
@@ -566,7 +566,7 @@
 | Dashboard | 10 | 1 | 0 | 11 | 91% |
 | Design System | 11 | 1 | 2 | 14 | 79% |
 | เพิ่มเติมจาก PRD | 12 | 0 | 0 | 12 | 100% |
-| **รวมทั้งหมด** | **95** | **5** | **196** | **296** | **32%** |
+| **รวมทั้งหมด** | **96** | **4** | **196** | **296** | **32%** |
 
 ---
 
