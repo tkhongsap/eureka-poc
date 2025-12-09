@@ -936,23 +936,45 @@ const Dashboard: React.FC = () => {
             onClick={() => setSelectedWorkOrder(null)}
           />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-teal-100 text-xs font-medium">{selectedWorkOrder.id}</p>
-                  <h3 className="text-white text-lg font-semibold mt-0.5">{selectedWorkOrder.title}</h3>
+            {/* Header - color based on status */}
+            {(() => {
+              const statusHeaderColor = {
+                'Open': 'from-blue-500 to-blue-600',
+                'In Progress': 'from-orange-500 to-orange-600',
+                'Pending': 'from-violet-500 to-violet-600',
+                'Completed': 'from-emerald-500 to-emerald-600',
+                'Closed': 'from-stone-500 to-stone-600',
+                'Canceled': 'from-pink-500 to-pink-600',
+              }[selectedWorkOrder.status] || 'from-teal-500 to-teal-600';
+              
+              const statusHeaderTextLight = {
+                'Open': 'text-blue-100',
+                'In Progress': 'text-orange-100',
+                'Pending': 'text-violet-100',
+                'Completed': 'text-emerald-100',
+                'Closed': 'text-stone-200',
+                'Canceled': 'text-pink-100',
+              }[selectedWorkOrder.status] || 'text-teal-100';
+              
+              return (
+                <div className={`bg-gradient-to-r ${statusHeaderColor} px-6 py-4`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`${statusHeaderTextLight} text-xs font-medium`}>{selectedWorkOrder.id}</p>
+                      <h3 className="text-white text-lg font-semibold mt-0.5">{selectedWorkOrder.title}</h3>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedWorkOrder(null)}
+                      className="text-white/80 hover:text-white transition-colors"
+                    >
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-                <button 
-                  onClick={() => setSelectedWorkOrder(null)}
-                  className="text-white/80 hover:text-white transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+              );
+            })()}
             
             {/* Content */}
             <div className="p-6 space-y-4">
@@ -1037,7 +1059,16 @@ const Dashboard: React.FC = () => {
             <div className="px-6 py-4 bg-stone-50 border-t border-stone-100">
               <button
                 onClick={() => setSelectedWorkOrder(null)}
-                className="w-full py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
+                className={`w-full py-2.5 text-white rounded-lg transition-colors font-medium ${
+                  {
+                    'Open': 'bg-blue-600 hover:bg-blue-700',
+                    'In Progress': 'bg-orange-600 hover:bg-orange-700',
+                    'Pending': 'bg-violet-600 hover:bg-violet-700',
+                    'Completed': 'bg-emerald-600 hover:bg-emerald-700',
+                    'Closed': 'bg-stone-600 hover:bg-stone-700',
+                    'Canceled': 'bg-pink-600 hover:bg-pink-700',
+                  }[selectedWorkOrder.status] || 'bg-teal-600 hover:bg-teal-700'
+                }`}
               >
                 {language === 'th' ? 'ปิด' : 'Close'}
               </button>
