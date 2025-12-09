@@ -306,9 +306,13 @@ async def check_and_create_reminders(db: Session = Depends(get_db)):
             due_date = datetime.strptime(wo.due_date, "%Y-%m-%d").date()
             days_until_due = (due_date - today).days
             formatted_due = due_date.strftime("%d/%m/%Y")
+            
+            # Get the date WO was created
+            wo_created_date = wo.created_at.date() if wo.created_at else None
 
             # Check for 7-day due date reminder
-            if days_until_due == 7:
+            # Skip if WO was just created today (to avoid duplicate with WO_ASSIGNED notification)
+            if days_until_due == 7 and wo_created_date != today:
                 existing = (
                     db.query(NotificationModel)
                     .filter(
