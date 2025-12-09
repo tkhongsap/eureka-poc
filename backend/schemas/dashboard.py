@@ -58,6 +58,11 @@ class Alert(BaseModel):
     priority: str
     createdAt: str
     assignedTo: Optional[str]
+    dueDate: Optional[str]
+    daysOverdue: Optional[int]
+    createdBy: Optional[str]
+    status: Optional[str]
+    description: Optional[str]
 
 
 class DashboardStats(BaseModel):

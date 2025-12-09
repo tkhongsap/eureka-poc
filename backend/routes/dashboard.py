@@ -229,6 +229,15 @@ async def get_dashboard_stats(
         .all()
     )
     for wo in overdue_wos:
+        # Calculate days overdue
+        days_overdue = 0
+        if wo.due_date:
+            try:
+                due = datetime.strptime(wo.due_date, "%Y-%m-%d").date()
+                days_overdue = (today - due).days
+            except:
+                pass
+        
         alerts.append(
             Alert(
                 id=alert_id,
@@ -239,6 +248,11 @@ async def get_dashboard_stats(
                 priority=wo.priority or "Medium",
                 createdAt=wo.created_at.isoformat() if wo.created_at else "",
                 assignedTo=wo.assigned_to,
+                dueDate=wo.due_date,
+                daysOverdue=days_overdue,
+                createdBy=wo.created_by,
+                status=wo.status,
+                description=wo.description,
             )
         )
         alert_id += 1
@@ -265,6 +279,11 @@ async def get_dashboard_stats(
                 priority=wo.priority or "High",
                 createdAt=wo.created_at.isoformat() if wo.created_at else "",
                 assignedTo=wo.assigned_to,
+                dueDate=wo.due_date,
+                daysOverdue=None,
+                createdBy=wo.created_by,
+                status=wo.status,
+                description=wo.description,
             )
         )
         alert_id += 1

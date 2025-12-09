@@ -88,6 +88,11 @@ interface Alert {
   priority: string;
   createdAt: string;
   assignedTo: string | null;
+  dueDate: string | null;
+  daysOverdue: number | null;
+  createdBy: string | null;
+  status: string | null;
+  description: string | null;
 }
 
 interface DashboardStatsAPI {
@@ -1085,6 +1090,14 @@ const Dashboard: React.FC = () => {
             
             {/* Content */}
             <div className="p-6 space-y-4">
+              {/* Days Overdue Banner */}
+              {selectedAlert.type === 'overdue' && selectedAlert.daysOverdue && selectedAlert.daysOverdue > 0 && (
+                <div className="bg-red-600 text-white p-4 rounded-xl text-center">
+                  <p className="text-3xl font-bold">{selectedAlert.daysOverdue}</p>
+                  <p className="text-sm opacity-90">{language === 'th' ? 'วันที่เลยกำหนด' : 'Days Overdue'}</p>
+                </div>
+              )}
+              
               <div className={`p-4 rounded-xl border ${
                 selectedAlert.type === 'overdue' 
                   ? 'bg-red-50 border-red-200' 
@@ -1097,6 +1110,14 @@ const Dashboard: React.FC = () => {
                 </p>
               </div>
               
+              {/* Description */}
+              {selectedAlert.description && (
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'รายละเอียดงาน' : 'Description'}</p>
+                  <p className="text-sm text-stone-700">{selectedAlert.description}</p>
+                </div>
+              )}
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-stone-50 p-3 rounded-xl">
                   <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'รหัสใบงาน' : 'Work Order ID'}</p>
@@ -1104,6 +1125,24 @@ const Dashboard: React.FC = () => {
                     {selectedAlert.workOrderId || '-'}
                   </p>
                 </div>
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'สถานะ' : 'Status'}</p>
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                    {
+                      'Open': 'bg-blue-100 text-blue-700',
+                      'In Progress': 'bg-orange-100 text-orange-700',
+                      'Pending': 'bg-violet-100 text-violet-700',
+                      'Completed': 'bg-emerald-100 text-emerald-700',
+                      'Closed': 'bg-stone-200 text-stone-700',
+                      'Canceled': 'bg-pink-100 text-pink-700',
+                    }[selectedAlert.status || ''] || 'bg-stone-100 text-stone-700'
+                  }`}>
+                    {selectedAlert.status || '-'}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div className="bg-stone-50 p-3 rounded-xl">
                   <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ความสำคัญ' : 'Priority'}</p>
                   <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
@@ -1117,17 +1156,32 @@ const Dashboard: React.FC = () => {
                     {selectedAlert.priority}
                   </span>
                 </div>
-              </div>
-              
-              {selectedAlert.assignedTo && (
                 <div className="bg-stone-50 p-3 rounded-xl">
-                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ผู้รับผิดชอบ' : 'Assigned To'}</p>
-                  <p className="text-sm font-medium text-stone-800 flex items-center gap-2">
-                    <Users size={16} className="text-stone-400" />
-                    {selectedAlert.assignedTo}
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'กำหนดเสร็จ' : 'Due Date'}</p>
+                  <p className={`text-sm font-medium ${
+                    selectedAlert.type === 'overdue' ? 'text-red-600' : 'text-stone-800'
+                  }`}>
+                    {selectedAlert.dueDate || '-'}
                   </p>
                 </div>
-              )}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {selectedAlert.createdBy && (
+                  <div className="bg-stone-50 p-3 rounded-xl">
+                    <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ผู้แจ้งงาน' : 'Requested By'}</p>
+                    <p className="text-sm font-medium text-stone-800">{selectedAlert.createdBy}</p>
+                  </div>
+                )}
+                
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ช่างผู้รับผิดชอบ' : 'Assigned Technician'}</p>
+                  <p className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                    <Users size={16} className="text-stone-400" />
+                    {selectedAlert.assignedTo || (language === 'th' ? 'ยังไม่ได้มอบหมาย' : 'Not Assigned')}
+                  </p>
+                </div>
+              </div>
             </div>
             
             {/* Footer */}
