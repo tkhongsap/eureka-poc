@@ -23,12 +23,17 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 # Use StaticPool so all sessions share the same in-memory database connection.
 # Otherwise each connection would see its own empty database, causing "no such table" errors.
+# IMPORTANT: This is an in-memory database that is destroyed when tests complete.
+# It should NEVER write to the real database.
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Verify we're using in-memory database, not the real one
+assert ":memory:" in str(engine.url), "Test database must use in-memory SQLite!"
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -146,8 +151,22 @@ def client(
 ) -> Generator[TestClient, None, None]:
     """
     Provide a TestClient with the test database and temporary pictures directory.
+
+    IMPORTANT: This fixture overrides the database dependency to use an in-memory
+    SQLite database. All tests MUST use this client fixture to ensure they don't
+    write to the real database.
     """
+    # Ensure we're using the test database override
     app.dependency_overrides[real_get_db] = override_get_db
+
+    # Verify the override is in place
+    assert (
+        real_get_db in app.dependency_overrides
+    ), "Database dependency override not set!"
+    assert (
+        app.dependency_overrides[real_get_db] == override_get_db
+    ), "Wrong database override!"
+
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
