@@ -83,7 +83,7 @@ const TeamSchedule: React.FC = () => {
                         <div className="flex justify-between items-start mb-4">
                             <div className="w-16 h-16 rounded-xl bg-stone-100 p-1 border border-stone-100 flex items-center justify-center overflow-hidden">
                                 {member.avatarUrl ? (
-                                    <img src={member.avatarUrl} alt={member.name} className="w-full h-full object-cover rounded-lg" />
+                                    <img src={member.avatarUrl} alt={member.name} className="w-full h-full object-cover rounded-lg" referrerPolicy="no-referrer" />
                                 ) : (
                                     <UserCircle size={60} className="text-stone-400" />
                                 )}

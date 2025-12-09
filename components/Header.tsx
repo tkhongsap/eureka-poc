@@ -11,9 +11,9 @@ interface HeaderProps {
   onNotificationsUpdate?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificationsUpdate = () => {} }) => {
+const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificationsUpdate = () => { } }) => {
   const { t } = useLanguage();
-  
+
   return (
     <header className="h-16 bg-white/80 backdrop-blur-md border-b border-stone-200/60 flex items-center justify-between px-6 fixed top-0 right-0 left-64 z-[9]">
       {/* Search */}
@@ -39,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificatio
         </div>
 
         {/* Notifications */}
-        <NotificationCenter 
+        <NotificationCenter
           notifications={notifications}
           onNotificationsUpdate={onNotificationsUpdate}
         />
@@ -50,8 +50,17 @@ const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificatio
             <div className="text-base font-semibold text-stone-800">{user.name}</div>
             <div className="text-sm text-stone-500">{user.role}</div>
           </div>
-          <div className="h-10 w-10 bg-stone-200 rounded-xl flex items-center justify-center border-2 border-white shadow-md">
-            <UserCircle size={40} className="text-stone-400" />
+          <div className="h-10 w-10 bg-stone-200 rounded-xl flex items-center justify-center border-2 border-white shadow-md overflow-hidden">
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name}
+                className="h-full w-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <UserCircle size={40} className="text-stone-400" />
+            )}
           </div>
         </div>
       </div>
