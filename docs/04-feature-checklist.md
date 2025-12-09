@@ -33,7 +33,7 @@
 
 | Feature | สถานะ | หมายเหตุ |
 |---------|-------|----------|
-| PASETO/JWT authentication | ✅ | Phase 1 - ใช้ JWT + Authlib |
+| PASETO/JWT authentication | ✅ | Phase 1 - ใช้ JWT + Authlib + Google OAuth |
 | User login/logout | ✅ | Phase 1 |
 | Role-based access control (RBAC) | ✅ | Phase 1 - 4 roles: Admin, Head Technician, Technician, Requester |
 | User session management | ✅ | ใช้ sessionStorage |
@@ -41,8 +41,8 @@
 | User management | ✅ | Phase 1 |
 | Two-Factor Authentication | ❌ | |
 | Keycloak integration | ❌ | Phase 2 |
-| User profile | ❌ | |
-| User preferences | ❌ | |
+| User profile | 🔄 | Settings.tsx มี placeholder สำหรับ Profile |
+| User preferences | 🔄 | Settings.tsx มี Language switcher ทำงานแล้ว, Theme/Notifications เป็น placeholder |
 | Team structure (teamId) | ✅ | เพิ่มเติม - Technician → Head Technician routing |
 
 ---
@@ -218,25 +218,25 @@
 
 | Feature | สถานะ | หมายเหตุ |
 |---------|-------|----------|
-| Asset hierarchy (tree view) | ❌ | Phase 1 - มี component เบื้องต้น |
+| Asset hierarchy (tree view) | 🔄 | มี AssetHierarchy.tsx - UI only, ใช้ mock data, ยังไม่มี backend |
 | Functional locations | ❌ | Phase 1 |
 | Equipment list with filters | ❌ | Phase 1 |
-| Asset register | ❌ | Phase 1 |
-| Critical assets | ❌ | Phase 1 |
+| Asset register | ❌ | Phase 1 - ยังไม่มี database model |
+| Critical assets | 🔄 | มี criticality field ใน mock data |
 | Downtime tracking | ❌ | Phase 1 |
 | Meter readings | ❌ | Phase 1 |
 | Warranties tracking | ❌ | Phase 1 |
 | Asset map (GIS view) | ❌ | Phase 1 |
 | QR code scanning | ❌ | Phase 1 |
-| Asset CRUD operations | ❌ | Phase 1 |
-| Asset classifications & criticality | ❌ | |
+| Asset CRUD operations | ❌ | Phase 1 - ไม่มี backend routes |
+| Asset classifications & criticality | 🔄 | มีใน mock data (High/Medium/Low) |
 | Technical specifications | ❌ | |
 | Manuals/drawings attachment | ❌ | |
 | Bill of Materials (BOM) | ❌ | |
 | TCO calculation | ❌ | |
 | Asset performance dashboards | ❌ | |
 | Log asset downtime | ❌ | |
-| Asset condition/status update | ❌ | |
+| Asset condition/status update | 🔄 | มี status field (Operational/Maintenance/Downtime) ใน mock |
 
 ---
 
@@ -244,17 +244,17 @@
 
 | Feature | สถานะ | หมายเหตุ |
 |---------|-------|----------|
-| Parts catalog | ❌ | Phase 1 - มี UI เบื้องต้น |
-| Stock levels | ❌ | Phase 1 |
-| Reorder alerts (ROP) | ❌ | Phase 1 |
+| Parts catalog | 🔄 | มี Inventory.tsx - UI only, ใช้ mock data, ยังไม่มี backend |
+| Stock levels | 🔄 | แสดงใน UI (quantity/minLevel) แต่ไม่มี backend |
+| Reorder alerts (ROP) | 🔄 | มี low stock indicator ใน UI |
 | Transactions (issue/receive) | ❌ | Phase 1 |
 | Reservations for WOs | ❌ | Phase 1 |
 | Cycle counts | ❌ | Phase 1 |
 | Purchase requests | ❌ | Phase 1 |
 | Suppliers directory | ❌ | Phase 1 |
 | Stock transfers | ❌ | Phase 1 |
-| Multi-warehouse support | ❌ | Phase 1 |
-| Bin location tracking | ❌ | Phase 1 |
+| Multi-warehouse support | 🔄 | มี location field ใน mock (WH-A-01, etc.) |
+| Bin location tracking | 🔄 | มี location field ใน mock |
 | Goods receipts | ❌ | |
 | Stock adjustments | ❌ | |
 | Parts images/specifications | ❌ | |
@@ -262,6 +262,7 @@
 | Barcode/QR/RFID scanning | ❌ | |
 | Link spare parts to BOMs | ❌ | |
 | Part usage history | ❌ | |
+| AI Stock Analysis | ✅ | เพิ่มเติม - Gemini AI วิเคราะห์ inventory |
 
 ---
 
@@ -284,13 +285,13 @@
 
 | Feature | สถานะ | หมายเหตุ |
 |---------|-------|----------|
-| Technician directory | ❌ | Phase 2 |
+| Technician directory | 🔄 | มี TeamSchedule.tsx - แสดง users จาก API (ไม่รวม Requester) |
 | Skills matrix (skills & certifications) | ❌ | Phase 2 |
-| Shift schedules (calendar view) | ❌ | Phase 2 - มี TeamSchedule UI |
+| Shift schedules (calendar view) | ❌ | Phase 2 - มี TeamSchedule UI แต่ยังไม่มี calendar |
 | Workload planning | ❌ | Phase 2 |
 | Time tracking | ❌ | Phase 2 |
 | Contractors management | ❌ | Phase 2 |
-| Availability (leave/absences) | ❌ | Phase 2 |
+| Availability (leave/absences) | 🔄 | มี status field (Available/Busy/Off-Shift/On-Leave) |
 | Proficiency levels | ❌ | |
 | Shift rotation cycles | ❌ | |
 | Company holidays | ❌ | |
@@ -321,7 +322,7 @@
 | LOTO procedures | ❌ | Phase 2 |
 | Safety checklists | ❌ | Phase 2 |
 | Incident reports | ❌ | Phase 2 |
-| Audit trail | ❌ | Phase 2 |
+| Audit trail | 🔄 | มี AuditLog model ใน backend แต่ยังไม่มี UI |
 | Compliance reports (ISO/FDA/OSHA) | ❌ | Phase 2 |
 | Safety incident investigation | ❌ | |
 | Near-miss tracking | ❌ | |
@@ -372,7 +373,7 @@
 
 | Feature | สถานะ | หมายเหตุ |
 |---------|-------|----------|
-| GPS coordinates capture | 🔄 | Phase 1 - มี LocationPicker |
+| GPS coordinates capture | ✅ | Phase 1 - LocationPicker ใช้ Geolocation API |
 | Map integration | ✅ | Phase 1 - ใช้ Leaflet |
 | Location picker | ✅ | Phase 1 |
 | Technician location tracking | ❌ | Phase 1 |
@@ -413,8 +414,8 @@
 | Feature | สถานะ | หมายเหตุ |
 |---------|-------|----------|
 | Logo (clickable to dashboard) | ✅ | Eureka CMMS logo |
-| Tenant selector | ❌ | Single tenant ปัจจุบัน |
-| Global search (Cmd/Ctrl + K) | ❌ | Phase 1 |
+| Tenant selector | 🔄 | มี Site Switcher UI ใน Header แต่ยังไม่ทำงาน (hardcoded "Plant A") |
+| Global search (Cmd/Ctrl + K) | 🔄 | มี Search bar ใน Header แต่ยังไม่ทำงานจริง |
 | Recent searches dropdown | ❌ | |
 | Quick filters by type | ❌ | |
 | Quick actions (create new) | ❌ | Phase 1 |
@@ -422,7 +423,7 @@
 | Unread count badge | ✅ | |
 | Mark all as read | ✅ | มี API และ UI แล้ว |
 | User menu dropdown | ✅ | |
-| User avatar with status | ❌ | |
+| User avatar with status | ✅ | แสดง avatar ใน Header (รองรับ Google avatar) |
 | Theme toggle (light/dark) | ❌ | |
 | Language selector | ✅ | TH/EN switcher |
 
@@ -437,19 +438,19 @@
 | 🏠 Dashboard menu | ✅ | Admin only |
 | 📋 Work Orders menu | ✅ | List view |
 | 📢 Work Notifications menu | ✅ | เรียกว่า "Requests" |
-| 🏭 Assets menu | ✅ | placeholder |
-| 📦 Inventory menu | ✅ | placeholder |
+| 🏭 Assets menu | 🔄 | มีเมนูแล้ว แต่ยังใช้ mock data, ไม่มี backend |
+| 📦 Inventory menu | ✅ | มีแล้ว |
 | 🔧 Preventive Maintenance menu | ❌ | Phase 2 |
 | 👥 Workforce menu | ✅ | "Team Schedule" - UI only |
-| 📊 Reports & Analytics menu | ❌ | |
+| 📊 Reports & Analytics menu | 🔄 | มี Reports.tsx - บาง report ใช้ได้, ส่วนใหญ่ยังเป็น Coming Soon |
 | 🏢 EOC menu | ❌ | Phase 2 |
 | 🏪 Spare Part Center menu | ❌ | Phase 2 |
 | 🔒 Safety & Compliance menu | ❌ | Phase 2 |
-| ⚙️ Settings menu | ❌ | |
-| ❓ Help & Support menu | ❌ | |
-| Keyboard shortcuts (Cmd+B toggle) | ❌ | |
-| Breadcrumb navigation | ❌ | |
-| Mobile slide-out drawer | ❌ | |
+| ⚙️ Settings menu | 🔄 | มี Settings.tsx - Language ใช้ได้, Theme/Profile ยังเป็น placeholder |
+| ❓ Help & Support menu | 🔄 | มี Help.tsx - บาง section ยังเป็น Coming Soon |
+| Keyboard shortcuts (Cmd+B toggle) | ✅ | มีใน App.tsx - Ctrl+B / Cmd+B toggle sidebar |
+| Breadcrumb navigation | ✅ | มี Breadcrumb.tsx - แสดง path navigation |
+| Mobile slide-out drawer | ❌ | รอทำ responsive mobile |
 
 ---
 
@@ -489,7 +490,7 @@
 | Empty states | ✅ | EmptyState |
 | Toast notifications | ✅ | |
 | Modal dialogs | ✅ | |
-| Responsive design | ✅ | Desktop/tablet |
+| Responsive design | 🔄 | Desktop/tablet รองรับ, mobile ยังไม่สมบูรณ์ |
 
 ---
 
@@ -550,30 +551,30 @@
 | หมวดหมู่ | เสร็จแล้ว | กำลังทำ | ยังไม่ได้ทำ | รวม | % |
 |----------|-----------|---------|-------------|-----|---|
 | Tenant & Site Management | 0 | 0 | 11 | 11 | 0% |
-| Authentication | 6 | 0 | 5 | 11 | 54% |
+| Authentication | 6 | 2 | 3 | 11 | 54% |
 | Work Notifications | 12 | 0 | 2 | 14 | 86% |
 | Work Order Management | 25 | 1 | 20 | 46 | 54% |
 | Technician Features | 3 | 0 | 12 | 15 | 20% |
 | Preventive Maintenance | 0 | 0 | 10 | 10 | 0% |
 | Route-Based Maintenance | 0 | 0 | 8 | 8 | 0% |
 | Predictive Maintenance | 0 | 0 | 8 | 8 | 0% |
-| Asset Management | 0 | 0 | 19 | 19 | 0% |
-| Inventory Management | 0 | 0 | 18 | 18 | 0% |
+| Asset Management | 0 | 4 | 15 | 19 | 11% |
+| Inventory Management | 1 | 5 | 13 | 19 | 5% |
 | Spare Part Center | 0 | 0 | 8 | 8 | 0% |
-| Workforce Management | 0 | 0 | 11 | 11 | 0% |
+| Workforce Management | 0 | 2 | 9 | 11 | 9% |
 | EOC | 0 | 0 | 8 | 8 | 0% |
-| Safety & Compliance | 0 | 0 | 9 | 9 | 0% |
+| Safety & Compliance | 0 | 1 | 8 | 9 | 6% |
 | Reports & Analytics | 0 | 1 | 12 | 13 | 4% |
 | Mobile PWA | 0 | 0 | 12 | 12 | 0% |
-| Location Services | 2 | 1 | 3 | 6 | 33% |
+| Location Services | 3 | 0 | 3 | 6 | 50% |
 | Native Mobile App | 0 | 0 | 5 | 5 | 0% |
 | Integrations | 0 | 0 | 6 | 6 | 0% |
-| Top Navigation | 6 | 0 | 7 | 13 | 46% |
-| Sidebar | 9 | 0 | 10 | 19 | 47% |
+| Top Navigation | 7 | 2 | 4 | 13 | 54% |
+| Sidebar | 10 | 4 | 5 | 19 | 53% |
 | Dashboard | 10 | 1 | 0 | 11 | 91% |
-| Design System | 11 | 1 | 2 | 14 | 79% |
+| Design System | 11 | 2 | 1 | 14 | 79% |
 | เพิ่มเติมจาก PRD | 19 | 0 | 0 | 19 | 100% |
-| **รวมทั้งหมด** | **103** | **4** | **196** | **303** | **34%** |
+| **รวมทั้งหมด** | **107** | **21** | **177** | **305** | **35%** |
 
 ---
 

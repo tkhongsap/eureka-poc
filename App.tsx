@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import Breadcrumb from './components/Breadcrumb';
 import Dashboard from './components/Dashboard';
 import WorkOrders from './components/WorkOrders';
 import WorkRequestPortal from './components/WorkRequestPortal';
@@ -11,6 +12,8 @@ import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
 import NotificationCenter from './components/NotificationCenter';
 import Settings from './components/Settings';
+import Help from './components/Help';
+import Reports from './components/Reports';
 import UserRoleManagement from './components/UserRoleManagement';
 import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
 import { UserCircle2 } from 'lucide-react';
@@ -488,6 +491,10 @@ const App: React.FC = () => {
         );
       case 'settings':
         return <Settings />;
+      case 'help':
+        return <Help />;
+      case 'reports':
+        return <Reports />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full text-slate-400">
@@ -529,6 +536,11 @@ const App: React.FC = () => {
         />
 
         <main className="flex-1 pt-16 overflow-y-auto scroll-smooth relative">
+          <Breadcrumb
+            currentView={currentView}
+            onNavigate={setCurrentView}
+            userRole={currentUser.userRole}
+          />
           {renderContent()}
         </main>
       </div>

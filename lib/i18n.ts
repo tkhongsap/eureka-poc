@@ -53,7 +53,9 @@ const translations = {
     'nav.team': 'Team',
     'nav.settings': 'Settings',
     'nav.userManagement': 'User Management',
+    'nav.reports': 'Reports',
     'nav.logout': 'Logout',
+    'nav.help': 'Help & Support',
     'nav.notifications': 'Notifications',
 
     // ============== Login ==============
@@ -631,7 +633,9 @@ const translations = {
     'nav.team': 'ทีมงาน',
     'nav.settings': 'ตั้งค่า',
     'nav.userManagement': 'จัดการสิทธิ์ผู้ใช้',
+    'nav.reports': 'รายงาน',
     'nav.logout': 'ออกจากระบบ',
+    'nav.help': 'ช่วยเหลือ',
     'nav.notifications': 'การแจ้งเตือน',
 
     // ============== Login ==============
