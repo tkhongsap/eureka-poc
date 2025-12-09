@@ -325,6 +325,20 @@ const App: React.FC = () => {
     }
   }, [currentUser]);
 
+  // Keyboard shortcut: Ctrl+B / Cmd+B to toggle sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl+B (Windows/Linux) or Cmd+B (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault(); // Prevent browser default (e.g., bold in text editor)
+        setSidebarCollapsed(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Handler to add new work order from request
   const handleNewRequest = async (request: {
     id: string;

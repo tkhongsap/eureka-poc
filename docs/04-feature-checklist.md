@@ -535,6 +535,13 @@
 | Reject history | ✅ | แสดงประวัติการ reject งานใน WO detail |
 | WO Canceled notification | ✅ | แจ้งเตือน Requester เมื่อ Admin ยกเลิก WO |
 | Due date reminder skip | ✅ | ไม่ส่ง WO_DUE_7_DAYS ถ้า WO เพิ่งสร้างวันเดียวกัน |
+| Status-colored WO cards | ✅ | Recent WO cards ใน Dashboard มีสีตาม status |
+| Status-colored WO popup | ✅ | WO detail popup header สีตาม status |
+| Enhanced Alert popup | ✅ | แสดง days overdue, description, status, createdBy, assignedTo |
+| Navigate to WO from popup | ✅ | กดปุ่มใน popup เพื่อไปหน้า Work Orders และเปิด WO detail |
+| Navigate to WO from notification | ✅ | กด notification แล้วเปิด WO detail panel ทันที (ทุก role) |
+| Work Orders by Technician detail | ✅ | แสดง In Progress, Completed, Open, Pending ของแต่ละช่าง |
+| Request page authentication | ✅ | /request ต้อง login ก่อนเข้าถึง |
 
 ---
 
@@ -565,8 +572,8 @@
 | Sidebar | 9 | 0 | 10 | 19 | 47% |
 | Dashboard | 10 | 1 | 0 | 11 | 91% |
 | Design System | 11 | 1 | 2 | 14 | 79% |
-| เพิ่มเติมจาก PRD | 12 | 0 | 0 | 12 | 100% |
-| **รวมทั้งหมด** | **96** | **4** | **196** | **296** | **32%** |
+| เพิ่มเติมจาก PRD | 19 | 0 | 0 | 19 | 100% |
+| **รวมทั้งหมด** | **103** | **4** | **196** | **303** | **34%** |
 
 ---
 
