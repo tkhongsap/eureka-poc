@@ -9,9 +9,10 @@ interface HeaderProps {
   user: User;
   notifications?: Notification[];
   onNotificationsUpdate?: () => void;
+  onNavigateToWorkOrder?: (workOrderId: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificationsUpdate = () => { } }) => {
+const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificationsUpdate = () => { }, onNavigateToWorkOrder }) => {
   const { t } = useLanguage();
 
   return (
@@ -42,6 +43,7 @@ const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificatio
         <NotificationCenter
           notifications={notifications}
           onNotificationsUpdate={onNotificationsUpdate}
+          onNavigateToWorkOrder={onNavigateToWorkOrder}
         />
 
         {/* User Profile */}

@@ -433,8 +433,11 @@ const App: React.FC = () => {
       case 'dashboard':
         return <Dashboard onNavigateToWorkOrder={(woId) => {
           setCurrentView('work-orders');
-          // Store the WO ID to open in sessionStorage so WorkOrders can pick it up
           sessionStorage.setItem('openWorkOrderId', woId);
+          // Dispatch event after delay to allow WorkOrders to mount
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('openWorkOrder', { detail: woId }));
+          }, 300);
         }} />;
       case 'work-orders':
         return <WorkOrders workOrders={workOrders} currentUser={currentUser} technicians={TECHNICIANS} />;
@@ -478,6 +481,13 @@ const App: React.FC = () => {
             <NotificationCenter
               notifications={notifications}
               onNotificationsUpdate={loadNotifications}
+              onNavigateToWorkOrder={(woId) => {
+                // For Requester, they can only view their own work orders in the portal
+                // We can scroll to or highlight their WO
+                sessionStorage.setItem('openWorkOrderId', woId);
+                // Force re-render of the portal
+                window.dispatchEvent(new CustomEvent('openWorkOrder', { detail: woId }));
+              }}
             />
             <LanguageSwitcher variant="minimal" />
             <button
@@ -521,6 +531,14 @@ const App: React.FC = () => {
           user={currentUser}
           notifications={notifications}
           onNotificationsUpdate={loadNotifications}
+          onNavigateToWorkOrder={(woId) => {
+            setCurrentView('work-orders');
+            sessionStorage.setItem('openWorkOrderId', woId);
+            // Dispatch event after delay to allow WorkOrders to mount
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('openWorkOrder', { detail: woId }));
+            }, 300);
+          }}
         />
 
         <main className="flex-1 pt-16 overflow-y-auto scroll-smooth relative">

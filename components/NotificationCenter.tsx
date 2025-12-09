@@ -8,6 +8,7 @@ import { useLanguage } from '../lib/i18n';
 interface NotificationCenterProps {
   notifications: Notification[];
   onNotificationsUpdate: () => void;
+  onNavigateToWorkOrder?: (workOrderId: string) => void;
 }
 
 /**
@@ -90,7 +91,8 @@ const getTranslatedMessage = (
 
 const NotificationCenter: React.FC<NotificationCenterProps> = ({ 
   notifications, 
-  onNotificationsUpdate 
+  onNotificationsUpdate,
+  onNavigateToWorkOrder
 }) => {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
@@ -311,6 +313,22 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                         !notification.isRead ? 'bg-blue-50/40' : ''
                       }`}
                       style={{ animationDelay: `${index * 50}ms` }}
+                      onClick={async () => {
+                        // Mark as read if not already
+                        if (!notification.isRead) {
+                          try {
+                            await markNotificationAsRead(notification.id);
+                            onNotificationsUpdate();
+                          } catch (error) {
+                            console.error('Failed to mark as read:', error);
+                          }
+                        }
+                        // Navigate to work order
+                        if (onNavigateToWorkOrder && notification.workOrderId) {
+                          onNavigateToWorkOrder(notification.workOrderId);
+                          setIsOpen(false);
+                        }
+                      }}
                     >
                       <div className="flex gap-3">
                         {/* Icon */}
