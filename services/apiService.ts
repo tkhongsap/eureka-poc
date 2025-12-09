@@ -418,22 +418,47 @@ export interface UserItem {
   userRole: string;
   status: string;
   createdAt: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
+// Normalize backend user payload (snake_case) to frontend UserItem
+const mapUser = (u: any): UserItem => ({
+  id: u.id,
+  email: u.email,
+  name: u.name,
+  phone: u.phone ?? u.phone_number,
+  avatarUrl: u.avatar_url ?? u.avatarUrl,
+  employeeId: u.employee_id ?? u.employeeId,
+  jobTitle: u.job_title ?? u.jobTitle,
+  role: u.role,
+  userRole: u.userRole ?? u.user_role ?? u.role,
+  status: u.status,
+  createdAt: u.created_at ?? u.createdAt,
+  updatedAt: u.updated_at ?? u.updatedAt,
+  lastLoginAt: u.last_login_at ?? u.lastLoginAt,
+  firstName: u.first_name ?? u.firstName,
+  lastName: u.last_name ?? u.lastName,
+});
+
 export const listUsers = async (userRole?: string): Promise<UserItem[]> => {
-  const url = userRole 
+  const url = userRole
     ? `${API_BASE_URL}/users/by-role/${encodeURIComponent(userRole)}`
     : `${API_BASE_URL}/users`;
-    
+
   const response = await fetch(url, {
     headers: getAuthHeaders(),
+    credentials: 'include',
   });
 
   if (!response.ok) {
     throw new Error('Failed to fetch users');
   }
 
-  return response.json();
+  const users = await response.json();
+  return users.map(mapUser);
 };
 
 export const getUsersByRole = async (userRole: string): Promise<UserItem[]> => {
@@ -452,7 +477,7 @@ export const getTeamHeadTechnician = async (teamId: string): Promise<UserItem> =
     throw new Error('Failed to fetch team head technician');
   }
 
-  return response.json();
+  return mapUser(await response.json());
 };
 
 export const getTeamMembers = async (teamId: string): Promise<UserItem[]> => {
@@ -464,7 +489,182 @@ export const getTeamMembers = async (teamId: string): Promise<UserItem[]> => {
     throw new Error('Failed to fetch team members');
   }
 
-  return response.json();
+  const users = await response.json();
+  return users.map(mapUser);
+};
+
+export interface CreateUserData {
+  email?: string;
+  passwordHash?: string;
+  name: string;
+  phone?: string;
+  avatarUrl?: string;
+  employeeId?: string;
+  jobTitle?: string;
+  role?: string; // Display role
+  userRole: string; // System role for permissions
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface UpdateUserData {
+  email?: string;
+  passwordHash?: string;
+  name?: string;
+  phone?: string;
+  avatarUrl?: string;
+  employeeId?: string;
+  jobTitle?: string;
+  role?: string; // Display role
+  status?: string;
+}
+
+export interface AuditLogItem {
+  id: string;
+  action: string;
+  actorId: string;
+  targetUserId?: string;
+  oldValue?: string;
+  newValue?: string;
+  reason?: string;
+  ipAddress?: string;
+  createdAt?: string;
+}
+
+
+
+export const getUser = async (userId: string): Promise<UserItem> => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch user');
+  }
+
+  const u = await response.json();
+  return mapUser(u);
+};
+
+export const createUser = async (data: CreateUserData): Promise<UserItem> => {
+  // Map frontend field names to backend field names
+  const payload: any = {
+    name: data.name,
+    userRole: data.userRole,
+  };
+
+  if (data.email) payload.email = data.email;
+  if (data.passwordHash) payload.password_hash = data.passwordHash;
+  if (data.phone) payload.phone = data.phone;
+  if (data.avatarUrl) payload.avatar_url = data.avatarUrl;
+  if (data.employeeId) payload.employee_id = data.employeeId;
+  if (data.jobTitle) payload.job_title = data.jobTitle;
+  if (data.role) payload.role = data.role;
+  if (data.firstName) payload.first_name = data.firstName;
+  if (data.lastName) payload.last_name = data.lastName;
+
+  const response = await fetch(`${API_BASE_URL}/users`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to create user');
+  }
+
+  const u = await response.json();
+  return mapUser(u);
+};
+
+export const updateUser = async (userId: string, data: UpdateUserData): Promise<UserItem> => {
+  // Map frontend field names to backend field names
+  const payload: any = {};
+
+  if (data.email !== undefined) payload.email = data.email;
+  if (data.passwordHash !== undefined) payload.password_hash = data.passwordHash;
+  if (data.name !== undefined) payload.name = data.name;
+  if (data.phone !== undefined) payload.phone = data.phone;
+  if (data.avatarUrl !== undefined) payload.avatar_url = data.avatarUrl;
+  if (data.employeeId !== undefined) payload.employee_id = data.employeeId;
+  if (data.jobTitle !== undefined) payload.job_title = data.jobTitle;
+  if (data.role !== undefined) payload.role = data.role;
+  if (data.status !== undefined) payload.status = data.status;
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to update user');
+  }
+
+  const u = await response.json();
+  return mapUser(u);
+};
+
+export const updateUserRole = async (
+  userId: string,
+  userRole: string,
+  reason?: string
+): Promise<UserItem> => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/role`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+    body: JSON.stringify({ userRole, reason }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to update user role');
+  }
+
+  const u = await response.json();
+  return mapUser(u);
+};
+
+export const getAuditLogs = async (): Promise<AuditLogItem[]> => {
+  const response = await fetch(`${API_BASE_URL}/audit/logs`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to fetch audit logs');
+  }
+
+  const logs = await response.json();
+  return logs.map((log: any) => ({
+    id: log.id,
+    action: log.action,
+    actorId: log.actor_id,
+    targetUserId: log.target_user_id,
+    oldValue: log.old_value,
+    newValue: log.new_value,
+    reason: log.reason,
+    ipAddress: log.ip_address,
+    createdAt: log.created_at,
+  }));
+};
+
+export const deleteUser = async (userId: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete user');
+  }
 };
 
 // --- Notification API ---
@@ -565,295 +765,6 @@ export const checkAndCreateReminders = async (): Promise<{ message: string; noti
   }
 
   return response.json();
-};
-
-// --- User API ---
-export interface UserItem {
-  id: string;
-  email?: string;
-  name: string;
-  phone?: string;
-  avatarUrl?: string;
-  employeeId?: string;
-  jobTitle?: string;
-  role?: string; // Display role
-  userRole: string; // System role for permissions
-  status?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  lastLoginAt?: string;
-  firstName?: string;
-  lastName?: string;
-}
-
-export interface CreateUserData {
-  email?: string;
-  passwordHash?: string;
-  name: string;
-  phone?: string;
-  avatarUrl?: string;
-  employeeId?: string;
-  jobTitle?: string;
-  role?: string; // Display role
-  userRole: string; // System role for permissions
-  firstName?: string;
-  lastName?: string;
-}
-
-export interface UpdateUserData {
-  email?: string;
-  passwordHash?: string;
-  name?: string;
-  phone?: string;
-  avatarUrl?: string;
-  employeeId?: string;
-  jobTitle?: string;
-  role?: string; // Display role
-  status?: string;
-}
-
-export interface AuditLogItem {
-  id: string;
-  action: string;
-  actorId: string;
-  targetUserId?: string;
-  oldValue?: string;
-  newValue?: string;
-  reason?: string;
-  ipAddress?: string;
-  createdAt?: string;
-}
-
-export const listUsers = async (): Promise<UserItem[]> => {
-  const response = await fetch(`${API_BASE_URL}/users`, {
-    headers: getAuthHeaders(),
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch users');
-  }
-
-  const users = await response.json();
-  // Map backend field names to frontend field names
-  return users.map((u: any) => ({
-    id: u.id,
-    email: u.email,
-    name: u.name,
-    phone: u.phone,
-    avatarUrl: u.avatar_url,
-    employeeId: u.employee_id,
-    jobTitle: u.job_title,
-    role: u.role,
-    userRole: u.userRole || u.user_role,
-    status: u.status,
-    createdAt: u.created_at,
-    updatedAt: u.updated_at,
-    lastLoginAt: u.last_login_at,
-    firstName: u.first_name,
-    lastName: u.last_name,
-  }));
-};
-
-export const getUser = async (userId: string): Promise<UserItem> => {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-    headers: getAuthHeaders(),
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch user');
-  }
-
-  const u = await response.json();
-  // Map backend field names to frontend field names
-  return {
-    id: u.id,
-    email: u.email,
-    name: u.name,
-    phone: u.phone,
-    avatarUrl: u.avatar_url,
-    employeeId: u.employee_id,
-    jobTitle: u.job_title,
-    role: u.role,
-    userRole: u.userRole || u.user_role,
-    status: u.status,
-    createdAt: u.created_at,
-    updatedAt: u.updated_at,
-    lastLoginAt: u.last_login_at,
-    firstName: u.first_name,
-    lastName: u.last_name,
-  };
-};
-
-export const createUser = async (data: CreateUserData): Promise<UserItem> => {
-  // Map frontend field names to backend field names
-  const payload: any = {
-    name: data.name,
-    userRole: data.userRole,
-  };
-
-  if (data.email) payload.email = data.email;
-  if (data.passwordHash) payload.password_hash = data.passwordHash;
-  if (data.phone) payload.phone = data.phone;
-  if (data.avatarUrl) payload.avatar_url = data.avatarUrl;
-  if (data.employeeId) payload.employee_id = data.employeeId;
-  if (data.jobTitle) payload.job_title = data.jobTitle;
-  if (data.role) payload.role = data.role;
-  if (data.firstName) payload.first_name = data.firstName;
-  if (data.lastName) payload.last_name = data.lastName;
-
-  const response = await fetch(`${API_BASE_URL}/users`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    credentials: 'include',
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'Failed to create user');
-  }
-
-  const u = await response.json();
-  // Map backend field names to frontend field names
-  return {
-    id: u.id,
-    email: u.email,
-    name: u.name,
-    phone: u.phone,
-    avatarUrl: u.avatar_url,
-    employeeId: u.employee_id,
-    jobTitle: u.job_title,
-    role: u.role,
-    userRole: u.userRole || u.user_role,
-    status: u.status,
-    createdAt: u.created_at,
-    updatedAt: u.updated_at,
-    lastLoginAt: u.last_login_at,
-    firstName: u.first_name,
-    lastName: u.last_name,
-  };
-};
-
-export const updateUser = async (userId: string, data: UpdateUserData): Promise<UserItem> => {
-  // Map frontend field names to backend field names
-  const payload: any = {};
-
-  if (data.email !== undefined) payload.email = data.email;
-  if (data.passwordHash !== undefined) payload.password_hash = data.passwordHash;
-  if (data.name !== undefined) payload.name = data.name;
-  if (data.phone !== undefined) payload.phone = data.phone;
-  if (data.avatarUrl !== undefined) payload.avatar_url = data.avatarUrl;
-  if (data.employeeId !== undefined) payload.employee_id = data.employeeId;
-  if (data.jobTitle !== undefined) payload.job_title = data.jobTitle;
-  if (data.role !== undefined) payload.role = data.role;
-  if (data.status !== undefined) payload.status = data.status;
-
-  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    credentials: 'include',
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'Failed to update user');
-  }
-
-  const u = await response.json();
-  // Map backend field names to frontend field names
-  return {
-    id: u.id,
-    email: u.email,
-    name: u.name,
-    phone: u.phone,
-    avatarUrl: u.avatar_url,
-    employeeId: u.employee_id,
-    jobTitle: u.job_title,
-    role: u.role,
-    userRole: u.userRole || u.user_role,
-    status: u.status,
-    createdAt: u.created_at,
-    updatedAt: u.updated_at,
-    lastLoginAt: u.last_login_at,
-    firstName: u.first_name,
-    lastName: u.last_name,
-  };
-};
-
-export const updateUserRole = async (
-  userId: string,
-  userRole: string,
-  reason?: string
-): Promise<UserItem> => {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}/role`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    credentials: 'include',
-    body: JSON.stringify({ userRole, reason }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'Failed to update user role');
-  }
-
-  const u = await response.json();
-  return {
-    id: u.id,
-    email: u.email,
-    name: u.name,
-    phone: u.phone,
-    avatarUrl: u.avatar_url,
-    employeeId: u.employee_id,
-    jobTitle: u.job_title,
-    role: u.role,
-    userRole: u.userRole || u.user_role,
-    status: u.status,
-    createdAt: u.created_at,
-    updatedAt: u.updated_at,
-    lastLoginAt: u.last_login_at,
-    firstName: u.first_name,
-    lastName: u.last_name,
-  };
-};
-
-export const getAuditLogs = async (): Promise<AuditLogItem[]> => {
-  const response = await fetch(`${API_BASE_URL}/audit/logs`, {
-    headers: getAuthHeaders(),
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'Failed to fetch audit logs');
-  }
-
-  const logs = await response.json();
-  return logs.map((log: any) => ({
-    id: log.id,
-    action: log.action,
-    actorId: log.actor_id,
-    targetUserId: log.target_user_id,
-    oldValue: log.old_value,
-    newValue: log.new_value,
-    reason: log.reason,
-    ipAddress: log.ip_address,
-    createdAt: log.created_at,
-  }));
-};
-
-export const deleteUser = async (userId: string): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to delete user');
-  }
 };
 
 // --- Health Check ---
