@@ -18,6 +18,7 @@ class WorkOrderCreate(BaseModel):
     imageIds: List[str] = []
     requestId: Optional[str] = None
     createdBy: Optional[str] = None  # Name of the requester who created this WO
+    managedBy: Optional[str] = None  # Name of the admin who assigned/manages this WO
     locationData: Optional[LocationData] = None
     preferredDate: Optional[str] = None  # Preferred maintenance date from request
 
@@ -38,6 +39,7 @@ class WorkOrder(BaseModel):
     imageIds: List[str] = Field(default_factory=list, validation_alias="image_ids")
     requestId: Optional[str] = Field(default=None, validation_alias="request_id")
     createdBy: Optional[str] = Field(default=None, validation_alias="created_by")
+    managedBy: Optional[str] = Field(default=None, validation_alias="managed_by")
     technicianNotes: Optional[str] = Field(
         default=None, validation_alias="technician_notes"
     )
@@ -77,6 +79,7 @@ class WorkOrderUpdate(BaseModel):
     priority: Optional[str] = None
     status: Optional[str] = None
     assignedTo: Optional[str] = None
+    managedBy: Optional[str] = None  # Admin who manages this WO
     dueDate: Optional[str] = None
     imageIds: Optional[List[str]] = None
     adminReview: Optional[str] = None

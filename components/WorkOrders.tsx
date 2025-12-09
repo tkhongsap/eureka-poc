@@ -25,14 +25,15 @@ const formatDateShort = (dateString: string): string => {
 };
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageDataUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, adminCloseWorkOrder, createNotification, getWorkOrderRejectHistory, type RejectHistoryItem } from '../services/apiService';
+import { getImageDataUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, adminCloseWorkOrder, createNotification, getUsersByRole, getTeamHeadTechnician } from '../services/apiService';
 import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules';
-import {
-  createWOAssignedNotification,
-  createWOCompletedNotification,
-  createWOApprovedNotifications,
-  createWORejectedNotification,
-  createWOClosedNotification
+import { 
+  createWOAssignedNotification, 
+  createWOCompletedNotifications, 
+  createWOApprovedNotifications, 
+  createWORejectedNotification, 
+  createWOClosedNotification,
+  createWOCanceledNotification
 } from '../services/notificationService';
 
 interface WorkOrdersProps {
@@ -100,8 +101,6 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [checklist, setChecklist] = useState<string[]>([]);
-  const [rejectHistory, setRejectHistory] = useState<RejectHistoryItem[] | null>(null);
-  const [isLoadingRejectHistory, setIsLoadingRejectHistory] = useState<boolean>(false);
   const [draggedWoId, setDraggedWoId] = useState<string | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
@@ -239,24 +238,6 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     }
     // Clear admin review fields
     setRejectionReason('');
-    // Fetch reject history for the selected work order
-    const fetchRejectHistory = async () => {
-      if (!selectedWO?.id) {
-        setRejectHistory(null);
-        return;
-      }
-      setIsLoadingRejectHistory(true);
-      try {
-        const items = await getWorkOrderRejectHistory(String(selectedWO.id));
-        setRejectHistory(items);
-      } catch (err) {
-        console.error('Failed to fetch reject history', err);
-        setRejectHistory([]);
-      } finally {
-        setIsLoadingRejectHistory(false);
-      }
-    };
-    fetchRejectHistory();
   }, [selectedWO]);
 
   // Build preview URLs for technicianImages (avoid async in render)
@@ -385,10 +366,35 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
   // Admin cancel (Open -> Canceled)
   const handleAdminCancel = async () => {
-    if (!selectedWO || currentUser?.userRole !== 'Admin') return;
-    if (selectedWO.status !== Status.OPEN) return;
+    console.log('[handleAdminCancel] Starting...', { selectedWO, currentUser });
+    if (!selectedWO || currentUser?.userRole !== 'Admin') {
+      console.log('[handleAdminCancel] Early return - no selectedWO or not Admin');
+      return;
+    }
+    if (selectedWO.status !== Status.OPEN) {
+      console.log('[handleAdminCancel] Early return - status is not OPEN:', selectedWO.status);
+      return;
+    }
     try {
+      console.log('[handleAdminCancel] Updating WO status to CANCELED...');
       await updateWorkOrder(selectedWO.id, { status: Status.CANCELED });
+      
+      // Create notification for Requestor (createdBy)
+      console.log('[handleAdminCancel] createdBy:', selectedWO.createdBy);
+      if (selectedWO.createdBy) {
+        const notification = createWOCanceledNotification(
+          selectedWO.id,
+          selectedWO.title,
+          currentUser.name,
+          selectedWO.createdBy
+        );
+        console.log('[handleAdminCancel] Creating notification:', notification);
+        await createNotification(notification);
+        console.log('[handleAdminCancel] Notification created successfully');
+      } else {
+        console.log('[handleAdminCancel] No createdBy - skipping notification');
+      }
+      
       setWorkOrders(prev => prev.map(wo => wo.id === selectedWO.id ? { ...wo, status: Status.CANCELED } : wo));
       setSelectedWO(null); // close panel after cancel
     } catch (e: any) {
@@ -502,15 +508,44 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       };
 
       const updatedWO = await technicianUpdateWorkOrder(selectedWO.id, updateData);
-
-      // Create notification for Admin (work completed, pending review)
-      const notification = createWOCompletedNotification(
-        selectedWO.id,
-        selectedWO.title,
-        currentUser.name
-      );
-      await createNotification(notification);
-
+      
+      // Create notification for the Head Technician of technician's team
+      // If technician has a teamId, notify only their team's Head Technician
+      // Otherwise fallback to all Head Technicians
+      try {
+        let supervisorName: string | undefined;
+        
+        // Try to get the Head Technician of technician's team
+        if (currentUser.teamId) {
+          try {
+            const headTech = await getTeamHeadTechnician(currentUser.teamId);
+            supervisorName = headTech.name;
+          } catch (e) {
+            console.warn('Could not find team head technician, falling back to all:', e);
+          }
+        }
+        
+        // Fallback: get all Head Technicians
+        const headTechs = await getUsersByRole('Head Technician');
+        const headTechNames = headTechs.map(ht => ht.name);
+        
+        if (headTechNames.length > 0 || supervisorName) {
+          const notifications = createWOCompletedNotifications(
+            selectedWO.id,
+            selectedWO.title,
+            currentUser.name,
+            headTechNames,
+            supervisorName // If set, only this Head Tech gets notified
+          );
+          
+          for (const notification of notifications) {
+            await createNotification(notification);
+          }
+        }
+      } catch (notifError) {
+        console.error('Failed to create notifications for head technicians:', notifError);
+      }
+      
       setWorkOrders(prev => prev.map(wo => wo.id === updatedWO.id ? updatedWO : wo));
       // Keep the details panel open but reflect new status (typically Pending),
       // which will hide the inline technician section automatically
@@ -574,18 +609,27 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       // Approve work order, changes status to Completed
       const updatedWO = await adminApproveWorkOrder(selectedWO.id);
 
-      // Create notifications for Requestor and Technician
-      const notifications = createWOApprovedNotifications(
-        selectedWO.id,
-        selectedWO.title,
-        currentUser.name,
-        undefined, // requestorName - would need to track this
-        selectedWO.assignedTo
-      );
-
-      // Send both notifications
-      for (const notification of notifications) {
-        await createNotification(notification);
+      // Create notifications - send to managedBy admin if assigned, otherwise all admins
+      try {
+        const admins = await getUsersByRole('Admin');
+        const adminNames = admins.map(a => a.name);
+        
+        const notifications = createWOApprovedNotifications(
+          selectedWO.id,
+          selectedWO.title,
+          currentUser.name,
+          adminNames,
+          selectedWO.createdBy, // requestorName
+          selectedWO.assignedTo,
+          selectedWO.managedBy // managedBy admin - if set, only this admin gets notified
+        );
+        
+        // Send all notifications
+        for (const notification of notifications) {
+          await createNotification(notification);
+        }
+      } catch (notifError) {
+        console.error('Failed to create notifications:', notifError);
       }
 
       // Update local state
@@ -670,14 +714,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       // Close work order, changes status to Closed
       const updatedWO = await adminCloseWorkOrder(selectedWO.id);
 
-      // Create notification for Requestor
-      const notification = createWOClosedNotification(
-        selectedWO.id,
-        selectedWO.title,
-        currentUser.name,
-        undefined // requestorName - would need to track this
-      );
-      await createNotification(notification);
+      // Note: No notification sent here because Requester already received 
+      // notification when Head Tech approved (WO_APPROVED)
 
       // Update local state
       setWorkOrders(prev => prev.map(wo =>
@@ -2129,4 +2167,4 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   );
 };
 
-export default WorkOrders;
+export default WorkOrders;  

@@ -3,6 +3,10 @@ import { Notification, NotificationType, UserRole } from '../types';
 /**
  * Notification Service
  * Handles creation and management of workflow notifications
+ * 
+ * Design: Each notification is sent to a specific user (recipientName).
+ * For role-based notifications, caller should fetch users by role and create
+ * notifications for each user.
  */
 
 // Generate unique notification ID
@@ -11,15 +15,17 @@ const generateNotificationId = (): string => {
 };
 
 /**
- * Create notification when WO is created
- * Notifies: Admin
+ * Create notifications when WO is created
+ * Notifies: All Admins
+ * @param adminNames - Array of admin names to notify
  */
-export const createWOCreatedNotification = (
+export const createWOCreatedNotifications = (
   workOrderId: string,
   workOrderTitle: string,
-  createdBy: string
-): Notification => {
-  return {
+  createdBy: string,
+  adminNames: string[]
+): Notification[] => {
+  return adminNames.map(adminName => ({
     id: generateNotificationId(),
     type: NotificationType.WO_CREATED,
     workOrderId,
@@ -27,11 +33,22 @@ export const createWOCreatedNotification = (
     message: `New work order created: "${workOrderTitle}"`,
     messageKey: 'notif.woCreated',
     messageParams: { title: workOrderTitle },
-    recipientRole: 'Admin',
+    recipientRole: 'Admin' as UserRole,
+    recipientName: adminName,
     isRead: false,
     createdAt: new Date().toISOString(),
     triggeredBy: createdBy
-  };
+  }));
+};
+
+// Legacy single-recipient version for backward compatibility
+export const createWOCreatedNotification = (
+  workOrderId: string,
+  workOrderTitle: string,
+  createdBy: string,
+  adminName: string
+): Notification => {
+  return createWOCreatedNotifications(workOrderId, workOrderTitle, createdBy, [adminName])[0];
 };
 
 /**
@@ -61,15 +78,23 @@ export const createWOAssignedNotification = (
 };
 
 /**
- * Create notification when Technician marks work as done
- * Notifies: Head Technician (for review)
+ * Create notifications when Technician marks work as done
+ * Notifies: Supervisor Head Technician (if specified) OR all Head Technicians (fallback)
+ * @param headTechnicianNames - Array of head technician names to notify (fallback)
+ * @param supervisorName - The specific head technician supervising this technician (takes priority)
  */
-export const createWOCompletedNotification = (
+export const createWOCompletedNotifications = (
   workOrderId: string,
   workOrderTitle: string,
-  completedBy: string
-): Notification => {
-  return {
+  completedBy: string,
+  headTechnicianNames: string[],
+  supervisorName?: string
+): Notification[] => {
+  // If supervisorName is specified, notify only that head technician
+  // Otherwise, notify all head technicians (fallback)
+  const headTechsToNotify = supervisorName ? [supervisorName] : headTechnicianNames;
+  
+  return headTechsToNotify.map(headTechnicianName => ({
     id: generateNotificationId(),
     type: NotificationType.WO_COMPLETED,
     workOrderId,
@@ -77,72 +102,97 @@ export const createWOCompletedNotification = (
     message: `Work order "${workOrderTitle}" has been completed and is pending review`,
     messageKey: 'notif.woCompleted',
     messageParams: { title: workOrderTitle },
-    recipientRole: 'Head Technician',
+    recipientRole: 'Head Technician' as UserRole,
+    recipientName: headTechnicianName,
     isRead: false,
     createdAt: new Date().toISOString(),
     triggeredBy: completedBy
-  };
+  }));
+};
+
+// Legacy single-recipient version for backward compatibility
+export const createWOCompletedNotification = (
+  workOrderId: string,
+  workOrderTitle: string,
+  completedBy: string,
+  headTechnicianName: string
+): Notification => {
+  return createWOCompletedNotifications(workOrderId, workOrderTitle, completedBy, [headTechnicianName])[0];
 };
 
 /**
  * Create notifications when Head Technician approves work
- * Notifies: Admin (for closing) + Requester + Technician
+ * Notifies: managedBy Admin (if assigned) OR all Admins (if no managedBy) + Requester + Technician
+ * @param adminNames - Array of admin names to notify (used if no managedBy)
+ * @param managedByAdmin - The specific admin who assigned the WO (takes priority)
  */
 export const createWOApprovedNotifications = (
   workOrderId: string,
   workOrderTitle: string,
   approvedBy: string,
+  adminNames: string[],
   requestorName?: string,
-  technicianName?: string
+  technicianName?: string,
+  managedByAdmin?: string
 ): Notification[] => {
   const notifications: Notification[] = [];
 
-  // Notification for Admin (to close the work order)
-  notifications.push({
-    id: generateNotificationId(),
-    type: NotificationType.WO_APPROVED,
-    workOrderId,
-    workOrderTitle,
-    message: `Work order "${workOrderTitle}" has been approved and is ready to be closed`,
-    messageKey: 'notif.woApproved',
-    messageParams: { title: workOrderTitle },
-    recipientRole: 'Admin',
-    isRead: false,
-    createdAt: new Date().toISOString(),
-    triggeredBy: approvedBy
+  // If managedByAdmin is specified, notify only that admin
+  // Otherwise, notify all admins (fallback for legacy WOs without managedBy)
+  const adminsToNotify = managedByAdmin ? [managedByAdmin] : adminNames;
+  
+  adminsToNotify.forEach(adminName => {
+    notifications.push({
+      id: generateNotificationId(),
+      type: NotificationType.WO_APPROVED,
+      workOrderId,
+      workOrderTitle,
+      message: `Work order "${workOrderTitle}" has been approved and is ready to be closed`,
+      messageKey: 'notif.woApproved',
+      messageParams: { title: workOrderTitle },
+      recipientRole: 'Admin' as UserRole,
+      recipientName: adminName,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      triggeredBy: approvedBy
+    });
   });
 
-  // Notification for Requester
-  notifications.push({
-    id: generateNotificationId(),
-    type: NotificationType.WO_APPROVED,
-    workOrderId,
-    workOrderTitle,
-    message: `Your work order "${workOrderTitle}" has been approved and completed`,
-    messageKey: 'notif.woApprovedRequestor',
-    messageParams: { title: workOrderTitle },
-    recipientRole: 'Requester',
-    recipientName: requestorName,
-    isRead: false,
-    createdAt: new Date().toISOString(),
-    triggeredBy: approvedBy
-  });
+  // Notification for Requester (if provided)
+  if (requestorName) {
+    notifications.push({
+      id: generateNotificationId(),
+      type: NotificationType.WO_APPROVED,
+      workOrderId,
+      workOrderTitle,
+      message: `Your work order "${workOrderTitle}" has been approved and completed`,
+      messageKey: 'notif.woApprovedRequestor',
+      messageParams: { title: workOrderTitle },
+      recipientRole: 'Requester' as UserRole,
+      recipientName: requestorName,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      triggeredBy: approvedBy
+    });
+  }
 
-  // Notification for Technician
-  notifications.push({
-    id: generateNotificationId(),
-    type: NotificationType.WO_APPROVED,
-    workOrderId,
-    workOrderTitle,
-    message: `Work order "${workOrderTitle}" has been approved`,
-    messageKey: 'notif.woApprovedTech',
-    messageParams: { title: workOrderTitle },
-    recipientRole: 'Technician',
-    recipientName: technicianName,
-    isRead: false,
-    createdAt: new Date().toISOString(),
-    triggeredBy: approvedBy
-  });
+  // Notification for Technician (if provided)
+  if (technicianName) {
+    notifications.push({
+      id: generateNotificationId(),
+      type: NotificationType.WO_APPROVED,
+      workOrderId,
+      workOrderTitle,
+      message: `Work order "${workOrderTitle}" has been approved`,
+      messageKey: 'notif.woApprovedTech',
+      messageParams: { title: workOrderTitle },
+      recipientRole: 'Technician' as UserRole,
+      recipientName: technicianName,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      triggeredBy: approvedBy
+    });
+  }
 
   return notifications;
 };
@@ -207,7 +257,34 @@ export const createWOClosedNotification = (
 };
 
 /**
+ * Create notification when Admin cancels work order
+ * Notifies: Requestor (who created the work order)
+ */
+export const createWOCanceledNotification = (
+  workOrderId: string,
+  workOrderTitle: string,
+  canceledBy: string,
+  requestorName?: string
+): Notification => {
+  return {
+    id: generateNotificationId(),
+    type: NotificationType.WO_CANCELED,
+    workOrderId,
+    workOrderTitle,
+    message: `Work order "${workOrderTitle}" has been canceled`,
+    messageKey: 'notif.woCanceled',
+    messageParams: { title: workOrderTitle },
+    recipientRole: 'Requester',
+    recipientName: requestorName,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+    triggeredBy: canceledBy
+  };
+};
+
+/**
  * Filter notifications for specific user
+ * Now requires recipientName to match exactly - no more broadcast notifications
  */
 export const filterNotificationsForUser = (
   notifications: Notification[],
@@ -215,16 +292,16 @@ export const filterNotificationsForUser = (
   userName?: string
 ): Notification[] => {
   return notifications.filter(notif => {
-    // Match role
+    // Match role first
     if (notif.recipientRole !== userRole) return false;
     
-    // If notification is for specific user, check name
-    if (notif.recipientName && userName) {
+    // Must match recipientName exactly (no more broadcast to entire role)
+    if (userName) {
       return notif.recipientName === userName;
     }
     
-    // Otherwise include all notifications for this role
-    return true;
+    // If no userName provided, only show notifications without recipientName (legacy)
+    return !notif.recipientName;
   });
 };
 

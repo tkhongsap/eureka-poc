@@ -47,10 +47,49 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.get("", response_model=List[User])
-async def list_users(db: Session = Depends(get_db)):
-    """List all users"""
-    users = db.query(UserModel).order_by(UserModel.created_at.desc()).all()
+async def list_users(
+    role: str = None,
+    user_role: str = None,
+    db: Session = Depends(get_db)
+):
+    """List all users, optionally filtered by role or user_role"""
+    query = db.query(UserModel)
+    
+    if role:
+        query = query.filter(UserModel.role == role)
+    if user_role:
+        query = query.filter(UserModel.user_role == user_role)
+    
+    users = query.order_by(UserModel.created_at.desc()).all()
     return [User.model_validate(u) for u in users]
+
+
+@router.get("/by-role/{user_role}", response_model=List[User])
+async def get_users_by_role(user_role: str, db: Session = Depends(get_db)):
+    """Get all users with a specific user_role (Admin, Head Technician, Technician, Requester)"""
+    users = db.query(UserModel).filter(UserModel.user_role == user_role).all()
+    return [User.model_validate(u) for u in users]
+
+
+@router.get("/team/{team_id}/head-technician", response_model=User)
+async def get_team_head_technician(team_id: str, db: Session = Depends(get_db)):
+    """Get the Head Technician for a specific team"""
+    head_tech = db.query(UserModel).filter(
+        UserModel.team_id == team_id,
+        UserModel.user_role == "Head Technician"
+    ).first()
+    
+    if not head_tech:
+        raise HTTPException(status_code=404, detail=f"No Head Technician found for team {team_id}")
+    
+    return User.model_validate(head_tech)
+
+
+@router.get("/team/{team_id}/members", response_model=List[User])
+async def get_team_members(team_id: str, db: Session = Depends(get_db)):
+    """Get all members of a specific team"""
+    members = db.query(UserModel).filter(UserModel.team_id == team_id).all()
+    return [User.model_validate(u) for u in members]
 
 
 @router.get("/{user_id}", response_model=User)
@@ -90,6 +129,8 @@ async def update_user(user_id: str, updates: UserUpdate, db: Session = Depends(g
         user.role = updates.role
     if updates.userRole is not None:
         user.user_role = updates.userRole
+    if updates.teamId is not None:
+        user.team_id = updates.teamId
     if updates.status is not None:
         user.status = updates.status
     if updates.settings is not None:

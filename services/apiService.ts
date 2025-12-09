@@ -239,6 +239,7 @@ export interface WorkOrderItem {
   imageIds: string[];
   requestId?: string;
   createdBy?: string; // Name of the requester who created this WO
+  managedBy?: string; // Name of the admin who assigned/manages this WO
   technicianNotes?: string;
   technicianImages?: string[];
   partsUsed?: { id: string; name: string; quantity: number }[];
@@ -399,6 +400,68 @@ export const adminCloseWorkOrder = async (woId: string): Promise<WorkOrderItem> 
 
   if (!response.ok) {
     throw new Error('Failed to close work order');
+  }
+
+  return response.json();
+};
+
+// --- Users API ---
+export interface UserItem {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  avatarUrl?: string;
+  employeeId?: string;
+  jobTitle?: string;
+  role: string;
+  userRole: string;
+  status: string;
+  createdAt: string;
+}
+
+export const listUsers = async (userRole?: string): Promise<UserItem[]> => {
+  const url = userRole 
+    ? `${API_BASE_URL}/users/by-role/${encodeURIComponent(userRole)}`
+    : `${API_BASE_URL}/users`;
+    
+  const response = await fetch(url, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch users');
+  }
+
+  return response.json();
+};
+
+export const getUsersByRole = async (userRole: string): Promise<UserItem[]> => {
+  return listUsers(userRole);
+};
+
+export const getTeamHeadTechnician = async (teamId: string): Promise<UserItem> => {
+  const response = await fetch(`${API_BASE_URL}/users/team/${teamId}/head-technician`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error(`No Head Technician found for team ${teamId}`);
+    }
+    throw new Error('Failed to fetch team head technician');
+  }
+
+  return response.json();
+};
+
+export const getTeamMembers = async (teamId: string): Promise<UserItem[]> => {
+  const response = await fetch(`${API_BASE_URL}/users/team/${teamId}/members`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch team members');
   }
 
   return response.json();

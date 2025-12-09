@@ -19,6 +19,7 @@ class User(Base):
     user_role = Column(
         String(50), nullable=False, index=True
     )  # System role for permissions
+    team_id = Column(String(100), nullable=True, index=True)  # Team ID for technician grouping
     status = Column(String(50), default="active", index=True)
     settings = Column(JSON, default=dict)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
