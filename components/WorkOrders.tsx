@@ -25,7 +25,7 @@ const formatDateShort = (dateString: string): string => {
 };
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageDataUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, adminCloseWorkOrder, createNotification, getUsersByRole, getTeamHeadTechnician } from '../services/apiService';
+import { getImageDataUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, adminCloseWorkOrder, createNotification, getUsersByRole, getTeamHeadTechnician, getWorkOrderRejectHistory, RejectHistoryItem } from '../services/apiService';
 import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules';
 import { 
   createWOAssignedNotification, 
@@ -184,6 +184,10 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   // Success/Error toast state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  // Reject history state
+  const [rejectHistory, setRejectHistory] = useState<RejectHistoryItem[]>([]);
+  const [isLoadingRejectHistory, setIsLoadingRejectHistory] = useState(false);
+
   // Get permissions for selected work order
   const selectedWOPermissions = selectedWO && currentUser
     ? getWorkOrderPermissions(
@@ -252,6 +256,27 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     };
     buildPreviews();
   }, [technicianImages]);
+
+  // Fetch reject history when selecting a work order
+  useEffect(() => {
+    const fetchRejectHistory = async () => {
+      if (!selectedWO) {
+        setRejectHistory([]);
+        return;
+      }
+      setIsLoadingRejectHistory(true);
+      try {
+        const history = await getWorkOrderRejectHistory(selectedWO.id);
+        setRejectHistory(history);
+      } catch (error) {
+        console.error('Failed to fetch reject history:', error);
+        setRejectHistory([]);
+      } finally {
+        setIsLoadingRejectHistory(false);
+      }
+    };
+    fetchRejectHistory();
+  }, [selectedWO?.id]);
 
   // Base technician scoping: technicians only ever see their own jobs
   const scopedWorkOrders = currentUser?.userRole === 'Technician'
