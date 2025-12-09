@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Plus, Filter, Download, MoreHorizontal, BrainCircuit, X, AlertTriangle, CheckSquare, Clock, ArrowRight, Zap,
   LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, HardHat, UserPlus,
-  Loader2, CheckCircle2, XCircle, Navigation, MapPin
+  Loader2, CheckCircle2, XCircle, Navigation, MapPin, UserCircle2, ChevronDown, ChevronRight, Settings, Users, Layers
 } from 'lucide-react';
 import { DateInputSmall } from './DateInput';
 import { useLanguage } from '../lib/i18n';
@@ -60,14 +60,39 @@ const priorityColors = {
 
 // Mock parts for selection
 const AVAILABLE_PARTS = [
-    { id: 'p1', name: 'Hydraulic Seal Kit', cost: 45.00 },
-    { id: 'p2', name: 'Bearing 6204', cost: 12.50 },
-    { id: 'p3', name: 'Sensor Cable (5m)', cost: 25.00 },
-    { id: 'p4', name: 'Industrial Grease (1kg)', cost: 15.00 },
+  { id: 'p1', name: 'Hydraulic Seal Kit', cost: 45.00 },
+  { id: 'p2', name: 'Bearing 6204', cost: 12.50 },
+  { id: 'p3', name: 'Sensor Cable (5m)', cost: 25.00 },
+  { id: 'p4', name: 'Industrial Grease (1kg)', cost: 15.00 },
 ];
 
 const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, currentUser, technicians = [] }) => {
   const { t, language } = useLanguage();
+
+  // Helper function to translate priority using i18n
+  const translatePriority = (priority: Priority): string => {
+    const priorityKeyMap: Record<Priority, 'priority.critical' | 'priority.high' | 'priority.medium' | 'priority.low'> = {
+      [Priority.CRITICAL]: 'priority.critical',
+      [Priority.HIGH]: 'priority.high',
+      [Priority.MEDIUM]: 'priority.medium',
+      [Priority.LOW]: 'priority.low',
+    };
+    return t(priorityKeyMap[priority]) || priority;
+  };
+
+  // Helper function to translate status using i18n
+  const translateStatus = (status: Status): string => {
+    const statusKeyMap: Record<Status, 'status.open' | 'status.inProgress' | 'status.pending' | 'status.completed' | 'status.closed' | 'status.canceled'> = {
+      [Status.OPEN]: 'status.open',
+      [Status.IN_PROGRESS]: 'status.inProgress',
+      [Status.PENDING]: 'status.pending',
+      [Status.COMPLETED]: 'status.completed',
+      [Status.CLOSED]: 'status.closed',
+      [Status.CANCELED]: 'status.canceled',
+    };
+    return t(statusKeyMap[status]) || status;
+  };
+
   const [viewMode, setViewMode] = useState<'list' | 'board'>('board');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(initialWorkOrders);
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
@@ -78,7 +103,45 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [checklist, setChecklist] = useState<string[]>([]);
   const [draggedWoId, setDraggedWoId] = useState<string | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
-  
+
+  // Collapsible columns state for Kanban board
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<Status>>(new Set());
+
+  // Column visibility customization
+  const [visibleColumns, setVisibleColumns] = useState<Set<Status>>(new Set([Status.OPEN, Status.IN_PROGRESS, Status.PENDING, Status.COMPLETED, Status.CANCELED]));
+  const [showColumnSettings, setShowColumnSettings] = useState(false);
+
+  // Swimlane grouping
+  type SwimlaneMode = 'none' | 'priority' | 'technician';
+  const [swimlaneMode, setSwimlaneMode] = useState<SwimlaneMode>('none');
+
+  const toggleColumnVisibility = (status: Status) => {
+    setVisibleColumns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(status)) {
+        // Don't allow hiding all columns
+        if (newSet.size > 1) {
+          newSet.delete(status);
+        }
+      } else {
+        newSet.add(status);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleColumnCollapse = (status: Status) => {
+    setCollapsedColumns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(status)) {
+        newSet.delete(status);
+      } else {
+        newSet.add(status);
+      }
+      return newSet;
+    });
+  };
+
   // Filter for technicians
   const [showOnlyMyJobs, setShowOnlyMyJobs] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -87,7 +150,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [selectedPriority, setSelectedPriority] = useState<Priority | 'ALL'>('ALL');
   const [selectedMonth, setSelectedMonth] = useState(''); // YYYY-MM
   const [selectedAssignedTo, setSelectedAssignedTo] = useState(''); // Filter by technician (Admin only)
-  
+
   // Technician update modal states
   const [showTechnicianModal, setShowTechnicianModal] = useState(false);
   const [technicianNotes, setTechnicianNotes] = useState('');
@@ -119,16 +182,16 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [isClosing, setIsClosing] = useState(false);
 
   // Success/Error toast state
-  const [toast, setToast] = useState<{message: string; type: 'success' | 'error'} | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Get permissions for selected work order
   const selectedWOPermissions = selectedWO && currentUser
     ? getWorkOrderPermissions(
-        selectedWO.status,
-        currentUser.userRole,
-        selectedWO.assignedTo,
-        currentUser.name
-      )
+      selectedWO.status,
+      currentUser.userRole,
+      selectedWO.assignedTo,
+      currentUser.name
+    )
     : null;
 
   // Sync props to state
@@ -136,7 +199,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     setWorkOrders(initialWorkOrders);
     // If technician, default to showing only their jobs
     if (currentUser?.userRole === 'Technician') {
-        setShowOnlyMyJobs(true);
+      setShowOnlyMyJobs(true);
     }
   }, [initialWorkOrders, currentUser]);
 
@@ -150,7 +213,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       } else {
         setSelectedWOImages([]);
       }
-      
+
       // Load technician work images for display (separate from upload state)
       if (selectedWO && selectedWO.technicianImages && selectedWO.technicianImages.length > 0) {
         const techImageUrls = await Promise.all(selectedWO.technicianImages.map(id => getImageDataUrl(id)));
@@ -160,7 +223,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       }
     };
     loadImages();
-    
+
     // Initialize technician fields when selecting a work order so technician can edit inline
     if (selectedWO) {
       setTechnicianNotes(selectedWO.technicianNotes || '');
@@ -198,7 +261,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const filteredWorkOrders = scopedWorkOrders.filter(wo => {
     const matchesSearch = searchText
       ? (wo.title.toLowerCase().includes(searchText.toLowerCase()) ||
-         wo.description.toLowerCase().includes(searchText.toLowerCase()))
+        wo.description.toLowerCase().includes(searchText.toLowerCase()))
       : true;
 
     // Use preferredDate for filtering if available, otherwise fall back to createdAt
@@ -252,7 +315,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       }
 
       const updated = await updateWorkOrder(selectedWO.id, payload);
-      
+
       // Create notification for assigned technician (only when assigning from Open)
       if (isFromOpen && adminAssignedTo) {
         const notification = createWOAssignedNotification(
@@ -263,7 +326,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         );
         await createNotification(notification);
       }
-      
+
       // Reflect locally (map API fields to WorkOrder shape if needed)
       const updatedWO: WorkOrder = {
         ...selectedWO,
@@ -346,17 +409,17 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     if (!part) return;
 
     const newPartUsage: PartUsage = {
-        partId: part.id,
-        name: part.name,
-        quantity: 1,
-        cost: part.cost
+      partId: part.id,
+      name: part.name,
+      quantity: 1,
+      cost: part.cost
     };
 
-    const updatedWo = { 
-        ...selectedWO, 
-        partsUsed: [...(selectedWO.partsUsed || []), newPartUsage] 
+    const updatedWo = {
+      ...selectedWO,
+      partsUsed: [...(selectedWO.partsUsed || []), newPartUsage]
     };
-    
+
     setSelectedWO(updatedWo);
     setWorkOrders(prev => prev.map(wo => wo.id === updatedWo.id ? updatedWo : wo));
   };
@@ -365,7 +428,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     if (!selectedWO || !selectedWO.partsUsed) return;
     const updatedParts = [...selectedWO.partsUsed];
     updatedParts.splice(index, 1);
-    
+
     const updatedWo = { ...selectedWO, partsUsed: updatedParts };
     setSelectedWO(updatedWo);
     setWorkOrders(prev => prev.map(wo => wo.id === updatedWo.id ? updatedWo : wo));
@@ -520,8 +583,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       await createNotification(notification);
 
       // Update local state
-      setWorkOrders(prev => prev.map(wo => 
-        wo.id === selectedWO.id 
+      setWorkOrders(prev => prev.map(wo =>
+        wo.id === selectedWO.id
           ? { ...wo, assignedTo: selectedTechnician, status: Status.IN_PROGRESS }
           : wo
       ));
@@ -570,13 +633,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       }
 
       // Update local state
-      setWorkOrders(prev => prev.map(wo => 
-        wo.id === selectedWO.id 
+      setWorkOrders(prev => prev.map(wo =>
+        wo.id === selectedWO.id
           ? { ...wo, status: Status.COMPLETED }
           : wo
       ));
       setSelectedWO({ ...selectedWO, status: Status.COMPLETED });
-      
+
       // Show success toast
       setToast({ message: 'Work order approved successfully!', type: 'success' });
       setTimeout(() => setToast(null), 3000);
@@ -594,7 +657,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     if (!selectedWO || !currentUser) return;
     if (currentUser.userRole !== 'Head Technician') return;
     if (selectedWO.status !== Status.PENDING) return;
-    
+
     // Validate rejection reason
     if (!rejectionReason.trim()) {
       setToast({ message: 'Please provide a reason for rejection', type: 'error' });
@@ -620,14 +683,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       await createNotification(notification);
 
       // Update local state
-      setWorkOrders(prev => prev.map(wo => 
-        wo.id === selectedWO.id 
+      setWorkOrders(prev => prev.map(wo =>
+        wo.id === selectedWO.id
           ? { ...wo, status: Status.IN_PROGRESS, rejectionReason: rejectionReason.trim() }
           : wo
       ));
       setSelectedWO({ ...selectedWO, status: Status.IN_PROGRESS, rejectionReason: rejectionReason.trim() });
       setRejectionReason('');
-      
+
       // Show success toast
       setToast({ message: 'Work order rejected and sent back', type: 'success' });
       setTimeout(() => setToast(null), 3000);
@@ -655,13 +718,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       // notification when Head Tech approved (WO_APPROVED)
 
       // Update local state
-      setWorkOrders(prev => prev.map(wo => 
-        wo.id === selectedWO.id 
+      setWorkOrders(prev => prev.map(wo =>
+        wo.id === selectedWO.id
           ? { ...wo, status: Status.CLOSED }
           : wo
       ));
       setSelectedWO({ ...selectedWO, status: Status.CLOSED });
-      
+
       // Show success toast
       setToast({ message: 'Work order closed successfully!', type: 'success' });
       setTimeout(() => setToast(null), 3000);
@@ -680,13 +743,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       e.preventDefault();
       return;
     }
-    
+
     const wo = workOrders.find(w => w.id === id);
     if (!wo) {
       e.preventDefault();
       return;
     }
-    
+
     // Check if user has permission to change status for this work order
     const permissions = getWorkOrderPermissions(
       wo.status,
@@ -694,47 +757,47 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       wo.assignedTo,
       currentUser.name
     );
-    
+
     if (!permissions.canChangeStatus) {
       e.preventDefault();
       return;
     }
-    
+
     setDraggedWoId(id);
     e.dataTransfer.setData('text/plain', id);
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); 
+    e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = async (e: React.DragEvent, newStatus: Status) => {
     e.preventDefault();
     const id = e.dataTransfer.getData('text/plain');
-    
+
     if (id && currentUser) {
-        const wo = workOrders.find(w => w.id === id);
-        if (!wo) return;
-        
-        // Check if transition is allowed
-        if (!canDragToStatus(wo.status, newStatus, currentUser.userRole)) {
-          alert(`You cannot move this work order from "${wo.status}" to "${newStatus}"`);
-          setDraggedWoId(null);
-          return;
-        }
-        
-        // Update via API
-        try {
-          const updatedWO = await updateWorkOrder(id, { status: newStatus });
-          setWorkOrders(prev => prev.map(w => 
-            w.id === id ? { ...w, status: newStatus } : w
-          ));
-        } catch (error: any) {
-          console.error('Failed to update work order:', error);
-          alert(error.message || 'Failed to update work order status');
-        }
+      const wo = workOrders.find(w => w.id === id);
+      if (!wo) return;
+
+      // Check if transition is allowed
+      if (!canDragToStatus(wo.status, newStatus, currentUser.userRole)) {
+        alert(`${t('workOrders.cannotMoveFrom')} "${translateStatus(wo.status)}" ${t('workOrders.to')} "${translateStatus(newStatus)}"`);
+        setDraggedWoId(null);
+        return;
+      }
+
+      // Update via API
+      try {
+        const updatedWO = await updateWorkOrder(id, { status: newStatus });
+        setWorkOrders(prev => prev.map(w =>
+          w.id === id ? { ...w, status: newStatus } : w
+        ));
+      } catch (error: any) {
+        console.error('Failed to update work order:', error);
+        alert(error.message || 'Failed to update work order status');
+      }
     }
     setDraggedWoId(null);
   };
@@ -745,9 +808,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     <div className="p-4 lg:p-6 h-full flex flex-col bg-stone-50/50 overflow-hidden">
       <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
         <div>
-          <h2 className="font-serif text-xl lg:text-2xl text-stone-900">{t('workOrders.title')}</h2>
-          <p className="text-stone-500 text-xs lg:text-sm">
-             {currentUser?.userRole === 'Technician' ? t('workOrders.myAssignedTasks') : t('workOrders.manageMaintenanceTasks')}
+          <h2 className="font-serif text-2xl lg:text-3xl text-stone-900">{t('workOrders.title')}</h2>
+          <p className="text-stone-500 text-sm lg:text-base">
+            {currentUser?.userRole === 'Technician' ? t('workOrders.myAssignedTasks') : t('workOrders.manageMaintenanceTasks')}
           </p>
         </div>
       </div>
@@ -775,6 +838,64 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
               </button>
             </div>
 
+            {/* Board Settings - Only show in board view */}
+            {viewMode === 'board' && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowColumnSettings(!showColumnSettings)}
+                  title={t('workOrders.boardSettings')}
+                  className={`p-1.5 rounded-lg border transition-all duration-200 ${showColumnSettings ? 'bg-teal-50 text-teal-600 border-teal-200' : 'bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100'}`}
+                >
+                  <Settings size={16} />
+                </button>
+
+                {/* Settings Dropdown */}
+                {showColumnSettings && (
+                  <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-lg border border-stone-200 p-3 z-20 min-w-[220px]">
+                    {/* Visible Columns */}
+                    <div className="mb-3">
+                      <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-stone-600">
+                        <Layers size={12} />
+                        {t('workOrders.visibleColumns')}
+                      </div>
+                      <div className="space-y-1">
+                        {[Status.OPEN, Status.IN_PROGRESS, Status.PENDING, Status.COMPLETED, Status.CANCELED].map(status => (
+                          <label key={status} className="flex items-center gap-2 cursor-pointer hover:bg-stone-50 px-2 py-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={visibleColumns.has(status)}
+                              onChange={() => toggleColumnVisibility(status)}
+                              className="w-3.5 h-3.5 rounded border-stone-300 text-teal-600 focus:ring-teal-500"
+                            />
+                            <div className={`w-2 h-2 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
+                            <span className="text-xs text-stone-700">{translateStatus(status)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Swimlane Grouping */}
+                    <div className="pt-3 border-t border-stone-100">
+                      <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-stone-600">
+                        <Users size={12} />
+                        {t('workOrders.swimlaneGroup')}
+                      </div>
+                      <select
+                        value={swimlaneMode}
+                        onChange={(e) => setSwimlaneMode(e.target.value as SwimlaneMode)}
+                        title={t('workOrders.swimlaneGroup')}
+                        className="w-full text-xs px-2 py-1.5 rounded-lg border border-stone-200 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      >
+                        <option value="none">{t('workOrders.swimlaneNone')}</option>
+                        <option value="priority">{t('workOrders.swimlanePriority')}</option>
+                        <option value="technician">{t('workOrders.swimlaneTechnician')}</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Text search */}
             <div className="relative">
               <input
@@ -782,17 +903,17 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 placeholder={t('common.search')}
-                className="text-xs pl-8 pr-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-40 lg:w-52 transition-all"
+                className="text-sm pl-8 pr-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-40 lg:w-52 transition-all"
               />
-              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
           </div>
 
           {/* Order count badge */}
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-teal-700 px-2.5 py-1 bg-teal-50 rounded-lg border border-teal-100">
-            <span className="text-sm">{filteredWorkOrders.length}</span>
+          <div className="flex items-center gap-1.5 text-sm font-semibold text-teal-700 px-2.5 py-1 bg-teal-50 rounded-lg border border-teal-100">
+            <span className="text-base">{filteredWorkOrders.length}</span>
             <span className="text-teal-600 font-medium">{t('workOrders.orders')}</span>
           </div>
         </div>
@@ -800,7 +921,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         {/* Row 2: Filters */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Date range filter */}
-          <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100 text-xs">
+          <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100 text-sm">
             <DateInputSmall
               value={startDate}
               onChange={(newStartDate) => {
@@ -823,12 +944,12 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
           {/* Priority filter */}
           <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100">
-            <span className="text-[10px] font-semibold text-stone-500 uppercase">{t('workOrders.priority')}</span>
+            <span className="text-xs font-semibold text-stone-500 uppercase">{t('workOrders.priority')}</span>
             <select
               value={selectedPriority}
               onChange={(e) => setSelectedPriority(e.target.value as Priority | 'ALL')}
               title={t('workOrders.filterByPriority')}
-              className="text-[11px] px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none cursor-pointer"
+              className="text-sm px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none cursor-pointer"
             >
               <option value="ALL">{t('common.all')}</option>
               <option value={Priority.CRITICAL}>{t('priority.critical')}</option>
@@ -841,12 +962,12 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           {/* AssignedTo filter - Admin only */}
           {currentUser?.userRole === 'Admin' && (
             <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-lg border border-stone-100">
-              <span className="text-[10px] font-semibold text-stone-500 uppercase">{language === 'th' ? 'ช่าง' : 'Tech'}</span>
+              <span className="text-xs font-semibold text-stone-500 uppercase">{t('workOrders.techLabel')}</span>
               <select
                 value={selectedAssignedTo}
                 onChange={(e) => setSelectedAssignedTo(e.target.value)}
                 title={t('workOrders.filterByTechnician')}
-                className="text-[11px] px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none min-w-[80px] cursor-pointer"
+                className="text-sm px-1 py-0.5 rounded border border-stone-200 bg-white focus:outline-none min-w-[80px] cursor-pointer"
               >
                 <option value="">{t('common.all')}</option>
                 {technicians.map(tech => (
@@ -861,965 +982,1188 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             type="button"
             onClick={() => { setStartDate(''); setEndDate(''); setSelectedMonth(''); setSelectedPriority('ALL'); setSearchText(''); setSelectedAssignedTo(''); }}
             title={t('workOrders.clearAllFilters')}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 border border-stone-200 hover:border-red-200 transition-all ml-auto"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 border border-stone-200 hover:border-red-200 transition-all ml-auto"
           >
-            <X size={12} />
+            <X size={14} />
             {t('workOrders.clearFilters')}
           </button>
         </div>
-      </div>
+      </div >
 
       {/* CONTENT AREA */}
-      <div className="flex-1 overflow-hidden">
-        
+      < div className="flex-1 overflow-hidden" >
+
         {/* LIST VIEW */}
-        {viewMode === 'list' && (
-             <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 h-full flex flex-col overflow-hidden">
-                <div className="overflow-auto flex-1">
+        {
+          viewMode === 'list' && (
+            <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 h-full flex flex-col overflow-hidden">
+              <div className="overflow-auto flex-1">
                 <table className="w-full text-left border-collapse">
-                    <thead className="bg-stone-50 sticky top-0 z-[1]">
+                  <thead className="bg-stone-50 sticky top-0 z-[1]">
                     <tr>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.id')}</th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.titleField')}</th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.asset')}</th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.priority')}</th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.appointment')}</th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.status')}</th>
-                        <th className="px-6 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.assignee')}</th>
+                      <th className="px-6 py-3.5 text-sm font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.id')}</th>
+                      <th className="px-6 py-3.5 text-sm font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.titleField')}</th>
+                      <th className="px-6 py-3.5 text-sm font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.asset')}</th>
+                      <th className="px-6 py-3.5 text-sm font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.priority')}</th>
+                      <th className="px-6 py-3.5 text-sm font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.appointment')}</th>
+                      <th className="px-6 py-3.5 text-sm font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.status')}</th>
+                      <th className="px-6 py-3.5 text-sm font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200">{t('workOrders.assignee')}</th>
                     </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100">
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
                     {filteredWorkOrders.map((wo) => (
-                        <tr
+                      <tr
                         key={wo.id}
                         onClick={() => setSelectedWO(wo)}
                         className="hover:bg-teal-50/50 cursor-pointer transition-colors duration-200 group"
-                        >
-                        <td className="px-6 py-4 text-sm font-medium text-stone-900">{wo.id}</td>
-                        <td className="px-6 py-4 text-sm text-stone-700 font-medium">
-                            {wo.title}
-                            <div className="text-xs text-stone-400 truncate max-w-[200px]">{wo.description}</div>
+                      >
+                        <td className="px-6 py-4 text-base font-medium text-stone-900">{wo.id}</td>
+                        <td className="px-6 py-4 text-base text-stone-700 font-medium">
+                          {wo.title}
+                          <div className="text-sm text-stone-400 truncate max-w-[200px]">{wo.description}</div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-stone-600">{wo.assetName}</td>
+                        <td className="px-6 py-4 text-base text-stone-600">{wo.assetName}</td>
                         <td className="px-6 py-4">
-                            <span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${priorityColors[wo.priority]}`}>
-                            {wo.priority}
-                            </span>
-                        </td>
-                        <td className="px-6 py-4">
-                            {wo.preferredDate ? (
-                              <div className="flex items-center gap-1.5 text-violet-700">
-                                <Calendar size={14} className="text-violet-500" />
-                                <span className="text-xs font-medium">
-                                  {formatDateDDMMYYYY(wo.preferredDate)}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-stone-400">-</span>
-                            )}
+                          <span className={`px-2.5 py-1 rounded-lg border text-sm font-semibold ${priorityColors[wo.priority]}`}>
+                            {translatePriority(wo.priority)}
+                          </span>
                         </td>
                         <td className="px-6 py-4">
-                            <span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${statusColors[wo.status]}`}>
-                            {wo.status}
-                            </span>
+                          {wo.preferredDate ? (
+                            <div className="flex items-center gap-1.5 text-violet-700">
+                              <Calendar size={14} className="text-violet-500" />
+                              <span className="text-sm font-medium">
+                                {formatDateDDMMYYYY(wo.preferredDate)}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-stone-400">-</span>
+                          )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-stone-600">
-                            <div className="flex items-center gap-2">
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded-lg border text-sm font-semibold ${statusColors[wo.status]}`}>
+                            {translateStatus(wo.status)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-base text-stone-600">
+                          <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center text-xs font-bold text-stone-600">
-                                {wo.assignedTo?.charAt(0) || '?'}
+                              {wo.assignedTo?.charAt(0) || '?'}
                             </div>
                             <span>{wo.assignedTo}</span>
-                            </div>
+                          </div>
                         </td>
-                        </tr>
+                      </tr>
                     ))}
-                    </tbody>
+                  </tbody>
                 </table>
-                </div>
+              </div>
             </div>
-        )}
+          )
+        }
 
         {/* BOARD VIEW */}
-        {viewMode === 'board' && (
+        {
+          viewMode === 'board' && (
             <div className="h-full overflow-x-auto pb-2">
-                <div className="grid grid-cols-5 gap-3 h-full min-w-[900px]">
-                    {columns.map(status => {
-                        const columnWos = filteredWorkOrders.filter(wo => wo.status === status);
-                        return (
-                            <div
-                                key={status}
-                                className="bg-stone-100/70 rounded-xl flex flex-col min-h-0 border border-stone-200/60"
-                                onDragOver={handleDragOver}
-                                onDrop={(e) => handleDrop(e, status)}
-                            >
-                                {/* Column Header */}
-                                <div className="p-3 flex items-center justify-between bg-stone-100/70 rounded-t-xl border-b border-stone-200/40">
-                                    <div className="flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
-                                        <h3 className="font-semibold text-stone-700 text-xs">{status}</h3>
-                                        <span className="bg-stone-200 text-stone-600 text-[10px] px-1.5 py-0.5 rounded-full">{columnWos.length}</span>
-                                    </div>
-                                </div>
+              {/* Swimlane Mode: None - Standard Kanban */}
+              {swimlaneMode === 'none' && (
+                <div className="flex gap-3 h-full min-w-[900px]">
+                  {columns.filter(status => visibleColumns.has(status)).map(status => {
+                    const columnWos = filteredWorkOrders.filter(wo => wo.status === status);
+                    const isCollapsed = collapsedColumns.has(status);
 
-                                {/* Cards Area */}
-                                <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                                    {columnWos.map(wo => {
-                                        const woPermissions = currentUser ? getWorkOrderPermissions(
-                                          wo.status,
-                                          currentUser.userRole,
-                                          wo.assignedTo,
-                                          currentUser.name
-                                        ) : null;
-                                        const isDraggable = woPermissions?.canChangeStatus ?? false;
-                                        
-                                        return (
-                                        <div
-                                            key={wo.id}
-                                            draggable={isDraggable}
-                                            onDragStart={(e) => handleDragStart(e, wo.id)}
-                                            onClick={() => setSelectedWO(wo)}
-                                            className={`bg-white p-3 rounded-lg shadow-sm border border-stone-200/60 ${isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group relative
+                    // Collapsed column view
+                    if (isCollapsed) {
+                      return (
+                        <div
+                          key={status}
+                          className="bg-stone-100/70 rounded-xl flex flex-col min-h-0 border border-stone-200/60 w-12 flex-shrink-0 cursor-pointer hover:bg-stone-200/50 transition-colors"
+                          onClick={() => toggleColumnCollapse(status)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, status)}
+                        >
+                          <div className="p-2 flex flex-col items-center gap-2">
+                            <ChevronRight size={14} className="text-stone-500" />
+                            <div className={`w-2.5 h-2.5 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
+                            <span className="bg-stone-200 text-stone-600 text-[10px] px-1.5 py-0.5 rounded-full font-medium">{columnWos.length}</span>
+                            <span className="writing-vertical text-[10px] font-semibold text-stone-600 whitespace-nowrap">
+                              {translateStatus(status)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Expanded column view
+                    return (
+                      <div
+                        key={status}
+                        className="bg-stone-100/70 rounded-xl flex flex-col min-h-0 border border-stone-200/60 flex-1 min-w-[200px]"
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, status)}
+                      >
+                        {/* Column Header */}
+                        <div className="p-3 flex items-center justify-between bg-stone-100/70 rounded-t-xl border-b border-stone-200/40">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => toggleColumnCollapse(status)}
+                              className="text-stone-400 hover:text-stone-600 transition-colors"
+                              title={t('workOrders.collapseColumn')}
+                            >
+                              <ChevronDown size={14} />
+                            </button>
+                            <div className={`w-2 h-2 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
+                            <h3 className="font-semibold text-stone-700 text-sm">{translateStatus(status)}</h3>
+                            <span className="bg-stone-200 text-stone-600 text-xs px-1.5 py-0.5 rounded-full">{columnWos.length}</span>
+                          </div >
+                        </div >
+
+                        {/* Cards Area */}
+                        < div className="flex-1 overflow-y-auto p-2 space-y-2" >
+                          {
+                            columnWos.map(wo => {
+                              const woPermissions = currentUser ? getWorkOrderPermissions(
+                                wo.status,
+                                currentUser.userRole,
+                                wo.assignedTo,
+                                currentUser.name
+                              ) : null;
+                              const isDraggable = woPermissions?.canChangeStatus ?? false;
+
+                              return (
+                                <div
+                                  key={wo.id}
+                                  draggable={isDraggable}
+                                  onDragStart={(e) => handleDragStart(e, wo.id)}
+                                  onClick={() => setSelectedWO(wo)}
+                                  className={`bg-white p-3 rounded-lg shadow-sm border border-stone-200/60 ${isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group relative
                                                 ${draggedWoId === wo.id ? 'opacity-50 border-dashed border-stone-400' : ''}
                                                 ${currentUser?.name === wo.assignedTo ? 'border-l-3 border-l-teal-500' : ''}
                                                 ${!isDraggable ? 'opacity-75' : ''}
                                             `}
-                                        >
-                                            <div className="flex justify-between items-start mb-1.5">
-                                                <span className="text-[10px] font-mono text-stone-400 truncate max-w-[120px]">{wo.id}</span>
-                                                {isDraggable && (
-                                                  <button
-                                                      title={t('workOrders.dragToChange')}
-                                                      aria-label={t('workOrders.dragToChange')}
-                                                      className="text-stone-300 hover:text-stone-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                  >
-                                                      <GripVertical size={12} />
-                                                  </button>
-                                                )}
-                                            </div>
-
-                                            <h4 className="font-medium text-stone-800 text-xs mb-2 leading-snug line-clamp-2">{wo.title}</h4>
-
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className={`px-1.5 py-0.5 rounded border text-[9px] uppercase font-bold ${priorityColors[wo.priority]}`}>
-                                                    {wo.priority}
-                                                </span>
-                                            </div>
-
-                                            {/* Preferred Date - Show prominently if set */}
-                                            {wo.preferredDate && (
-                                              <div className="mb-2 px-2 py-1.5 bg-violet-50 border border-violet-200 rounded-lg text-[10px] text-violet-700 flex items-center gap-1.5">
-                                                <Calendar size={12} className="text-violet-500" />
-                                                <span className="font-medium">{t('workOrders.appointment')}: {formatDateDDMMYYYY(wo.preferredDate)}</span>
-                                              </div>
-                                            )}
-
-                                            {/* Location Info */}
-                                            <div className="mb-2 text-xs text-stone-600">
-                                              <div className="flex items-start gap-1.5">
-                                                <MapPin size={12} className="text-stone-400 mt-0.5 flex-shrink-0" />
-                                                <span className="line-clamp-1">{wo.location}</span>
-                                              </div>
-                                            </div>
-
-                                            {/* GPS Navigation Link */}
-                                            {wo.locationData && (
-                                              <a
-                                                href={`https://www.google.com/maps/dir/?api=1&destination=${wo.locationData.latitude},${wo.locationData.longitude}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="flex items-center gap-1.5 mb-3 px-2 py-1.5 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg text-teal-700 text-xs transition-colors"
-                                              >
-                                                <Navigation size={12} />
-                                                <span className="truncate flex-1 text-left">{wo.locationData.address.split(',')[0]}</span>
-                                                <span className="text-teal-500 font-medium">{t('workOrders.navigateBtn')}</span>
-                                              </a>
-                                            )}
-
-                                            <div className="flex items-center justify-between pt-3 border-t border-stone-100 mt-3">
-                                                <div className="flex items-center gap-1.5 text-xs text-stone-500">
-                                                     <div className={`w-5 h-5 rounded-lg border border-stone-200 flex items-center justify-center text-[10px] font-bold ${wo.assignedTo === currentUser?.name ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-stone-100 text-stone-600'}`}>
-                                                        {wo.assignedTo?.charAt(0) || '?'}
-                                                    </div>
-                                                    <span className="text-[9px] text-stone-400">{formatDateShort(wo.dueDate)}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )})}
-                                    {columnWos.length === 0 && (
-                                        <div className="h-20 border-2 border-dashed border-stone-200 rounded-lg flex items-center justify-center text-stone-400 text-[10px] italic">
-                                            {t('workOrders.noOrders')}
-                                        </div>
+                                >
+                                  <div className="flex justify-between items-start mb-1.5">
+                                    <span className="text-xs font-mono text-stone-400 truncate max-w-[120px]">{wo.id}</span>
+                                    {isDraggable && (
+                                      <button
+                                        title={t('workOrders.dragToChange')}
+                                        aria-label={t('workOrders.dragToChange')}
+                                        className="text-stone-300 hover:text-stone-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <GripVertical size={12} />
+                                      </button>
                                     )}
-                                </div>
+                                  </div>
+
+                                  <h4 className="font-medium text-stone-800 text-sm mb-2 leading-snug line-clamp-2">{wo.title}</h4>
+
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className={`px-1.5 py-0.5 rounded border text-xs uppercase font-bold ${priorityColors[wo.priority]}`}>
+                                      {translatePriority(wo.priority)}
+                                    </span>
+                                  </div>
+
+                                  {/* Preferred Date - Show prominently if set */}
+                                  {
+                                    wo.preferredDate && (
+                                      <div className="mb-2 px-2 py-1.5 bg-violet-50 border border-violet-200 rounded-lg text-xs text-violet-700 flex items-center gap-1.5">
+                                        <Calendar size={12} className="text-violet-500" />
+                                        <span className="font-medium">{t('workOrders.appointment')}: {formatDateDDMMYYYY(wo.preferredDate)}</span>
+                                      </div>
+                                    )
+                                  }
+
+                                  {/* Location Info */}
+                                  <div className="mb-2 text-sm text-stone-600">
+                                    <div className="flex items-start gap-1.5">
+                                      <MapPin size={12} className="text-stone-400 mt-0.5 flex-shrink-0" />
+                                      <span className="line-clamp-1">{wo.location}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* GPS Navigation Link */}
+                                  {
+                                    wo.locationData && (
+                                      <a
+                                        href={`https://www.google.com/maps/dir/?api=1&destination=${wo.locationData.latitude},${wo.locationData.longitude}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="flex items-center gap-1.5 mb-3 px-2 py-1.5 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg text-teal-700 text-sm transition-colors"
+                                      >
+                                        <Navigation size={12} />
+                                        <span className="truncate flex-1 text-left">{wo.locationData.address.split(',')[0]}</span>
+                                        <span className="text-teal-500 font-medium">{t('workOrders.navigateBtn')}</span>
+                                      </a>
+                                    )
+                                  }
+
+                                  <div className="flex items-center justify-between pt-3 border-t border-stone-100 mt-3">
+                                    <div className="flex items-center gap-1.5 text-sm text-stone-500">
+                                      <div className={`w-5 h-5 rounded-lg border border-stone-200 flex items-center justify-center text-xs font-bold ${wo.assignedTo === currentUser?.name ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-stone-100 text-stone-600'}`}>
+                                        {wo.assignedTo?.charAt(0) || '?'}
+                                      </div>
+                                      <span className="text-xs text-stone-400">{formatDateShort(wo.dueDate)}</span>
+                                    </div>
+                                  </div>
+                                </div >
+                              )
+                            })}
+                          {
+                            columnWos.length === 0 && (
+                              <div className="h-20 border-2 border-dashed border-stone-200 rounded-lg flex items-center justify-center text-stone-400 text-xs italic">
+                                {t('workOrders.noOrders')}
+                              </div>
+                            )
+                          }
+                        </div >
+                      </div >
+                    );
+                  })}
+                </div >
+              )}
+
+              {/* Swimlane Mode: Priority */}
+              {
+                swimlaneMode === 'priority' && (
+                  <div className="space-y-4 h-full overflow-y-auto">
+                    {[Priority.CRITICAL, Priority.HIGH, Priority.MEDIUM, Priority.LOW].map(priority => {
+                      const priorityWos = filteredWorkOrders.filter(wo => wo.priority === priority);
+                      if (priorityWos.length === 0) return null;
+
+                      return (
+                        <div key={priority} className="bg-white rounded-xl border border-stone-200/60 shadow-sm">
+                          {/* Swimlane Header */}
+                          <div className={`px-4 py-2 border-b border-stone-100 flex items-center gap-2 ${priorityColors[priority].split(' ').slice(1).join(' ')}`}>
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${priorityColors[priority]}`}>
+                              {translatePriority(priority)}
+                            </span>
+                            <span className="text-xs text-stone-500">({priorityWos.length})</span>
+                          </div>
+
+                          {/* Horizontal scroll cards */}
+                          <div className="p-3 overflow-x-auto">
+                            <div className="flex gap-3 min-w-max">
+                              {columns.filter(status => visibleColumns.has(status)).map(status => {
+                                const statusWos = priorityWos.filter(wo => wo.status === status);
+                                return (
+                                  <div key={status} className="w-[220px] flex-shrink-0">
+                                    <div className="flex items-center gap-1.5 mb-2 px-1">
+                                      <div className={`w-2 h-2 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
+                                      <span className="text-[10px] font-semibold text-stone-600">{translateStatus(status)}</span>
+                                      <span className="text-[10px] text-stone-400">({statusWos.length})</span>
+                                    </div>
+                                    <div
+                                      className="space-y-2 min-h-[60px] bg-stone-50/50 rounded-lg p-2"
+                                      onDragOver={handleDragOver}
+                                      onDrop={(e) => handleDrop(e, status)}
+                                    >
+                                      {statusWos.map(wo => (
+                                        <div
+                                          key={wo.id}
+                                          draggable
+                                          onDragStart={(e) => handleDragStart(e, wo.id)}
+                                          onClick={() => setSelectedWO(wo)}
+                                          className="bg-white p-2 rounded-lg shadow-sm border border-stone-200/60 cursor-grab active:cursor-grabbing hover:shadow-md transition-all text-xs"
+                                        >
+                                          <div className="font-medium text-stone-800 line-clamp-1 mb-1">{wo.title}</div>
+                                          <div className="flex items-center justify-between text-[10px] text-stone-500">
+                                            <span>{wo.assignedTo || t('workOrders.unassigned')}</span>
+                                            <span>{formatDateShort(wo.dueDate)}</span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
-                        );
+                          </div>
+                        </div>
+                      );
                     })}
-                </div>
-            </div>
-        )}
-      </div>
+                  </div>
+                )
+              }
+
+              {/* Swimlane Mode: Technician */}
+              {
+                swimlaneMode === 'technician' && (
+                  <div className="space-y-4 h-full overflow-y-auto">
+                    {/* Get unique technicians */}
+                    {(() => {
+                      const unassignedLabel = t('workOrders.unassigned');
+                      const techNames: string[] = Array.from(new Set(filteredWorkOrders.map(wo => wo.assignedTo || unassignedLabel)));
+                      return techNames.map(techName => {
+                        const techWos = filteredWorkOrders.filter(wo => (wo.assignedTo || unassignedLabel) === techName);
+
+                        return (
+                          <div key={techName} className="bg-white rounded-xl border border-stone-200/60 shadow-sm">
+                            {/* Swimlane Header */}
+                            <div className="px-4 py-2 border-b border-stone-100 flex items-center gap-2 bg-stone-50/50">
+                              <div className="w-6 h-6 rounded-lg bg-teal-100 flex items-center justify-center text-xs font-bold text-teal-700">
+                                {techName.charAt(0)}
+                              </div>
+                              <span className="text-sm font-medium text-stone-700">{techName}</span>
+                              <span className="text-xs text-stone-500">({techWos.length})</span>
+                            </div>
+
+                            {/* Horizontal scroll cards */}
+                            <div className="p-3 overflow-x-auto">
+                              <div className="flex gap-3 min-w-max">
+                                {columns.filter(status => visibleColumns.has(status)).map(status => {
+                                  const statusWos = techWos.filter(wo => wo.status === status);
+                                  return (
+                                    <div key={status} className="w-[220px] flex-shrink-0">
+                                      <div className="flex items-center gap-1.5 mb-2 px-1">
+                                        <div className={`w-2 h-2 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
+                                        <span className="text-[10px] font-semibold text-stone-600">{translateStatus(status)}</span>
+                                        <span className="text-[10px] text-stone-400">({statusWos.length})</span>
+                                      </div>
+                                      <div
+                                        className="space-y-2 min-h-[60px] bg-stone-50/50 rounded-lg p-2"
+                                        onDragOver={handleDragOver}
+                                        onDrop={(e) => handleDrop(e, status)}
+                                      >
+                                        {statusWos.map(wo => (
+                                          <div
+                                            key={wo.id}
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, wo.id)}
+                                            onClick={() => setSelectedWO(wo)}
+                                            className="bg-white p-2 rounded-lg shadow-sm border border-stone-200/60 cursor-grab active:cursor-grabbing hover:shadow-md transition-all text-xs"
+                                          >
+                                            <div className="font-medium text-stone-800 line-clamp-1 mb-1">{wo.title}</div>
+                                            <div className="flex items-center justify-between text-[10px]">
+                                              <span className={`px-1.5 py-0.5 rounded border ${priorityColors[wo.priority]}`}>
+                                                {translatePriority(wo.priority)}
+                                              </span>
+                                              <span className="text-stone-500">{formatDateShort(wo.dueDate)}</span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                )
+              }
+            </div >
+          )
+        }
+      </div >
 
       {/* Slide-over Detail Panel */}
-      {selectedWO && (
-        <div className="fixed inset-0 z-10 flex justify-end">
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" onClick={() => setSelectedWO(null)}></div>
-          <div className="relative w-full max-w-2xl bg-white shadow-2xl h-full overflow-y-auto flex flex-col">
+      {
+        selectedWO && (
+          <div className="fixed inset-0 z-10 flex justify-end">
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" onClick={() => setSelectedWO(null)}></div>
+            <div className="relative w-full max-w-2xl bg-white shadow-2xl h-full overflow-y-auto flex flex-col">
 
-            {/* Modal Header */}
-            <div className="p-6 border-b border-stone-100 bg-white sticky top-0 z-20 flex justify-between items-start">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                   <h2 className="font-serif text-xl text-stone-900">{selectedWO.id}: {selectedWO.title}</h2>
-                   <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${statusColors[selectedWO.status]}`}>{selectedWO.status}</span>
-                   {selectedWOPermissions && (
-                     <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${
-                       selectedWOPermissions.canEdit 
-                         ? 'bg-green-50 text-green-700 border-green-200' 
-                         : 'bg-stone-100 text-stone-600 border-stone-200'
-                     }`}>
-                       {selectedWOPermissions.canEdit ? `✓ ${t('workOrders.editable')}` : `🔒 ${t('workOrders.readOnly')}`}
-                     </span>
-                   )}
-                </div>
-                <p className="text-stone-500 text-sm">{t('workOrders.createdOnDate')} {formatDateDDMMYYYY(selectedWO.createdAt)} • {t('workOrders.dueDateDisplay')} {formatDateDDMMYYYY(selectedWO.dueDate)}</p>
-                {selectedWO.preferredDate && (
-                  <p className="text-violet-600 text-sm mt-1 flex items-center gap-1.5">
-                    <Calendar size={14} />
-                    <span>{t('workOrders.appointmentDate')}: <span className="font-medium">{formatDateDDMMYYYY(selectedWO.preferredDate)}</span></span>
-                  </p>
-                )}
-                {selectedWO.assignedTo && (
-                  <p className="text-stone-600 text-sm mt-1">
-                    {t('workOrders.assignedTo')}: <span className="font-medium">{selectedWO.assignedTo}</span>
-                    {selectedWO.assignedTo === currentUser?.name && (
-                      <span className="ml-2 text-teal-600 font-medium">{t('workOrders.you')}</span>
-                    )}
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={() => setSelectedWO(null)}
-                title={t('workOrders.closePanel')}
-                aria-label={t('workOrders.closePanel')}
-                className="p-2 hover:bg-stone-100 rounded-xl text-stone-400 hover:text-stone-600 transition-colors duration-200"
-              >
-                <X size={24} />
-              </button>
-            </div>
+              {/* Modal Header */}
+              <div className="p-6 border-b border-stone-100 bg-white sticky top-0 z-20 flex justify-between items-start">
+                <div className="flex-1">
+                  {/* Requester Info - Show at top */}
+                  {selectedWO.createdBy && (
+                    <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                      <UserCircle2 size={16} className="text-blue-600" />
+                      <span className="text-sm text-blue-700">
+                        <span className="font-medium">{t('workOrders.requestedBy')}:</span> {selectedWO.createdBy}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <h2 className="font-serif text-2xl text-stone-900">{selectedWO.id}: {selectedWO.title}</h2>
+                    <span className={`px-2.5 py-1 rounded-lg text-sm font-bold border ${statusColors[selectedWO.status]}`}>{translateStatus(selectedWO.status)}</span>
+                    {
+                      selectedWOPermissions && (
+                        <span className={`px-2.5 py-1 rounded-lg text-sm font-semibold border ${selectedWOPermissions.canEdit
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : 'bg-stone-100 text-stone-600 border-stone-200'
+                          }`}>
+                          {selectedWOPermissions.canEdit ? `✓ ${t('workOrders.editable')}` : `🔒 ${t('workOrders.readOnly')}`}
+                        </span>
+                      )
+                    }
+                  </div >
+                  <p className="text-stone-500 text-base">{t('workOrders.createdOnDate')} {formatDateDDMMYYYY(selectedWO.createdAt)} • {t('workOrders.dueDateDisplay')} {formatDateDDMMYYYY(selectedWO.dueDate)}</p>
+                  {
+                    selectedWO.preferredDate && (
+                      <p className="text-violet-600 text-base mt-1 flex items-center gap-1.5">
+                        <Calendar size={14} />
+                        <span>{t('workOrders.appointmentDate')}: <span className="font-medium">{formatDateDDMMYYYY(selectedWO.preferredDate)}</span></span>
+                      </p>
+                    )
+                  }
+                  {
+                    selectedWO.assignedTo && (
+                      <p className="text-stone-600 text-base mt-1">
+                        {t('workOrders.assignedTo')}: <span className="font-medium">{selectedWO.assignedTo}</span>
+                        {selectedWO.assignedTo === currentUser?.name && (
+                          <span className="ml-2 text-teal-600 font-medium">{t('workOrders.you')}</span>
+                        )}
+                      </p>
+                    )
+                  }
+                </div >
+                <button
+                  onClick={() => setSelectedWO(null)}
+                  title={t('workOrders.closePanel')}
+                  aria-label={t('workOrders.closePanel')}
+                  className="p-2 hover:bg-stone-100 rounded-xl text-stone-400 hover:text-stone-600 transition-colors duration-200"
+                >
+                  <X size={24} />
+                </button>
+              </div >
 
-            <div className="p-6 space-y-8 flex-1">
+              <div className="p-6 space-y-8 flex-1">
 
-              {/* Description */}
-              <div>
-                <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2">{t('workOrders.description')}</h3>
-                <p className="text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100">
-                  {selectedWO.description}
-                </p>
-                {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.PENDING && (
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('workOrders.review')}</label>
-                    <textarea
-                      value={adminReview}
-                      onChange={(e) => setAdminReview(e.target.value)}
-                      rows={4}
-                      className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-white"
-                      placeholder={t('workOrders.reviewPlaceholder')}
-                    />
-                    <p className="text-xs text-stone-500 mt-1">{t('workOrders.reviewNote')}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* GPS Location Section with Map */}
-              {/* Debug: check if locationData exists */}
-              {console.log('selectedWO.locationData:', selectedWO.locationData)}
-              {selectedWO.locationData && (
+                {/* Description */}
                 <div>
-                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
-                    <MapPin size={16} className="text-teal-600" /> 📍 {t('workOrders.gpsLocation')}
-                  </h3>
-                  <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200 rounded-xl overflow-hidden">
-                    {/* Embedded Map using OpenStreetMap */}
-                    <div className="h-[200px] w-full">
-                      <iframe
-                        title={t('workOrders.locationMap')}
-                        width="100%"
-                        height="100%"
-                        className="border-0"
-                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedWO.locationData.longitude - 0.005},${selectedWO.locationData.latitude - 0.003},${selectedWO.locationData.longitude + 0.005},${selectedWO.locationData.latitude + 0.003}&layer=mapnik&marker=${selectedWO.locationData.latitude},${selectedWO.locationData.longitude}`}
-                      />
-                    </div>
-                    
-                    {/* Location Details */}
-                    <div className="p-4">
-                      <p className="text-sm text-stone-700 mb-3 font-medium">{selectedWO.locationData.address}</p>
-                      <div className="flex items-center gap-3 text-xs text-stone-500 mb-4">
-                        <span className="font-mono bg-white px-2 py-1 rounded border border-stone-200">
-                          Lat: {selectedWO.locationData.latitude.toFixed(6)}
-                        </span>
-                        <span className="font-mono bg-white px-2 py-1 rounded border border-stone-200">
-                          Lng: {selectedWO.locationData.longitude.toFixed(6)}
-                        </span>
-                      </div>
-                      
-                      {/* Google Maps Links */}
-                      <div className="flex flex-wrap gap-2">
-                        <a
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${selectedWO.locationData.latitude},${selectedWO.locationData.longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-xl transition-colors shadow-lg shadow-teal-600/20"
-                        >
-                          <Navigation size={18} />
-                          {t('workOrders.navigateBtn')}
-                        </a>
-                        <a
-                          href={`https://www.google.com/maps?q=${selectedWO.locationData.latitude},${selectedWO.locationData.longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-stone-50 text-teal-700 font-medium rounded-xl transition-colors border-2 border-teal-200"
-                        >
-                          <MapPin size={18} />
-                          {t('workOrders.viewInMaps')}
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-             
-              {/* Head Technician Review Section (visible only to Head Technician when status is Pending) */}
-              {currentUser?.userRole === 'Head Technician' && selectedWO?.status === Status.PENDING && (
-                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
-                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <CheckSquare size={16} className="text-purple-600" /> {t('workOrders.reviewWorkCompletion')}
-                  </h3>
-
-                  {/* Display Technician's Work */}
-                  <div className="bg-white p-4 rounded-xl border border-purple-200 mb-4">
-                    <h4 className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-2">
-                      {t('workOrders.workSummary')}
+                  <h3 className="text-base font-bold text-stone-900 uppercase tracking-wide mb-2">{t('workOrders.description')}</h3>
+                  <p className="text-base text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100">
+                    {selectedWO.description}
+                  </p>
+                  {/* Reject History Section (visible to all roles, fetched from backend) */}
+                  <div className="mt-3">
+                    <h4 className="text-sm font-bold text-red-700 uppercase tracking-wide mb-1 flex items-center gap-2">
+                      <X size={14} className="text-red-500" /> Reject History
                     </h4>
-                    
-                    {selectedWO.technicianNotes && (
-                      <div className="mb-3">
-                        <p className="text-xs font-medium text-purple-700 mb-1">{t('workOrders.workNotes')}:</p>
-                        <p className="text-sm text-stone-700 bg-stone-50 p-3 rounded-lg border border-stone-200">
-                          {selectedWO.technicianNotes}
-                        </p>
-                      </div>
+                    {isLoadingRejectHistory ? (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-base text-red-700">Loading history...</div>
+                    ) : rejectHistory && rejectHistory.length > 0 ? (
+                      <ul className="space-y-2">
+                        {rejectHistory.map(item => (
+                          <li key={item.id} className="bg-red-50 border border-red-200 rounded-xl p-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-base text-red-800 font-medium">{item.message}</span>
+                              <span className="text-sm text-red-600">{item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}</span>
+                            </div>
+                            <div className="text-sm text-red-700 mt-1">By: {item.triggeredBy}{item.recipientName ? ` → ${item.recipientName}` : ''} ({item.recipientRole})</div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm text-stone-600">No rejection history</div>
                     )}
+                  </div>
+                  {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.PENDING && (
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('workOrders.review')}</label>
+                      <textarea
+                        value={adminReview}
+                        onChange={(e) => setAdminReview(e.target.value)}
+                        rows={4}
+                        className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-white"
+                        placeholder={t('workOrders.reviewPlaceholder')}
+                      />
+                      <p className="text-xs text-stone-500 mt-1">{t('workOrders.reviewNote')}</p>
+                    </div>
+                  )}
+                </div>
 
-                    {selectedWO.technicianImages && selectedWO.technicianImages.length > 0 && (
-                      <div>
-                        <p className="text-xs font-medium text-purple-700 mb-2">
-                          {t('workOrders.workPhotos')} ({selectedWO.technicianImages.length}):
-                        </p>
-                        <div className="grid grid-cols-3 gap-2">
-                          {selectedTechImages.map((imgUrl, idx) => (
-                            <img
-                              key={idx}
-                              src={imgUrl}
-                              alt={`Work photo ${idx + 1}`}
-                              className="w-full h-20 object-cover rounded-lg border border-stone-200 cursor-pointer hover:opacity-80 transition-opacity"
-                              onClick={() => setFullscreenImage(imgUrl)}
-                            />
-                          ))}
+                {/* GPS Location Section with Map */}
+                {/* Debug: check if locationData exists */}
+                {console.log('selectedWO.locationData:', selectedWO.locationData)}
+                {selectedWO.locationData && (
+                  <div>
+                    <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
+                      <MapPin size={16} className="text-teal-600" /> 📍 {t('workOrders.gpsLocation')}
+                    </h3>
+                    <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200 rounded-xl overflow-hidden">
+                      {/* Embedded Map using OpenStreetMap */}
+                      <div className="h-[200px] w-full">
+                        <iframe
+                          title={t('workOrders.locationMap')}
+                          width="100%"
+                          height="100%"
+                          className="border-0"
+                          src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedWO.locationData.longitude - 0.005},${selectedWO.locationData.latitude - 0.003},${selectedWO.locationData.longitude + 0.005},${selectedWO.locationData.latitude + 0.003}&layer=mapnik&marker=${selectedWO.locationData.latitude},${selectedWO.locationData.longitude}`}
+                        />
+                      </div>
+
+                      {/* Location Details */}
+                      <div className="p-4">
+                        <p className="text-sm text-stone-700 mb-3 font-medium">{selectedWO.locationData.address}</p>
+                        <div className="flex items-center gap-3 text-xs text-stone-500 mb-4">
+                          <span className="font-mono bg-white px-2 py-1 rounded border border-stone-200">
+                            Lat: {selectedWO.locationData.latitude.toFixed(6)}
+                          </span>
+                          <span className="font-mono bg-white px-2 py-1 rounded border border-stone-200">
+                            Lng: {selectedWO.locationData.longitude.toFixed(6)}
+                          </span>
+                        </div>
+
+                        {/* Google Maps Links */}
+                        <div className="flex flex-wrap gap-2">
+                          <a
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${selectedWO.locationData.latitude},${selectedWO.locationData.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-xl transition-colors shadow-lg shadow-teal-600/20"
+                          >
+                            <Navigation size={18} />
+                            {t('workOrders.navigateBtn')}
+                          </a>
+                          <a
+                            href={`https://www.google.com/maps?q=${selectedWO.locationData.latitude},${selectedWO.locationData.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-stone-50 text-teal-700 font-medium rounded-xl transition-colors border-2 border-teal-200"
+                          >
+                            <MapPin size={18} />
+                            {t('workOrders.viewInMaps')}
+                          </a>
                         </div>
                       </div>
-                    )}
-
-                    {!selectedWO.technicianNotes && (!selectedWO.technicianImages || selectedWO.technicianImages.length === 0) && (
-                      <p className="text-sm text-stone-500 italic">{t('workOrders.noWorkSummary')}</p>
-                    )}
+                    </div>
                   </div>
+                )}
 
-                  {/* Review Actions */}
-                  <div className="space-y-4">
-                    {/* Approve Button */}
+
+                {/* Head Technician Review Section (visible only to Head Technician when status is Pending) */}
+                {currentUser?.userRole === 'Head Technician' && selectedWO?.status === Status.PENDING && (
+                  <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                    <h3 className="text-base font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <CheckSquare size={16} className="text-purple-600" /> {t('workOrders.reviewWorkCompletion')}
+                    </h3>
+
+                    {/* Display Technician's Work */}
+                    <div className="bg-white p-4 rounded-xl border border-purple-200 mb-4">
+                      <h4 className="text-sm font-bold text-purple-800 uppercase tracking-wide mb-2">
+                        {t('workOrders.workSummary')}
+                      </h4>
+
+                      {selectedWO.technicianNotes && (
+                        <div className="mb-3">
+                          <p className="text-sm font-medium text-purple-700 mb-1">{t('workOrders.workNotes')}:</p>
+                          <p className="text-base text-stone-700 bg-stone-50 p-3 rounded-lg border border-stone-200">
+                            {selectedWO.technicianNotes}
+                          </p>
+                        </div>
+                      )}
+
+                      {selectedWO.technicianImages && selectedWO.technicianImages.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium text-purple-700 mb-2">
+                            {t('workOrders.workPhotos')} ({selectedWO.technicianImages.length}):
+                          </p>
+                          <div className="grid grid-cols-3 gap-2">
+                            {selectedTechImages.map((imgUrl, idx) => (
+                              <img
+                                key={idx}
+                                src={imgUrl}
+                                alt={`Work photo ${idx + 1}`}
+                                className="w-full h-20 object-cover rounded-lg border border-stone-200 cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => setFullscreenImage(imgUrl)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {!selectedWO.technicianNotes && (!selectedWO.technicianImages || selectedWO.technicianImages.length === 0) && (
+                        <p className="text-base text-stone-500 italic">{t('workOrders.noWorkSummary')}</p>
+                      )}
+                    </div>
+
+                    {/* Review Actions */}
+                    <div className="space-y-4">
+                      {/* Approve Button */}
+                      <button
+                        onClick={handleApprove}
+                        disabled={isApproving || isRejecting}
+                        className="w-full px-5 py-3 bg-emerald-600 text-white rounded-xl text-base font-semibold hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                      >
+                        <CheckSquare size={18} />
+                        {isApproving ? t('workOrders.approving') : t('workOrders.approveBtn')}
+                      </button>
+
+                      {/* Rejection Section */}
+                      <div className="border-t border-purple-200 pt-4">
+                        <label className="block text-base font-medium text-purple-700 mb-2">
+                          {t('workOrders.rejectWithReason')}
+                        </label>
+                        <textarea
+                          value={rejectionReason}
+                          onChange={(e) => setRejectionReason(e.target.value)}
+                          placeholder={t('workOrders.rejectPlaceholder')}
+                          className="w-full px-4 py-3 bg-white border-2 border-purple-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none"
+                          rows={3}
+                          disabled={isApproving || isRejecting}
+                        />
+                        <button
+                          onClick={handleReject}
+                          disabled={isApproving || isRejecting || !rejectionReason.trim()}
+                          className="w-full mt-2 px-5 py-3 bg-red-600 text-white rounded-xl text-base font-semibold hover:bg-red-700 shadow-lg shadow-red-600/20 hover:shadow-xl hover:shadow-red-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                        >
+                          <X size={18} />
+                          {isRejecting ? t('workOrders.rejecting') : t('workOrders.rejectBtn')}
+                        </button>
+                      </div>
+
+                      {/* Info Messages */}
+                      <div className="space-y-2">
+                        <div className="bg-emerald-100/50 border border-emerald-200 p-3 rounded-xl">
+                          <p className="text-sm text-emerald-700 flex items-start gap-2">
+                            <CheckSquare size={14} className="mt-0.5 flex-shrink-0" />
+                            <span>
+                              {t('workOrders.approveNote')}
+                            </span>
+                          </p>
+                        </div>
+                        <div className="bg-red-100/50 border border-red-200 p-3 rounded-xl">
+                          <p className="text-sm text-red-700 flex items-start gap-2">
+                            <X size={14} className="mt-0.5 flex-shrink-0" />
+                            <span>
+                              {t('workOrders.rejectNote')}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Admin Close Section (visible to Admin when status is Completed) */}
+                {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED && (
+                  <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                    <h3 className="text-base font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <CheckSquare size={16} className="text-purple-600" /> {t('workOrders.closeWorkOrderTitle')}
+                    </h3>
+
+                    <div className="bg-white p-4 rounded-xl border border-purple-200 mb-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                          <CheckSquare size={24} className="text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="text-base font-bold text-emerald-700">{t('workOrders.workCompletedApproved')}</p>
+                          <p className="text-sm text-stone-600">{t('workOrders.readyToBeClosed')}</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-stone-50 p-3 rounded-lg border border-stone-200">
+                        <p className="text-sm text-stone-700 leading-relaxed">
+                          {t('workOrders.closingNote')}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Close Button */}
                     <button
-                      onClick={handleApprove}
-                      disabled={isApproving || isRejecting}
-                      className="w-full px-5 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                      onClick={handleClose}
+                      disabled={isClosing}
+                      className="w-full px-5 py-3 bg-purple-600 text-white rounded-xl text-base font-semibold hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:shadow-xl hover:shadow-purple-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                     >
                       <CheckSquare size={18} />
-                      {isApproving ? t('workOrders.approving') : t('workOrders.approveBtn')}
+                      {isClosing ? t('workOrders.closing') : t('workOrders.closingBtn')}
                     </button>
 
-                    {/* Rejection Section */}
-                    <div className="border-t border-purple-200 pt-4">
-                      <label className="block text-sm font-medium text-purple-700 mb-2">
-                        {t('workOrders.rejectWithReason')}
-                      </label>
-                      <textarea
-                        value={rejectionReason}
-                        onChange={(e) => setRejectionReason(e.target.value)}
-                        placeholder={t('workOrders.rejectPlaceholder')}
-                        className="w-full px-4 py-3 bg-white border-2 border-purple-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none"
-                        rows={3}
-                        disabled={isApproving || isRejecting}
-                      />
-                      <button
-                        onClick={handleReject}
-                        disabled={isApproving || isRejecting || !rejectionReason.trim()}
-                        className="w-full mt-2 px-5 py-3 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 shadow-lg shadow-red-600/20 hover:shadow-xl hover:shadow-red-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                      >
-                        <X size={18} />
-                        {isRejecting ? t('workOrders.rejecting') : t('workOrders.rejectBtn')}
-                      </button>
-                    </div>
-
-                    {/* Info Messages */}
-                    <div className="space-y-2">
-                      <div className="bg-emerald-100/50 border border-emerald-200 p-3 rounded-xl">
-                        <p className="text-xs text-emerald-700 flex items-start gap-2">
-                          <CheckSquare size={14} className="mt-0.5 flex-shrink-0" />
-                          <span>
-                            {t('workOrders.approveNote')}
-                          </span>
-                        </p>
-                      </div>
-                      <div className="bg-red-100/50 border border-red-200 p-3 rounded-xl">
-                        <p className="text-xs text-red-700 flex items-start gap-2">
-                          <X size={14} className="mt-0.5 flex-shrink-0" />
-                          <span>
-                            {t('workOrders.rejectNote')}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Admin Close Section (visible to Admin when status is Completed) */}
-              {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED && (
-                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
-                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <CheckSquare size={16} className="text-purple-600" /> {t('workOrders.closeWorkOrderTitle')}
-                  </h3>
-
-                  <div className="bg-white p-4 rounded-xl border border-purple-200 mb-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                        <CheckSquare size={24} className="text-emerald-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-emerald-700">{t('workOrders.workCompletedApproved')}</p>
-                        <p className="text-xs text-stone-600">{t('workOrders.readyToBeClosed')}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-stone-50 p-3 rounded-lg border border-stone-200">
-                      <p className="text-xs text-stone-700 leading-relaxed">
-                        {t('workOrders.closingNote')}
+                    {/* Info Message */}
+                    <div className="mt-4 bg-purple-100/50 border border-purple-200 p-3 rounded-xl">
+                      <p className="text-sm text-purple-700 flex items-start gap-2">
+                        <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                        <span>
+                          {t('workOrders.closeNote')}
+                        </span>
                       </p>
                     </div>
                   </div>
+                )}
 
-                  {/* Close Button */}
-                  <button
-                    onClick={handleClose}
-                    disabled={isClosing}
-                    className="w-full px-5 py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 shadow-lg shadow-purple-600/20 hover:shadow-xl hover:shadow-purple-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                  >
-                    <CheckSquare size={18} />
-                    {isClosing ? t('workOrders.closing') : t('workOrders.closingBtn')}
-                  </button>
+                {/* Technician Inline Update (visible to assigned Technician with edit permission) */}
+                {selectedWOPermissions?.canEdit && currentUser?.userRole === 'Technician' && selectedWO?.status === Status.IN_PROGRESS && (
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-5">
+                    <h3 className="text-base font-bold text-blue-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <ImageIcon size={16} className="text-blue-600" /> {t('workOrders.completeAndSubmit')}
+                    </h3>
 
-                  {/* Info Message */}
-                  <div className="mt-4 bg-purple-100/50 border border-purple-200 p-3 rounded-xl">
-                    <p className="text-xs text-purple-700 flex items-start gap-2">
-                      <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
-                      <span>
-                        {t('workOrders.closeNote')}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              )}
+                    <div className="mb-4">
+                      <label className="block text-base font-medium text-blue-700 mb-1.5">{t('workOrders.workNotesLabel')}</label>
+                      <textarea
+                        value={technicianNotes}
+                        onChange={(e) => setTechnicianNotes(e.target.value)}
+                        rows={5}
+                        className="w-full border-2 border-blue-200 rounded-xl p-3 text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                        placeholder={t('workOrders.workNotesPlaceholder')}
+                        disabled={!selectedWOPermissions?.canEdit}
+                      />
+                    </div>
 
-              {/* Technician Inline Update (visible to assigned Technician with edit permission) */}
-              {selectedWOPermissions?.canEdit && currentUser?.userRole === 'Technician' && selectedWO?.status === Status.IN_PROGRESS && (
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-5">
-                  <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-blue-600" /> {t('workOrders.completeAndSubmit')}
-                  </h3>
+                    <div className="mb-4">
+                      <label className="block text-base font-medium text-blue-700 mb-2">{t('workOrders.workPhotosOptional')}</label>
+                      <div className="flex items-center gap-3 mb-3">
+                        <label className={`inline-flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-blue-200 rounded-xl text-base transition-colors duration-200 ${selectedWOPermissions?.canEdit ? 'cursor-pointer hover:bg-blue-50' : 'opacity-50 cursor-not-allowed'}`}>
+                          <Upload size={16} className="text-blue-600" />
+                          <span>{isUploading ? t('workOrders.uploading') : t('workOrders.addPhotos')}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            disabled={!selectedWOPermissions?.canEdit || isUploading}
+                          />
+                        </label>
+                        {isUploading && <span className="text-base text-blue-600">{t('workOrders.uploading')}</span>}
+                        {technicianImages.length > 0 && (
+                          <button
+                            onClick={() => { setTechnicianImages([]); }}
+                            className="text-base text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={!selectedWOPermissions?.canEdit}
+                          >
+                            {t('workOrders.clearAll')}
+                          </button>
+                        )}
+                      </div>
 
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-blue-700 mb-1.5">{t('workOrders.workNotesLabel')}</label>
-                    <textarea 
-                      value={technicianNotes} 
-                      onChange={(e) => setTechnicianNotes(e.target.value)} 
-                      rows={5} 
-                      className="w-full border-2 border-blue-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white" 
-                      placeholder={t('workOrders.workNotesPlaceholder')}
-                      disabled={!selectedWOPermissions?.canEdit}
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-blue-700 mb-2">{t('workOrders.workPhotosOptional')}</label>
-                    <div className="flex items-center gap-3 mb-3">
-                      <label className={`inline-flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-blue-200 rounded-xl text-sm transition-colors duration-200 ${selectedWOPermissions?.canEdit ? 'cursor-pointer hover:bg-blue-50' : 'opacity-50 cursor-not-allowed'}`}>
-                        <Upload size={16} className="text-blue-600" />
-                        <span>{isUploading ? t('workOrders.uploading') : t('workOrders.addPhotos')}</span>
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          multiple 
-                          onChange={handleImageUpload} 
-                          className="hidden" 
-                          disabled={!selectedWOPermissions?.canEdit || isUploading}
-                        />
-                      </label>
-                      {isUploading && <span className="text-sm text-blue-600">{t('workOrders.uploading')}</span>}
-                      {technicianImages.length > 0 && (
-                        <button 
-                          onClick={() => { setTechnicianImages([]); }} 
-                          className="text-sm text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={!selectedWOPermissions?.canEdit}
-                        >
-                          {t('workOrders.clearAll')}
-                        </button>
+                      {technicianPreviewUrls.length > 0 && (
+                        <div className="grid grid-cols-3 gap-3 mb-4">
+                          {technicianPreviewUrls.map((imgUrl, idx) => (
+                            <div key={idx} className="relative rounded-xl overflow-hidden border-2 border-blue-200">
+                              <img src={imgUrl} alt={`work-photo-${idx}`} className="w-full h-28 object-cover" />
+                              <button
+                                onClick={() => removeTechnicianImage(idx)}
+                                title={t('workOrders.removeImage')}
+                                aria-label={t('workOrders.removeImage')}
+                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-md"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
 
-                    {technicianPreviewUrls.length > 0 && (
-                      <div className="grid grid-cols-3 gap-3 mb-4">
-                        {technicianPreviewUrls.map((imgUrl, idx) => (
-                          <div key={idx} className="relative rounded-xl overflow-hidden border-2 border-blue-200">
-                            <img src={imgUrl} alt={`work-photo-${idx}`} className="w-full h-28 object-cover" />
-                            <button 
-                              onClick={() => removeTechnicianImage(idx)} 
-                              title={t('workOrders.removeImage')}
-                              aria-label={t('workOrders.removeImage')}
-                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-md"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
+                    {/* Submit Button */}
+                    <button
+                      onClick={submitTechnicianUpdate}
+                      disabled={isSubmitting || (!technicianNotes.trim() && technicianImages.length === 0)}
+                      className="w-full px-5 py-3 bg-blue-600 text-white rounded-xl text-base font-semibold hover:bg-blue-700 shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                    >
+                      <CheckSquare size={18} />
+                      {isSubmitting ? t('workOrders.submitting') : t('workOrders.markDoneBtn')}
+                    </button>
+
+                    {/* Info Message */}
+                    <div className="mt-4 bg-blue-100/50 border border-blue-200 p-3 rounded-xl">
+                      <p className="text-sm text-blue-700 flex items-start gap-2">
+                        <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                        <span>
+                          {t('workOrders.submitNote')}
+                          {!technicianNotes.trim() && technicianImages.length === 0 && (
+                            <strong className="block mt-1 text-amber-700">{t('workOrders.addNotesOrPhotos')}</strong>
+                          )}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Admin Assignment Block (appears before AI Assistant) */}
+                {currentUser?.userRole === 'Admin' && (
+                  <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
+                    <h3 className="text-base font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <UserPlus size={16} className="text-purple-600" /> {t('workOrders.assign')}
+                    </h3>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <select
+                        value={adminAssignedTo}
+                        onChange={(e) => setAdminAssignedTo(e.target.value)}
+                        className="flex-1 text-base border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-stone-50"
+                        title="Select technician"
+                        aria-label="Select technician"
+                      >
+                        <option value="">{t('workOrders.selectTechnicianPlaceholder')}</option>
+                        {TECHNICIANS.map(t => (
+                          <option key={t} value={t}>{t}</option>
                         ))}
+                      </select>
+                    </div>
+                    {selectedWO.status === Status.OPEN && (
+                      <p className="mt-2 text-sm text-stone-500">{t('workOrders.savingWillMove')}</p>
+                    )}
+                    {selectedWO.status === Status.IN_PROGRESS && (
+                      <p className="mt-2 text-sm text-stone-500">{t('workOrders.savingWillKeep')}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Original Request Images */}
+                {selectedWOImages.length > 0 && (
+                  <div>
+                    <h3 className="text-base font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <ImageIcon size={16} className="text-teal-600" /> {t('workOrders.originalRequestImages')} ({selectedWOImages.length})
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {selectedWOImages.map((imgUrl, idx) => (
+                        <div
+                          key={idx}
+                          className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-teal-200 hover:border-teal-400 transition-all duration-200"
+                          onClick={() => setFullscreenImage(imgUrl)}
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`Request image ${idx + 1}`}
+                            className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
+                            <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
+                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Technician Work Images */}
+                {selectedTechImages.length > 0 && (
+                  <div>
+                    <h3 className="text-base font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <ImageIcon size={16} className="text-violet-600" /> {t('workOrders.technicianWorkImages')} ({selectedTechImages.length})
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {selectedTechImages.map((imgUrl, idx) => (
+                        <div
+                          key={idx}
+                          className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-violet-200 hover:border-violet-400 transition-all duration-200"
+                          onClick={() => setFullscreenImage(imgUrl)}
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`Technician image ${idx + 1}`}
+                            className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
+                            <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
+                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Assistant Section */}
+                <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-6 border border-teal-100 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <BrainCircuit size={120} className="text-teal-600" />
+                  </div>
+
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-4">
+                      <BrainCircuit className="text-teal-600" size={24} />
+                      <h3 className="font-serif text-xl text-teal-900">{t('workOrders.aiAssistant')}</h3>
+                    </div>
+
+                    {!analysis ? (
+                      <div>
+                        <p className="text-teal-700 mb-4 text-base">
+                          {t('workOrders.aiDescription')}
+                        </p>
+                        <button
+                          onClick={handleAnalyze}
+                          disabled={isAnalyzing}
+                          className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-medium text-base transition-all duration-200 shadow-lg shadow-teal-600/20 flex items-center gap-2 disabled:opacity-70 hover:-translate-y-0.5"
+                        >
+                          {isAnalyzing ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                              <span>{t('workOrders.analyzing')}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap size={18} />
+                              <span>{t('workOrders.analyzeIssue')}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Analysis Results */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-white/80 p-4 rounded-xl border border-teal-100">
+                            <h4 className="text-sm font-bold text-teal-600 uppercase mb-2 flex items-center gap-1">
+                              <AlertTriangle size={14} /> {t('workOrders.potentialRootCauses')}
+                            </h4>
+                            <ul className="list-disc list-inside text-base text-stone-700 space-y-1">
+                              {analysis.rootCauses.map((cause, idx) => <li key={idx}>{cause}</li>)}
+                            </ul>
+                          </div>
+                          <div className="bg-white/80 p-4 rounded-xl border border-teal-100">
+                            <h4 className="text-sm font-bold text-teal-600 uppercase mb-2 flex items-center gap-1">
+                              <Clock size={14} /> {t('workOrders.estRepairTime')}
+                            </h4>
+                            <div className="text-2xl font-bold text-stone-800">{analysis.estimatedTimeHours} {t('workOrders.hours')}</div>
+                            <p className="text-sm text-stone-500 mt-1">{t('workOrders.basedOnHistorical')} {selectedWO.assetName}</p>
+                          </div>
+                        </div>
+
+                        <div className="bg-white/80 p-4 rounded-xl border border-teal-100">
+                          <h4 className="text-sm font-bold text-teal-600 uppercase mb-2 flex items-center gap-1">
+                            <CheckSquare size={14} /> {t('workOrders.recommendedActions')}
+                          </h4>
+                          <div className="space-y-2">
+                            {analysis.recommendedActions.map((action, idx) => (
+                              <div key={idx} className="flex items-start gap-3 p-2 hover:bg-teal-50 rounded-lg transition-colors duration-200">
+                                <div className="mt-0.5 w-5 h-5 rounded-full border-2 border-teal-200 flex items-center justify-center text-xs text-teal-600 font-bold">{idx + 1}</div>
+                                <span className="text-base text-stone-700">{action}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <button onClick={handleAnalyze} className="text-sm text-teal-600 hover:text-teal-800 underline">
+                          {t('workOrders.reAnalyze')}
+                        </button>
                       </div>
                     )}
                   </div>
-
-                  {/* Submit Button */}
-                  <button
-                    onClick={submitTechnicianUpdate}
-                    disabled={isSubmitting || (!technicianNotes.trim() && technicianImages.length === 0)}
-                    className="w-full px-5 py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                  >
-                    <CheckSquare size={18} />
-                    {isSubmitting ? t('workOrders.submitting') : t('workOrders.markDoneBtn')}
-                  </button>
-
-                  {/* Info Message */}
-                  <div className="mt-4 bg-blue-100/50 border border-blue-200 p-3 rounded-xl">
-                    <p className="text-xs text-blue-700 flex items-start gap-2">
-                      <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
-                      <span>
-                        {t('workOrders.submitNote')}
-                        {!technicianNotes.trim() && technicianImages.length === 0 && (
-                          <strong className="block mt-1 text-amber-700">{t('workOrders.addNotesOrPhotos')}</strong>
-                        )}
-                      </span>
-                    </p>
-                  </div>
                 </div>
-              )}
 
-              {/* Admin Assignment Block (appears before AI Assistant) */}
-              {currentUser?.userRole === 'Admin' && (
-                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
-                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <UserPlus size={16} className="text-purple-600" /> {t('workOrders.assign')}
-                  </h3>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <select
-                      value={adminAssignedTo}
-                      onChange={(e) => setAdminAssignedTo(e.target.value)}
-                      className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-stone-50"
-                      title="Select technician"
-                      aria-label="Select technician"
-                    >
-                      <option value="">{t('workOrders.selectTechnicianPlaceholder')}</option>
-                      {TECHNICIANS.map(t => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {selectedWO.status === Status.OPEN && (
-                    <p className="mt-2 text-xs text-stone-500">{t('workOrders.savingWillMove')}</p>
-                  )}
-                  {selectedWO.status === Status.IN_PROGRESS && (
-                    <p className="mt-2 text-xs text-stone-500">{t('workOrders.savingWillKeep')}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Original Request Images */}
-              {selectedWOImages.length > 0 && (
+                {/* Spare Parts Usage Section */}
                 <div>
-                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-teal-600" /> {t('workOrders.originalRequestImages')} ({selectedWOImages.length})
+                  <h3 className="text-base font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <Package size={16} className="text-teal-600" /> {t('workOrders.spareParts')}
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {selectedWOImages.map((imgUrl, idx) => (
-                      <div
-                        key={idx}
-                        className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-teal-200 hover:border-teal-400 transition-all duration-200"
-                        onClick={() => setFullscreenImage(imgUrl)}
-                      >
-                        <img
-                          src={imgUrl}
-                          alt={`Request image ${idx + 1}`}
-                          className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
-                          <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                            </svg>
+                  <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-4">
+                    {/* List Used Parts */}
+                    {(selectedWO.partsUsed && selectedWO.partsUsed.length > 0) ? (
+                      <div className="space-y-2 mb-4">
+                        {selectedWO.partsUsed.map((part, idx) => (
+                          <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-xl border border-stone-200">
+                            <div>
+                              <div className="font-medium text-base text-stone-800">{part.name}</div>
+                              <div className="text-sm text-stone-500">Qty: {part.quantity} • ${part.cost}/unit</div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <span className="font-bold text-stone-700">${part.cost * part.quantity}</span>
+                              <button
+                                onClick={() => removePartFromWo(idx)}
+                                title="Remove part"
+                                aria-label="Remove part"
+                                className="text-red-400 hover:text-red-600 p-1 transition-colors"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
                           </div>
+                        ))}
+                        <div className="flex justify-between items-center pt-2 border-t border-stone-200 px-2">
+                          <span className="text-base font-medium text-stone-600">{t('workOrders.totalCostLabel')}</span>
+                          <span className="text-lg font-bold text-stone-900">
+                            ${selectedWO.partsUsed.reduce((acc, p) => acc + (p.cost * p.quantity), 0).toFixed(2)}
+                          </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    ) : (
+                      <div className="text-center py-4 text-stone-400 text-base mb-4">{t('workOrders.noPartsConsumed')}</div>
+                    )}
 
-              {/* Technician Work Images */}
-              {selectedTechImages.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-violet-600" /> {t('workOrders.technicianWorkImages')} ({selectedTechImages.length})
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {selectedTechImages.map((imgUrl, idx) => (
-                      <div
-                        key={idx}
-                        className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-violet-200 hover:border-violet-400 transition-all duration-200"
-                        onClick={() => setFullscreenImage(imgUrl)}
-                      >
-                        <img
-                          src={imgUrl}
-                          alt={`Technician image ${idx + 1}`}
-                          className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
-                          <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* AI Assistant Section */}
-              <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-6 border border-teal-100 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-10">
-                   <BrainCircuit size={120} className="text-teal-600" />
-                </div>
-
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-4">
-                    <BrainCircuit className="text-teal-600" size={24} />
-                    <h3 className="font-serif text-lg text-teal-900">{t('workOrders.aiAssistant')}</h3>
-                  </div>
-
-                  {!analysis ? (
-                    <div>
-                      <p className="text-teal-700 mb-4 text-sm">
-                        {t('workOrders.aiDescription')}
-                      </p>
-                      <button
-                        onClick={handleAnalyze}
-                        disabled={isAnalyzing}
-                        className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all duration-200 shadow-lg shadow-teal-600/20 flex items-center gap-2 disabled:opacity-70 hover:-translate-y-0.5"
-                      >
-                        {isAnalyzing ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            <span>{t('workOrders.analyzing')}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Zap size={18} />
-                            <span>{t('workOrders.analyzeIssue')}</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Analysis Results */}
-                      <div className="grid grid-cols-2 gap-4">
-                         <div className="bg-white/80 p-4 rounded-xl border border-teal-100">
-                            <h4 className="text-xs font-bold text-teal-600 uppercase mb-2 flex items-center gap-1">
-                               <AlertTriangle size={14} /> {t('workOrders.potentialRootCauses')}
-                            </h4>
-                            <ul className="list-disc list-inside text-sm text-stone-700 space-y-1">
-                              {analysis.rootCauses.map((cause, idx) => <li key={idx}>{cause}</li>)}
-                            </ul>
-                         </div>
-                         <div className="bg-white/80 p-4 rounded-xl border border-teal-100">
-                            <h4 className="text-xs font-bold text-teal-600 uppercase mb-2 flex items-center gap-1">
-                               <Clock size={14} /> {t('workOrders.estRepairTime')}
-                            </h4>
-                            <div className="text-2xl font-bold text-stone-800">{analysis.estimatedTimeHours} {t('workOrders.hours')}</div>
-                            <p className="text-xs text-stone-500 mt-1">{t('workOrders.basedOnHistorical')} {selectedWO.assetName}</p>
-                         </div>
-                      </div>
-
-                      <div className="bg-white/80 p-4 rounded-xl border border-teal-100">
-                        <h4 className="text-xs font-bold text-teal-600 uppercase mb-2 flex items-center gap-1">
-                            <CheckSquare size={14} /> {t('workOrders.recommendedActions')}
-                        </h4>
-                        <div className="space-y-2">
-                           {analysis.recommendedActions.map((action, idx) => (
-                             <div key={idx} className="flex items-start gap-3 p-2 hover:bg-teal-50 rounded-lg transition-colors duration-200">
-                               <div className="mt-0.5 w-5 h-5 rounded-full border-2 border-teal-200 flex items-center justify-center text-xs text-teal-600 font-bold">{idx + 1}</div>
-                               <span className="text-sm text-stone-700">{action}</span>
-                             </div>
-                           ))}
-                        </div>
-                      </div>
-
-                      <button onClick={handleAnalyze} className="text-xs text-teal-600 hover:text-teal-800 underline">
-                        {t('workOrders.reAnalyze')}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Spare Parts Usage Section */}
-              <div>
-                    <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <Package size={16} className="text-teal-600" /> {t('workOrders.spareParts')}
-                    </h3>
-                    <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-4">
-                      {/* List Used Parts */}
-                      {(selectedWO.partsUsed && selectedWO.partsUsed.length > 0) ? (
-                          <div className="space-y-2 mb-4">
-                              {selectedWO.partsUsed.map((part, idx) => (
-                                  <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-xl border border-stone-200">
-                                      <div>
-                                          <div className="font-medium text-sm text-stone-800">{part.name}</div>
-                                          <div className="text-xs text-stone-500">Qty: {part.quantity} • ${part.cost}/unit</div>
-                                      </div>
-                                      <div className="flex items-center gap-4">
-                                          <span className="font-bold text-stone-700">${part.cost * part.quantity}</span>
-                                          <button
-                                            onClick={() => removePartFromWo(idx)}
-                                            title="Remove part"
-                                            aria-label="Remove part"
-                                            className="text-red-400 hover:text-red-600 p-1 transition-colors"
-                                          >
-                                              <Trash2 size={16} />
-                                          </button>
-                                      </div>
-                                  </div>
-                              ))}
-                              <div className="flex justify-between items-center pt-2 border-t border-stone-200 px-2">
-                                  <span className="text-sm font-medium text-stone-600">{t('workOrders.totalCostLabel')}</span>
-                                  <span className="text-lg font-bold text-stone-900">
-                                      ${selectedWO.partsUsed.reduce((acc, p) => acc + (p.cost * p.quantity), 0).toFixed(2)}
-                                  </span>
-                              </div>
-                          </div>
-                      ) : (
-                        <div className="text-center py-4 text-stone-400 text-sm mb-4">{t('workOrders.noPartsConsumed')}</div>
-                      )}
-
-                      {/* Add Part Dropdown - hide for Admin when status is Completed */}
-                      {!(currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED) && (
+                    {/* Add Part Dropdown - hide for Admin when status is Completed */}
+                    {!(currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED) && (
                       <div className="flex gap-2">
-                          <select
-                            title="Add part from inventory"
-                            aria-label="Add part from inventory"
-                            className="flex-1 text-sm border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white transition-all duration-200"
-                            onChange={(e) => {
-                                addPartToWo(e.target.value);
-                                e.target.value = ''; // Reset
-                            }}
-                          >
-                              <option value="">{t('workOrders.addPartPlaceholder')}</option>
-                              {AVAILABLE_PARTS.map(p => (
-                                  <option key={p.id} value={p.id}>{p.name} (${p.cost})</option>
-                              ))}
-                          </select>
+                        <select
+                          title="Add part from inventory"
+                          aria-label="Add part from inventory"
+                          className="flex-1 text-base border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white transition-all duration-200"
+                          onChange={(e) => {
+                            addPartToWo(e.target.value);
+                            e.target.value = ''; // Reset
+                          }}
+                        >
+                          <option value="">{t('workOrders.addPartPlaceholder')}</option>
+                          {AVAILABLE_PARTS.map(p => (
+                            <option key={p.id} value={p.id}>{p.name} (${p.cost})</option>
+                          ))}
+                        </select>
                       </div>
-                      )}
-                    </div>
-              </div>
+                    )}
+                  </div>
+                </div>
 
-              {/* Checklist Section */}
-              {checklist.length > 0 && (
-                 <div>
-                    <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                {/* Checklist Section */}
+                {checklist.length > 0 && (
+                  <div>
+                    <h3 className="text-base font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
                       <CheckSquare size={16} className="text-teal-600" /> {t('workOrders.maintenanceChecklist')}
                     </h3>
                     <div className="bg-white border border-stone-200/60 rounded-2xl divide-y divide-stone-100 overflow-hidden">
-                        {checklist.map((item, idx) => (
-                          <label key={idx} className="flex items-center gap-3 p-3.5 hover:bg-stone-50 cursor-pointer transition-colors duration-200">
-                            <input type="checkbox" className="w-4 h-4 rounded border-stone-300 text-teal-600 focus:ring-teal-500" />
-                            <span className="text-sm text-stone-700">{item}</span>
-                          </label>
-                        ))}
+                      {checklist.map((item, idx) => (
+                        <label key={idx} className="flex items-center gap-3 p-3.5 hover:bg-stone-50 cursor-pointer transition-colors duration-200">
+                          <input type="checkbox" className="w-4 h-4 rounded border-stone-300 text-teal-600 focus:ring-teal-500" />
+                          <span className="text-base text-stone-700">{item}</span>
+                        </label>
+                      ))}
                     </div>
-                 </div>
-              )}
-
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-stone-200 bg-stone-50 flex justify-end gap-3 sticky bottom-0 z-20">
-               {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.OPEN ? (
-                 <button
-                   onClick={handleAdminCancel}
-                   className="px-5 py-2.5 bg-rose-600 text-white rounded-xl text-sm font-semibold hover:bg-rose-700 shadow-lg shadow-rose-600/20 hover:shadow-xl hover:shadow-rose-600/25 hover:-translate-y-0.5 transition-all duration-200"
-                   title={t('workOrders.cancelWO')}
-                   aria-label={t('workOrders.cancelWO')}
-                 >
-                   {t('workOrders.cancelBtn')}
-                 </button>
-               ) : (
-                 <button
-                   onClick={() => setSelectedWO(null)}
-                   className="px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-stone-700 text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200"
-                 >
-                   {t('workOrders.closeBtn')}
-                 </button>
-               )}
-               {(() => {
-                 // Technician inline submit button is now in the update section
-                 // Only show footer buttons for Admin/Requester with edit permissions
-                 if (!selectedWOPermissions?.canEdit) {
-                   return null;
-                 }
-                 // Technicians: no footer button needed (submit is in inline section)
-                 if (currentUser?.userRole === 'Technician') {
-                   return null;
-                 }
-                 // Admin actions
-                 if (currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician') {
-                   if (selectedWO?.status === Status.OPEN) {
-                     return (
-                       <button
-                         onClick={handleAdminAssign}
-                         className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
-                       >
-                         <span>{t('workOrders.saveAndUpdate')}</span>
-                         <ArrowRight size={16} />
-                       </button>
-                     );
-                   }
-                   if (selectedWO?.status === Status.IN_PROGRESS) {
-                     return (
-                       <button
-                         onClick={handleAdminAssign}
-                         className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
-                       >
-                         <span>{t('workOrders.saveAndUpdate')}</span>
-                         <ArrowRight size={16} />
-                       </button>
-                     );
-                   }
-                   // Removed Save & Update button for Pending status
-                 }
-                 return null;
-               })()}
-            </div>
-
-          </div>
-        </div>
-      )}
-      {/* Technician Update Modal */}
-      {showTechnicianModal && (
-        <div className="fixed inset-0 z-10 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowTechnicianModal(false)}></div>
-          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-auto p-6 z-20">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="font-serif text-lg text-stone-900">{t('workOrders.updateTechnicianModal')}</h3>
-              <button onClick={() => setShowTechnicianModal(false)} title={t('workOrders.closeModal')} aria-label={t('workOrders.closeModal')} className="p-2 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors duration-200">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-stone-700">{t('workOrders.notesLabel')}</label>
-              <textarea value={technicianNotes} onChange={(e) => setTechnicianNotes(e.target.value)} rows={5} placeholder={t('workOrders.notesPlaceholder')} className="w-full border border-stone-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-stone-50 transition-all duration-200" />
-
-              <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">{t('workOrders.addImages')}</label>
-                <div className="flex items-center gap-3">
-                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm hover:bg-stone-100 transition-colors duration-200">
-                    <Upload size={16} />
-                    <span>{isUploading ? t('workOrders.uploading') : t('workOrders.selectImages')}</span>
-                    <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
-                  </label>
-                  {isUploading && <span className="text-sm text-stone-500">{t('workOrders.uploading')}</span>}
-                </div>
-                {technicianPreviewUrls.length > 0 && (
-                  <div className="grid grid-cols-3 gap-3 mt-4">
-                    {technicianPreviewUrls.map((imgUrl, idx) => (
-                      <div key={idx} className="relative rounded-xl overflow-hidden border border-stone-200">
-                        <img src={imgUrl} alt={`img-${idx}`} className="w-full h-28 object-cover" />
-                        <button onClick={() => removeTechnicianImage(idx)} title="Remove image" aria-label="Remove image" className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ))}
                   </div>
                 )}
+
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t border-stone-200 bg-stone-50 flex justify-end gap-3 sticky bottom-0 z-20">
+                {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.OPEN ? (
+                  <button
+                    onClick={handleAdminCancel}
+                    className="px-5 py-2.5 bg-rose-600 text-white rounded-xl text-base font-semibold hover:bg-rose-700 shadow-lg shadow-rose-600/20 hover:shadow-xl hover:shadow-rose-600/25 hover:-translate-y-0.5 transition-all duration-200"
+                    title={t('workOrders.cancelWO')}
+                    aria-label={t('workOrders.cancelWO')}
+                  >
+                    {t('workOrders.cancelBtn')}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setSelectedWO(null)}
+                    className="px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-stone-700 text-base font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200"
+                  >
+                    {t('workOrders.closeBtn')}
+                  </button>
+                )}
+                {(() => {
+                  // Technician inline submit button is now in the update section
+                  // Only show footer buttons for Admin/Requester with edit permissions
+                  if (!selectedWOPermissions?.canEdit) {
+                    return null;
+                  }
+                  // Technicians: no footer button needed (submit is in inline section)
+                  if (currentUser?.userRole === 'Technician') {
+                    return null;
+                  }
+                  // Admin actions
+                  if (currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician') {
+                    if (selectedWO?.status === Status.OPEN) {
+                      return (
+                        <button
+                          onClick={handleAdminAssign}
+                          className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-base font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
+                        >
+                          <span>{t('workOrders.saveAndUpdate')}</span>
+                          <ArrowRight size={16} />
+                        </button>
+                      );
+                    }
+                    if (selectedWO?.status === Status.IN_PROGRESS) {
+                      return (
+                        <button
+                          onClick={handleAdminAssign}
+                          className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-base font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
+                        >
+                          <span>{t('workOrders.saveAndUpdate')}</span>
+                          <ArrowRight size={16} />
+                        </button>
+                      );
+                    }
+                    // Removed Save & Update button for Pending status
+                  }
+                  return null;
+                })()}
+              </div>
+
+            </div >
+          </div >
+        )
+      }
+      {/* Technician Update Modal */}
+      {
+        showTechnicianModal && (
+          <div className="fixed inset-0 z-10 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowTechnicianModal(false)}></div>
+            <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-auto p-6 z-20">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="font-serif text-xl text-stone-900">{t('workOrders.updateTechnicianModal')}</h3>
+                <button onClick={() => setShowTechnicianModal(false)} title={t('workOrders.closeModal')} aria-label={t('workOrders.closeModal')} className="p-2 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors duration-200">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block text-base font-medium text-stone-700">{t('workOrders.notesLabel')}</label>
+                <textarea value={technicianNotes} onChange={(e) => setTechnicianNotes(e.target.value)} rows={5} placeholder={t('workOrders.notesPlaceholder')} className="w-full border border-stone-200 rounded-xl p-3 text-base outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-stone-50 transition-all duration-200" />
+
+                <div>
+                  <label className="block text-base font-medium text-stone-700 mb-2">{t('workOrders.addImages')}</label>
+                  <div className="flex items-center gap-3">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-base hover:bg-stone-100 transition-colors duration-200">
+                      <Upload size={16} />
+                      <span>{isUploading ? t('workOrders.uploading') : t('workOrders.selectImages')}</span>
+                      <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+                    </label>
+                    {isUploading && <span className="text-sm text-stone-500">{t('workOrders.uploading')}</span>}
+                  </div>
+                  {technicianPreviewUrls.length > 0 && (
+                    <div className="grid grid-cols-3 gap-3 mt-4">
+                      {technicianPreviewUrls.map((imgUrl, idx) => (
+                        <div key={idx} className="relative rounded-xl overflow-hidden border border-stone-200">
+                          <img src={imgUrl} alt={`img-${idx}`} className="w-full h-28 object-cover" />
+                          <button onClick={() => removeTechnicianImage(idx)} title="Remove image" aria-label="Remove image" className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button onClick={() => setShowTechnicianModal(false)} className="px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200">{t('common.cancel')}</button>
+                <button onClick={submitTechnicianUpdate} disabled={isSubmitting} className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:-translate-y-0.5 transition-all duration-200">
+                  {isSubmitting ? t('workOrders.saving') : t('workOrders.saveAndUpdate')}
+                  <Save size={14} />
+                </button>
               </div>
             </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setShowTechnicianModal(false)} className="px-5 py-2.5 bg-white border-2 border-stone-200 rounded-xl text-sm font-medium hover:bg-stone-50 hover:border-stone-300 transition-all duration-200">{t('common.cancel')}</button>
-              <button onClick={submitTechnicianUpdate} disabled={isSubmitting} className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:-translate-y-0.5 transition-all duration-200">
-                {isSubmitting ? t('workOrders.saving') : t('workOrders.saveAndUpdate')}
-                <Save size={14} />
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Fullscreen Image Modal */}
-      {fullscreenImage && (
-        <div
-          className="fixed inset-0 z-20 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setFullscreenImage(null)}
-        >
-          <button
+      {
+        fullscreenImage && (
+          <div
+            className="fixed inset-0 z-20 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setFullscreenImage(null)}
-            className="absolute top-4 right-4 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
-            title={t('common.close')}
-            aria-label={t('common.close')}
           >
-            <X size={28} />
-          </button>
-          <img
-            src={fullscreenImage}
-            alt="Full size"
-            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm bg-black/50 px-4 py-2 rounded-full">
-            {t('workOrders.clickOutsideToClose')}
+            <button
+              onClick={() => setFullscreenImage(null)}
+              className="absolute top-4 right-4 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
+              title={t('common.close')}
+              aria-label={t('common.close')}
+            >
+              <X size={28} />
+            </button>
+            <img
+              src={fullscreenImage}
+              alt="Full size"
+              className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm bg-black/50 px-4 py-2 rounded-full">
+              {t('workOrders.clickOutsideToClose')}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 

@@ -331,3 +331,9 @@ html {
   background-color: rgba(20, 184, 166, 0.2);
   color: inherit;
 }
+
+/* Vertical Text for Kanban collapsed columns */
+.writing-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}

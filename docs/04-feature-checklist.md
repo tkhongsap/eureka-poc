@@ -7,7 +7,7 @@
 - 🔄 กำลังทำ  
 - ❌ ยังไม่ได้ทำ
 
-**อัพเดทล่าสุด:** 2025-12-08
+**อัพเดทล่าสุด:** 2025-12-09
 
 ---
 
@@ -74,12 +74,12 @@
 
 | Feature | สถานะ | หมายเหตุ |
 |---------|-------|----------|
-| Multi-column Kanban layout | 🔄 | Phase 1 - มี List view, Kanban partial |
-| Drag-and-drop status updates | ❌ | Phase 1 |
-| Collapsible columns | ❌ | Phase 1 |
-| Column customization | ❌ | |
-| Column counters | ❌ | Phase 1 |
-| Swimlanes (priority/asset/technician) | ❌ | |
+| Multi-column Kanban layout | ✅ | Phase 1 - 5 columns (Open, In Progress, Pending, Completed, Canceled) |
+| Drag-and-drop status updates | ✅ | Phase 1 - รองรับ workflow rules ตาม role |
+| Collapsible columns | ✅ | Phase 1 - คลิกเพื่อย่อ/ขยาย column |
+| Column customization | ✅ | Phase 1 - เลือก columns ที่จะแสดง ผ่าน Board Settings |
+| Column counters | ✅ | Phase 1 - แสดงจำนวน WO ในแต่ละ column |
+| Swimlanes (priority/asset/technician) | ✅ | Phase 1 - Group by None/Priority/Technician |
 
 ### Work Order Cards
 
@@ -539,7 +539,7 @@
 | Tenant & Site Management | 0 | 0 | 11 | 11 | 0% |
 | Authentication | 4 | 0 | 6 | 10 | 40% |
 | Work Notifications | 12 | 0 | 2 | 14 | 86% |
-| Work Order Management | 19 | 2 | 25 | 46 | 41% |
+| Work Order Management | 25 | 0 | 21 | 46 | 54% |
 | Technician Features | 3 | 0 | 12 | 15 | 20% |
 | Preventive Maintenance | 0 | 0 | 10 | 10 | 0% |
 | Route-Based Maintenance | 0 | 0 | 8 | 8 | 0% |
@@ -560,7 +560,7 @@
 | Dashboard | 10 | 1 | 0 | 11 | 91% |
 | Design System | 11 | 1 | 2 | 14 | 79% |
 | เพิ่มเติมจาก PRD | 7 | 0 | 0 | 7 | 100% |
-| **รวมทั้งหมด** | **82** | **6** | **203** | **291** | **30%** |
+| **รวมทั้งหมด** | **86** | **3** | **202** | **291** | **30%** |
 
 ---
 
