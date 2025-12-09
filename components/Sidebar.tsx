@@ -13,7 +13,9 @@ import {
   LogOut,
   Package,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Building2,
+  HelpCircle
 } from 'lucide-react';
 import { UserRole, User } from '../types';
 import { useLanguage } from '../lib/i18n';
@@ -50,8 +52,10 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'work-orders', labelKey: 'nav.workOrders' as const, icon: Wrench, roles: ['Admin', 'Head Technician', 'Technician'] },
     { id: 'my-work-orders', labelKey: 'nav.myWorkOrders' as const, icon: ClipboardList, roles: ['Requester'] },
     { id: 'requests', labelKey: 'nav.requests' as const, icon: FileText, roles: ['Admin', 'Head Technician', 'Technician', 'Requester'] },
+    { id: 'assets', labelKey: 'nav.assets' as const, icon: Building2, roles: ['Admin', 'Head Technician', 'Technician'] },
     { id: 'inventory', labelKey: 'inventory.title' as const, icon: Package, roles: ['Admin', 'Head Technician', 'Technician'] },
     { id: 'team', labelKey: 'team.title' as const, icon: Users, roles: ['Admin', 'Head Technician'] },
+    { id: 'reports', labelKey: 'nav.reports' as const, icon: BarChart3, roles: ['Admin'] },
     { id: 'user-management', labelKey: 'nav.userManagement' as const, icon: UserCog, roles: ['Admin'] },
   ];
 
@@ -99,6 +103,19 @@ const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       <div className="p-4 border-t border-stone-700 space-y-1">
+        {/* Help Button */}
+        <button
+          onClick={() => onChangeView('help')}
+          title={isCollapsed ? t('nav.help') : undefined}
+          className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-xl transition-all duration-200 ${
+            currentView === 'help'
+              ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20'
+              : 'text-stone-400 hover:bg-stone-800 hover:text-white'
+          }`}
+        >
+          <HelpCircle size={20} className="flex-shrink-0" />
+          {!isCollapsed && <span className="font-medium text-base">{t('nav.help')}</span>}
+        </button>
         {/* Settings Button */}
         <button
           onClick={() => onChangeView('settings')}

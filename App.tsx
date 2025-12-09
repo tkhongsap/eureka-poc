@@ -11,6 +11,8 @@ import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
 import NotificationCenter from './components/NotificationCenter';
 import Settings from './components/Settings';
+import Help from './components/Help';
+import Reports from './components/Reports';
 import UserRoleManagement from './components/UserRoleManagement';
 import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
 import { UserCircle2 } from 'lucide-react';
@@ -488,6 +490,10 @@ const App: React.FC = () => {
         );
       case 'settings':
         return <Settings />;
+      case 'help':
+        return <Help />;
+      case 'reports':
+        return <Reports />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full text-slate-400">
