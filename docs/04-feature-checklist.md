@@ -35,14 +35,15 @@
 |---------|-------|----------|
 | PASETO/JWT authentication | ✅ | Phase 1 - ใช้ JWT + Authlib |
 | User login/logout | ✅ | Phase 1 |
-| Role-based access control (RBAC) | ✅ | Phase 1 - 4 roles (PRD มี 8 roles) |
+| Role-based access control (RBAC) | ✅ | Phase 1 - 4 roles: Admin, Head Technician, Technician, Requester |
 | User session management | ✅ | ใช้ sessionStorage |
 | Password reset/change | ❌ | Phase 1 |
-| User management | ❌ | Phase 1 |
+| User management | 🔄 | Phase 1 - มี API แต่ยังไม่มี UI จัดการ |
 | Two-Factor Authentication | ❌ | |
 | Keycloak integration | ❌ | Phase 2 |
 | User profile | ❌ | |
 | User preferences | ❌ | |
+| Team structure (teamId) | ✅ | เพิ่มเติม - Technician → Head Technician routing |
 
 ---
 
@@ -419,7 +420,7 @@
 | Quick actions (create new) | ❌ | Phase 1 |
 | Notifications bell icon | ✅ | NotificationCenter |
 | Unread count badge | ✅ | |
-| Mark all as read | ❌ | |
+| Mark all as read | ✅ | มี API และ UI แล้ว |
 | User menu dropdown | ✅ | |
 | User avatar with status | ❌ | |
 | Theme toggle (light/dark) | ❌ | |
@@ -529,6 +530,11 @@
 | Landing page | ✅ | หน้าแรกก่อน login |
 | Requestor portal | ✅ | แยก portal สำหรับ requestor |
 | Team schedule view | ✅ | TeamSchedule component |
+| Per-user notification system | ✅ | Notifications ส่งถึงผู้ใช้รายบุคคลด้วย recipientName |
+| managedBy tracking | ✅ | Track admin ที่ assign งาน เพื่อ route notifications |
+| Reject history | ✅ | แสดงประวัติการ reject งานใน WO detail |
+| WO Canceled notification | ✅ | แจ้งเตือน Requester เมื่อ Admin ยกเลิก WO |
+| Due date reminder skip | ✅ | ไม่ส่ง WO_DUE_7_DAYS ถ้า WO เพิ่งสร้างวันเดียวกัน |
 
 ---
 
@@ -537,9 +543,9 @@
 | หมวดหมู่ | เสร็จแล้ว | กำลังทำ | ยังไม่ได้ทำ | รวม | % |
 |----------|-----------|---------|-------------|-----|---|
 | Tenant & Site Management | 0 | 0 | 11 | 11 | 0% |
-| Authentication | 4 | 0 | 6 | 10 | 40% |
+| Authentication | 5 | 1 | 5 | 11 | 45% |
 | Work Notifications | 12 | 0 | 2 | 14 | 86% |
-| Work Order Management | 25 | 0 | 21 | 46 | 54% |
+| Work Order Management | 25 | 1 | 20 | 46 | 54% |
 | Technician Features | 3 | 0 | 12 | 15 | 20% |
 | Preventive Maintenance | 0 | 0 | 10 | 10 | 0% |
 | Route-Based Maintenance | 0 | 0 | 8 | 8 | 0% |
@@ -555,12 +561,12 @@
 | Location Services | 2 | 1 | 3 | 6 | 33% |
 | Native Mobile App | 0 | 0 | 5 | 5 | 0% |
 | Integrations | 0 | 0 | 6 | 6 | 0% |
-| Top Navigation | 5 | 0 | 8 | 13 | 38% |
+| Top Navigation | 6 | 0 | 7 | 13 | 46% |
 | Sidebar | 9 | 0 | 10 | 19 | 47% |
 | Dashboard | 10 | 1 | 0 | 11 | 91% |
 | Design System | 11 | 1 | 2 | 14 | 79% |
-| เพิ่มเติมจาก PRD | 7 | 0 | 0 | 7 | 100% |
-| **รวมทั้งหมด** | **86** | **3** | **202** | **291** | **30%** |
+| เพิ่มเติมจาก PRD | 12 | 0 | 0 | 12 | 100% |
+| **รวมทั้งหมด** | **95** | **5** | **196** | **296** | **32%** |
 
 ---
 
