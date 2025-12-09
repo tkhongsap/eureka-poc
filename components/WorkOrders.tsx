@@ -44,11 +44,11 @@ interface WorkOrdersProps {
 
 const statusColors = {
   [Status.OPEN]: 'bg-blue-50 text-blue-600 border-blue-200',
-  [Status.IN_PROGRESS]: 'bg-violet-50 text-violet-700 border-violet-200',
-  [Status.PENDING]: 'bg-amber-50 text-amber-700 border-amber-200',
+  [Status.IN_PROGRESS]: 'bg-orange-50 text-orange-600 border-orange-200',
+  [Status.PENDING]: 'bg-violet-50 text-violet-700 border-violet-200',
   [Status.COMPLETED]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   [Status.CLOSED]: 'bg-stone-100 text-stone-700 border-stone-200',
-  [Status.CANCELED]: 'bg-rose-50 text-rose-700 border-rose-200',
+  [Status.CANCELED]: 'bg-pink-50 text-pink-600 border-pink-200',
 };
 
 const priorityColors = {

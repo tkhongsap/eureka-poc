@@ -769,22 +769,23 @@ const Dashboard: React.FC = () => {
                   'Low': 'bg-green-100 text-green-700 border-green-200',
                 }[wo.priority] || 'bg-stone-100 text-stone-700 border-stone-200';
                 
-                const statusColor = {
-                  'Open': 'bg-blue-500',
-                  'In Progress': 'bg-orange-500',
-                  'Pending': 'bg-violet-500',
-                  'Completed': 'bg-green-500',
-                  'Closed': 'bg-stone-500',
-                }[wo.status] || 'bg-stone-400';
+                // Card background color based on status (matching WorkOrders.tsx statusColors)
+                const statusCardColor = {
+                  'Open': 'bg-blue-50 hover:bg-blue-100 border-l-4 border-l-blue-500',
+                  'In Progress': 'bg-orange-50 hover:bg-orange-100 border-l-4 border-l-orange-500',
+                  'Pending': 'bg-violet-50 hover:bg-violet-100 border-l-4 border-l-violet-500',
+                  'Completed': 'bg-emerald-50 hover:bg-emerald-100 border-l-4 border-l-emerald-500',
+                  'Closed': 'bg-stone-100 hover:bg-stone-200 border-l-4 border-l-stone-500',
+                  'Canceled': 'bg-pink-50 hover:bg-pink-100 border-l-4 border-l-pink-400',
+                }[wo.status] || 'bg-stone-50 hover:bg-stone-100 border-l-4 border-l-stone-400';
 
                 return (
                   <div 
                     key={wo.id} 
                     onClick={() => setSelectedWorkOrder(wo)}
-                    className="flex items-center justify-between p-3 bg-stone-50 rounded-xl hover:bg-stone-100 transition-colors cursor-pointer group"
+                    className={`flex items-center justify-between p-3 rounded-xl transition-colors cursor-pointer group ${statusCardColor}`}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className={`w-2 h-2 rounded-full ${statusColor} flex-shrink-0`} />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-stone-800 truncate group-hover:text-teal-700 transition-colors">
                           {wo.title}
