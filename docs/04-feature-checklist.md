@@ -449,8 +449,8 @@
 | ⚙️ Settings menu | 🔄 | มี Settings.tsx - Language ใช้ได้, Theme/Profile ยังเป็น placeholder |
 | ❓ Help & Support menu | 🔄 | มี Help.tsx - บาง section ยังเป็น Coming Soon |
 | Keyboard shortcuts (Cmd+B toggle) | ✅ | มีใน App.tsx - Ctrl+B / Cmd+B toggle sidebar |
-| Breadcrumb navigation | ❌ | |
-| Mobile slide-out drawer | ❌ | |
+| Breadcrumb navigation | ✅ | มี Breadcrumb.tsx - แสดง path navigation |
+| Mobile slide-out drawer | ❌ | รอทำ responsive mobile |
 
 ---
 
@@ -570,11 +570,11 @@
 | Native Mobile App | 0 | 0 | 5 | 5 | 0% |
 | Integrations | 0 | 0 | 6 | 6 | 0% |
 | Top Navigation | 7 | 2 | 4 | 13 | 54% |
-| Sidebar | 9 | 4 | 6 | 19 | 47% |
+| Sidebar | 10 | 4 | 5 | 19 | 53% |
 | Dashboard | 10 | 1 | 0 | 11 | 91% |
 | Design System | 11 | 2 | 1 | 14 | 79% |
 | เพิ่มเติมจาก PRD | 19 | 0 | 0 | 19 | 100% |
-| **รวมทั้งหมด** | **106** | **21** | **178** | **305** | **35%** |
+| **รวมทั้งหมด** | **107** | **21** | **177** | **305** | **35%** |
 
 ---
 
