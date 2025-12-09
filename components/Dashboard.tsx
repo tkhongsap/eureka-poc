@@ -64,7 +64,11 @@ interface PriorityDistribution {
 
 interface WorkOrdersByAssignee {
   name: string;
-  count: number;
+  count: number;  // Total assigned
+  inProgress: number;  // Currently working
+  completed: number;  // Finished
+  open: number;  // Not started yet
+  pending: number;  // Waiting for approval
 }
 
 interface RecentWorkOrder {
@@ -920,11 +924,49 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder }) => {
             {t('dashboard.woByTechnician')}
           </h3>
           <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {workOrdersByAssignee.map((assignee) => (
-                <div key={assignee.name} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl">
-                  <span className="text-sm text-stone-700 font-medium truncate">{assignee.name}</span>
-                  <span className="text-lg font-bold text-teal-600 ml-2">{assignee.count}</span>
+                <div key={assignee.name} className="bg-gradient-to-br from-stone-50 to-stone-100 rounded-2xl border border-stone-200 overflow-hidden">
+                  {/* Header with name and total */}
+                  <div className="bg-gradient-to-r from-teal-600 to-teal-500 px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                        <UserCircle size={20} className="text-white" />
+                      </div>
+                      <span className="font-semibold text-white truncate">{assignee.name}</span>
+                    </div>
+                    <div className="bg-white/20 px-3 py-1 rounded-full">
+                      <span className="text-sm font-bold text-white">{assignee.count}</span>
+                      <span className="text-xs text-white/80 ml-1">{language === 'th' ? 'งาน' : 'jobs'}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Stats Grid */}
+                  <div className="p-4 grid grid-cols-2 gap-3">
+                    {/* In Progress */}
+                    <div className="bg-white rounded-xl p-3 border-l-4 border-l-orange-500 shadow-sm">
+                      <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'กำลังทำ' : 'In Progress'}</p>
+                      <p className="text-2xl font-bold text-orange-600">{assignee.inProgress}</p>
+                    </div>
+                    
+                    {/* Completed */}
+                    <div className="bg-white rounded-xl p-3 border-l-4 border-l-emerald-500 shadow-sm">
+                      <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'เสร็จแล้ว' : 'Completed'}</p>
+                      <p className="text-2xl font-bold text-emerald-600">{assignee.completed}</p>
+                    </div>
+                    
+                    {/* Open */}
+                    <div className="bg-white rounded-xl p-3 border-l-4 border-l-blue-500 shadow-sm">
+                      <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'รอดำเนินการ' : 'Open'}</p>
+                      <p className="text-2xl font-bold text-blue-600">{assignee.open}</p>
+                    </div>
+                    
+                    {/* Pending */}
+                    <div className="bg-white rounded-xl p-3 border-l-4 border-l-violet-500 shadow-sm">
+                      <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'รออนุมัติ' : 'Pending'}</p>
+                      <p className="text-2xl font-bold text-violet-600">{assignee.pending}</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

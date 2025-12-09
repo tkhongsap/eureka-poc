@@ -177,17 +177,51 @@ async def get_dashboard_stats(
         or 0
     )
 
-    # --- Work orders by assignee ---
-    assignee_rows = (
-        db.query(WorkOrderModel.assigned_to, func.count(WorkOrderModel.id))
-        .group_by(WorkOrderModel.assigned_to)
+    # --- Work orders by assignee (with detailed status breakdown) ---
+    assignee_status_rows = (
+        db.query(
+            WorkOrderModel.assigned_to,
+            WorkOrderModel.status,
+            func.count(WorkOrderModel.id)
+        )
+        .filter(WorkOrderModel.assigned_to.isnot(None))
+        .group_by(WorkOrderModel.assigned_to, WorkOrderModel.status)
         .all()
     )
-    assignees: List[WorkOrdersByAssignee] = []
-    for name, count in assignee_rows:
+    
+    # Aggregate by technician
+    tech_stats: dict = {}
+    for name, status, count in assignee_status_rows:
         if not name:
             continue
-        assignees.append(WorkOrdersByAssignee(name=name, count=count))
+        if name not in tech_stats:
+            tech_stats[name] = {
+                'total': 0,
+                'inProgress': 0,
+                'completed': 0,
+                'open': 0,
+                'pending': 0,
+            }
+        tech_stats[name]['total'] += count
+        if status == 'In Progress':
+            tech_stats[name]['inProgress'] += count
+        elif status in ['Completed', 'Closed']:
+            tech_stats[name]['completed'] += count
+        elif status == 'Open':
+            tech_stats[name]['open'] += count
+        elif status == 'Pending':
+            tech_stats[name]['pending'] += count
+    
+    assignees: List[WorkOrdersByAssignee] = []
+    for name, stats in tech_stats.items():
+        assignees.append(WorkOrdersByAssignee(
+            name=name,
+            count=stats['total'],
+            inProgress=stats['inProgress'],
+            completed=stats['completed'],
+            open=stats['open'],
+            pending=stats['pending'],
+        ))
 
     # --- Recent work orders (last 8) ---
     recent_wo_rows = (
