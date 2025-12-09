@@ -44,6 +44,7 @@ class RecentWorkOrder(BaseModel):
     status: str
     priority: str
     assignedTo: Optional[str]
+    createdBy: Optional[str]
     createdAt: str
     dueDate: Optional[str]
 

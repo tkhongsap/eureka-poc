@@ -18,6 +18,7 @@ import {
   Lock,
   RefreshCw,
   Users,
+  UserCircle,
   FilePlus,
   AlertTriangle,
   FileText,
@@ -73,6 +74,7 @@ interface RecentWorkOrder {
   status: string;
   priority: string;
   assignedTo: string | null;
+  createdBy: string | null;
   createdAt: string;
   dueDate: string | null;
 }
@@ -985,6 +987,15 @@ const Dashboard: React.FC = () => {
                     {selectedWorkOrder.priority}
                   </span>
                 </div>
+              </div>
+              
+              {/* Requested By */}
+              <div className="bg-stone-50 p-3 rounded-xl">
+                <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ผู้แจ้งงาน' : 'Requested By'}</p>
+                <p className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                  <UserCircle size={16} className="text-stone-400" />
+                  {selectedWorkOrder.createdBy || (language === 'th' ? 'ไม่ระบุ' : 'Unknown')}
+                </p>
               </div>
               
               <div className="bg-stone-50 p-3 rounded-xl">

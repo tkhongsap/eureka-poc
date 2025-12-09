@@ -206,6 +206,7 @@ async def get_dashboard_stats(
                 status=wo.status or "Open",
                 priority=wo.priority or "Medium",
                 assignedTo=wo.assigned_to,
+                createdBy=wo.created_by,
                 createdAt=wo.created_at.isoformat() if wo.created_at else "",
                 dueDate=wo.due_date if wo.due_date else None,
             )
