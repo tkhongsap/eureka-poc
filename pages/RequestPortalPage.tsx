@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import WorkRequestPortal from '../components/WorkRequestPortal';
 import { User, UserRole } from '../types';
 import { generateTitleFromDescription } from '../services/geminiService';
@@ -7,15 +7,6 @@ import { createWorkOrder } from '../services/apiService';
 import { ArrowLeft, Wrench } from 'lucide-react';
 import { useLanguage } from '../lib/i18n';
 import LanguageSwitcher from '../components/LanguageSwitcher';
-
-// Default guest user for public request portal
-const GUEST_USER: User = {
-  id: 'guest',
-  name: 'Guest User',
-  role: 'Requester',
-  userRole: 'Requester',
-  avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest'
-};
 
 // List of technicians for assignment
 const TECHNICIANS = [
@@ -27,7 +18,38 @@ const TECHNICIANS = [
 
 const RequestPortalPage: React.FC = () => {
   const { t } = useLanguage();
-  const [currentUser] = useState<User>(GUEST_USER);
+  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check if user is logged in
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem('currentUser');
+    if (!storedUser) {
+      // Redirect to login if not authenticated
+      navigate('/login', { replace: true });
+      return;
+    }
+    
+    try {
+      const user = JSON.parse(storedUser) as User;
+      setCurrentUser(user);
+    } catch (e) {
+      console.error('Failed to parse stored user:', e);
+      navigate('/login', { replace: true });
+      return;
+    }
+    setIsLoading(false);
+  }, [navigate]);
+
+  // Show loading while checking auth
+  if (isLoading || !currentUser) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
+      </div>
+    );
+  }
 
   // Handler to create work order from request
   const handleNewRequest = async (request: {
