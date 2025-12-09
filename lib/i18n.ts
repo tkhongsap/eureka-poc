@@ -46,6 +46,7 @@ const translations = {
     // ============== Navigation ==============
     'nav.dashboard': 'Dashboard',
     'nav.workOrders': 'Work Orders',
+    'nav.myWorkOrders': 'My Work Orders',
     'nav.requests': 'Requests',
     'nav.assets': 'Assets',
     'nav.inventory': 'Inventory',
@@ -623,6 +624,7 @@ const translations = {
     // ============== Navigation ==============
     'nav.dashboard': 'แดชบอร์ด',
     'nav.workOrders': 'ใบงาน',
+    'nav.myWorkOrders': 'ใบงานของฉัน',
     'nav.requests': 'คำร้อง',
     'nav.assets': 'สินทรัพย์',
     'nav.inventory': 'คลังสินค้า',

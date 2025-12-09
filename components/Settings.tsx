@@ -43,18 +43,15 @@ const Settings: React.FC<SettingsProps> = () => {
                   onClick={() => setLanguage(lang.code)}
                   className={`flex items-center gap-3 px-5 py-3 rounded-xl border-2 transition-all duration-200 min-w-[140px] ${
                     language === lang.code
-                      ? 'border-teal-500 bg-teal-50 text-teal-700'
+                      ? 'border-teal-600 bg-teal-100 text-teal-800 shadow-sm'
                       : 'border-stone-200 hover:border-stone-300 text-stone-700 hover:bg-stone-50'
                   }`}
                 >
                   <span className="text-2xl">{lang.flag}</span>
                   <div className="text-left">
-                    <div className="font-semibold">{lang.fullName}</div>
-                    <div className="text-xs text-stone-500">{lang.label}</div>
+                    <div className={`font-semibold ${language === lang.code ? 'text-teal-800' : ''}`}>{lang.fullName}</div>
+                    <div className={`text-xs ${language === lang.code ? 'text-teal-600' : 'text-stone-500'}`}>{lang.label}</div>
                   </div>
-                  {language === lang.code && (
-                    <span className="ml-auto text-teal-500 text-lg">✓</span>
-                  )}
                 </button>
               ))}
             </div>

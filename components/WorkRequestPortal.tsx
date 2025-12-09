@@ -618,17 +618,6 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                     <p className="text-sm text-teal-700 mt-1">{t('request.emergencyHint')} <span className="font-mono font-bold">555-0199</span></p>
                 </div>
             </div>
-
-            {/* Work Orders Section - Show work orders created from requests */}
-            {currentUser && workOrders.length > 0 && (
-              <div>
-                <h3 className="font-serif text-2xl text-stone-900 mb-4">{t('request.myWorkOrders')}</h3>
-                <RequestorWorkOrders 
-                  workOrders={workOrders} 
-                  requestorName={currentUser.name}
-                />
-              </div>
-            )}
        </div>
 
        {/* Right Column: History */}

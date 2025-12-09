@@ -5,6 +5,7 @@ import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import WorkOrders from './components/WorkOrders';
 import WorkRequestPortal from './components/WorkRequestPortal';
+import RequestorWorkOrders from './components/RequestorWorkOrders';
 import AssetHierarchy from './components/AssetHierarchy';
 import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
@@ -478,6 +479,13 @@ const App: React.FC = () => {
         return <TeamSchedule />;
       case 'user-management':
         return <UserRoleManagement currentUser={currentUser} />;
+      case 'my-work-orders':
+        return (
+          <div className="p-6">
+            <h1 className="text-2xl font-bold text-stone-900 mb-6">{t('nav.myWorkOrders')}</h1>
+            <RequestorWorkOrders workOrders={workOrders} requestorName={currentUser.name} />
+          </div>
+        );
       case 'settings':
         return <Settings />;
       default:
@@ -509,9 +517,11 @@ const App: React.FC = () => {
           notifications={notifications}
           onNotificationsUpdate={loadNotifications}
           onNavigateToWorkOrder={(woId) => {
-            setCurrentView('work-orders');
+            // Requester goes to my-work-orders, others go to work-orders
+            const targetView = currentUser.userRole === 'Requester' ? 'my-work-orders' : 'work-orders';
+            setCurrentView(targetView);
             sessionStorage.setItem('openWorkOrderId', woId);
-            // Dispatch event after delay to allow WorkOrders to mount
+            // Dispatch event after delay to allow component to mount
             setTimeout(() => {
               window.dispatchEvent(new CustomEvent('openWorkOrder', { detail: woId }));
             }, 300);

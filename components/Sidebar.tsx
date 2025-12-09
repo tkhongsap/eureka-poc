@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Wrench,
   FileText,
+  ClipboardList,
   Factory,
   Users,
   Settings,
@@ -47,6 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const allMenuItems = [
     { id: 'dashboard', labelKey: 'nav.dashboard' as const, icon: LayoutDashboard, roles: ['Admin'] },
     { id: 'work-orders', labelKey: 'nav.workOrders' as const, icon: Wrench, roles: ['Admin', 'Head Technician', 'Technician'] },
+    { id: 'my-work-orders', labelKey: 'nav.myWorkOrders' as const, icon: ClipboardList, roles: ['Requester'] },
     { id: 'requests', labelKey: 'nav.requests' as const, icon: FileText, roles: ['Admin', 'Head Technician', 'Technician', 'Requester'] },
     { id: 'inventory', labelKey: 'inventory.title' as const, icon: Package, roles: ['Admin', 'Head Technician', 'Technician'] },
     { id: 'team', labelKey: 'team.title' as const, icon: Users, roles: ['Admin', 'Head Technician'] },
