@@ -44,6 +44,7 @@ class RecentWorkOrder(BaseModel):
     status: str
     priority: str
     assignedTo: Optional[str]
+    createdBy: Optional[str]
     createdAt: str
     dueDate: Optional[str]
 
@@ -57,6 +58,11 @@ class Alert(BaseModel):
     priority: str
     createdAt: str
     assignedTo: Optional[str]
+    dueDate: Optional[str]
+    daysOverdue: Optional[int]
+    createdBy: Optional[str]
+    status: Optional[str]
+    description: Optional[str]
 
 
 class DashboardStats(BaseModel):

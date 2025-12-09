@@ -18,6 +18,7 @@ import {
   Lock,
   RefreshCw,
   Users,
+  UserCircle,
   FilePlus,
   AlertTriangle,
   FileText,
@@ -73,6 +74,7 @@ interface RecentWorkOrder {
   status: string;
   priority: string;
   assignedTo: string | null;
+  createdBy: string | null;
   createdAt: string;
   dueDate: string | null;
 }
@@ -86,6 +88,11 @@ interface Alert {
   priority: string;
   createdAt: string;
   assignedTo: string | null;
+  dueDate: string | null;
+  daysOverdue: number | null;
+  createdBy: string | null;
+  status: string | null;
+  description: string | null;
 }
 
 interface DashboardStatsAPI {
@@ -190,7 +197,11 @@ const renderActiveShape = (props: any) => {
   );
 };
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  onNavigateToWorkOrder?: (workOrderId: string) => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder }) => {
   const { t, language } = useLanguage();
   const [stats, setStats] = useState<DashboardStatsAPI | null>(null);
   const [loading, setLoading] = useState(true);
@@ -769,22 +780,23 @@ const Dashboard: React.FC = () => {
                   'Low': 'bg-green-100 text-green-700 border-green-200',
                 }[wo.priority] || 'bg-stone-100 text-stone-700 border-stone-200';
                 
-                const statusColor = {
-                  'Open': 'bg-blue-500',
-                  'In Progress': 'bg-orange-500',
-                  'Pending': 'bg-violet-500',
-                  'Completed': 'bg-green-500',
-                  'Closed': 'bg-stone-500',
-                }[wo.status] || 'bg-stone-400';
+                // Card background color based on status (matching WorkOrders.tsx statusColors)
+                const statusCardColor = {
+                  'Open': 'bg-blue-50 hover:bg-blue-100 border-l-4 border-l-blue-500',
+                  'In Progress': 'bg-orange-50 hover:bg-orange-100 border-l-4 border-l-orange-500',
+                  'Pending': 'bg-violet-50 hover:bg-violet-100 border-l-4 border-l-violet-500',
+                  'Completed': 'bg-emerald-50 hover:bg-emerald-100 border-l-4 border-l-emerald-500',
+                  'Closed': 'bg-stone-100 hover:bg-stone-200 border-l-4 border-l-stone-500',
+                  'Canceled': 'bg-pink-50 hover:bg-pink-100 border-l-4 border-l-pink-400',
+                }[wo.status] || 'bg-stone-50 hover:bg-stone-100 border-l-4 border-l-stone-400';
 
                 return (
                   <div 
                     key={wo.id} 
                     onClick={() => setSelectedWorkOrder(wo)}
-                    className="flex items-center justify-between p-3 bg-stone-50 rounded-xl hover:bg-stone-100 transition-colors cursor-pointer group"
+                    className={`flex items-center justify-between p-3 rounded-xl transition-colors cursor-pointer group ${statusCardColor}`}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className={`w-2 h-2 rounded-full ${statusColor} flex-shrink-0`} />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-stone-800 truncate group-hover:text-teal-700 transition-colors">
                           {wo.title}
@@ -928,23 +940,45 @@ const Dashboard: React.FC = () => {
             onClick={() => setSelectedWorkOrder(null)}
           />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-teal-100 text-xs font-medium">{selectedWorkOrder.id}</p>
-                  <h3 className="text-white text-lg font-semibold mt-0.5">{selectedWorkOrder.title}</h3>
+            {/* Header - color based on status */}
+            {(() => {
+              const statusHeaderColor = {
+                'Open': 'from-blue-500 to-blue-600',
+                'In Progress': 'from-orange-500 to-orange-600',
+                'Pending': 'from-violet-500 to-violet-600',
+                'Completed': 'from-emerald-500 to-emerald-600',
+                'Closed': 'from-stone-500 to-stone-600',
+                'Canceled': 'from-pink-500 to-pink-600',
+              }[selectedWorkOrder.status] || 'from-teal-500 to-teal-600';
+              
+              const statusHeaderTextLight = {
+                'Open': 'text-blue-100',
+                'In Progress': 'text-orange-100',
+                'Pending': 'text-violet-100',
+                'Completed': 'text-emerald-100',
+                'Closed': 'text-stone-200',
+                'Canceled': 'text-pink-100',
+              }[selectedWorkOrder.status] || 'text-teal-100';
+              
+              return (
+                <div className={`bg-gradient-to-r ${statusHeaderColor} px-6 py-4`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`${statusHeaderTextLight} text-xs font-medium`}>{selectedWorkOrder.id}</p>
+                      <h3 className="text-white text-lg font-semibold mt-0.5">{selectedWorkOrder.title}</h3>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedWorkOrder(null)}
+                      className="text-white/80 hover:text-white transition-colors"
+                    >
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-                <button 
-                  onClick={() => setSelectedWorkOrder(null)}
-                  className="text-white/80 hover:text-white transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+              );
+            })()}
             
             {/* Content */}
             <div className="p-6 space-y-4">
@@ -986,6 +1020,15 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
               
+              {/* Requested By */}
+              <div className="bg-stone-50 p-3 rounded-xl">
+                <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ผู้แจ้งงาน' : 'Requested By'}</p>
+                <p className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                  <UserCircle size={16} className="text-stone-400" />
+                  {selectedWorkOrder.createdBy || (language === 'th' ? 'ไม่ระบุ' : 'Unknown')}
+                </p>
+              </div>
+              
               <div className="bg-stone-50 p-3 rounded-xl">
                 <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ผู้รับผิดชอบ' : 'Assigned To'}</p>
                 <p className="text-sm font-medium text-stone-800 flex items-center gap-2">
@@ -1017,10 +1060,31 @@ const Dashboard: React.FC = () => {
             </div>
             
             {/* Footer */}
-            <div className="px-6 py-4 bg-stone-50 border-t border-stone-100">
+            <div className="px-6 py-4 bg-stone-50 border-t border-stone-100 space-y-2">
+              {onNavigateToWorkOrder && (
+                <button
+                  onClick={() => {
+                    onNavigateToWorkOrder(selectedWorkOrder.id);
+                    setSelectedWorkOrder(null);
+                  }}
+                  className={`w-full py-2.5 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
+                    {
+                      'Open': 'bg-blue-600 hover:bg-blue-700',
+                      'In Progress': 'bg-orange-600 hover:bg-orange-700',
+                      'Pending': 'bg-violet-600 hover:bg-violet-700',
+                      'Completed': 'bg-emerald-600 hover:bg-emerald-700',
+                      'Closed': 'bg-stone-600 hover:bg-stone-700',
+                      'Canceled': 'bg-pink-600 hover:bg-pink-700',
+                    }[selectedWorkOrder.status] || 'bg-teal-600 hover:bg-teal-700'
+                  }`}
+                >
+                  <FileText size={16} />
+                  {language === 'th' ? 'ดูรายละเอียดใบงาน' : 'View Work Order Details'}
+                </button>
+              )}
               <button
                 onClick={() => setSelectedWorkOrder(null)}
-                className="w-full py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
+                className="w-full py-2.5 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300 transition-colors font-medium"
               >
                 {language === 'th' ? 'ปิด' : 'Close'}
               </button>
@@ -1073,6 +1137,14 @@ const Dashboard: React.FC = () => {
             
             {/* Content */}
             <div className="p-6 space-y-4">
+              {/* Days Overdue Banner */}
+              {selectedAlert.type === 'overdue' && selectedAlert.daysOverdue && selectedAlert.daysOverdue > 0 && (
+                <div className="bg-red-600 text-white p-4 rounded-xl text-center">
+                  <p className="text-3xl font-bold">{selectedAlert.daysOverdue}</p>
+                  <p className="text-sm opacity-90">{language === 'th' ? 'วันที่เลยกำหนด' : 'Days Overdue'}</p>
+                </div>
+              )}
+              
               <div className={`p-4 rounded-xl border ${
                 selectedAlert.type === 'overdue' 
                   ? 'bg-red-50 border-red-200' 
@@ -1085,6 +1157,14 @@ const Dashboard: React.FC = () => {
                 </p>
               </div>
               
+              {/* Description */}
+              {selectedAlert.description && (
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'รายละเอียดงาน' : 'Description'}</p>
+                  <p className="text-sm text-stone-700">{selectedAlert.description}</p>
+                </div>
+              )}
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-stone-50 p-3 rounded-xl">
                   <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'รหัสใบงาน' : 'Work Order ID'}</p>
@@ -1092,6 +1172,24 @@ const Dashboard: React.FC = () => {
                     {selectedAlert.workOrderId || '-'}
                   </p>
                 </div>
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'สถานะ' : 'Status'}</p>
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                    {
+                      'Open': 'bg-blue-100 text-blue-700',
+                      'In Progress': 'bg-orange-100 text-orange-700',
+                      'Pending': 'bg-violet-100 text-violet-700',
+                      'Completed': 'bg-emerald-100 text-emerald-700',
+                      'Closed': 'bg-stone-200 text-stone-700',
+                      'Canceled': 'bg-pink-100 text-pink-700',
+                    }[selectedAlert.status || ''] || 'bg-stone-100 text-stone-700'
+                  }`}>
+                    {selectedAlert.status || '-'}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div className="bg-stone-50 p-3 rounded-xl">
                   <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ความสำคัญ' : 'Priority'}</p>
                   <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
@@ -1105,28 +1203,55 @@ const Dashboard: React.FC = () => {
                     {selectedAlert.priority}
                   </span>
                 </div>
-              </div>
-              
-              {selectedAlert.assignedTo && (
                 <div className="bg-stone-50 p-3 rounded-xl">
-                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ผู้รับผิดชอบ' : 'Assigned To'}</p>
-                  <p className="text-sm font-medium text-stone-800 flex items-center gap-2">
-                    <Users size={16} className="text-stone-400" />
-                    {selectedAlert.assignedTo}
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'กำหนดเสร็จ' : 'Due Date'}</p>
+                  <p className={`text-sm font-medium ${
+                    selectedAlert.type === 'overdue' ? 'text-red-600' : 'text-stone-800'
+                  }`}>
+                    {selectedAlert.dueDate || '-'}
                   </p>
                 </div>
-              )}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {selectedAlert.createdBy && (
+                  <div className="bg-stone-50 p-3 rounded-xl">
+                    <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ผู้แจ้งงาน' : 'Requested By'}</p>
+                    <p className="text-sm font-medium text-stone-800">{selectedAlert.createdBy}</p>
+                  </div>
+                )}
+                
+                <div className="bg-stone-50 p-3 rounded-xl">
+                  <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'ช่างผู้รับผิดชอบ' : 'Assigned Technician'}</p>
+                  <p className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                    <Users size={16} className="text-stone-400" />
+                    {selectedAlert.assignedTo || (language === 'th' ? 'ยังไม่ได้มอบหมาย' : 'Not Assigned')}
+                  </p>
+                </div>
+              </div>
             </div>
             
             {/* Footer */}
-            <div className="px-6 py-4 bg-stone-50 border-t border-stone-100">
+            <div className="px-6 py-4 bg-stone-50 border-t border-stone-100 space-y-2">
+              {onNavigateToWorkOrder && selectedAlert.workOrderId && (
+                <button
+                  onClick={() => {
+                    onNavigateToWorkOrder(selectedAlert.workOrderId!);
+                    setSelectedAlert(null);
+                  }}
+                  className={`w-full py-2.5 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
+                    selectedAlert.type === 'overdue'
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-amber-600 hover:bg-amber-700'
+                  }`}
+                >
+                  <FileText size={16} />
+                  {language === 'th' ? 'ดูรายละเอียดใบงาน' : 'View Work Order Details'}
+                </button>
+              )}
               <button
                 onClick={() => setSelectedAlert(null)}
-                className={`w-full py-2.5 text-white rounded-lg transition-colors font-medium ${
-                  selectedAlert.type === 'overdue'
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-amber-600 hover:bg-amber-700'
-                }`}
+                className="w-full py-2.5 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300 transition-colors font-medium"
               >
                 {language === 'th' ? 'ปิด' : 'Close'}
               </button>
