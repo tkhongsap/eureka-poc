@@ -5,11 +5,12 @@ import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import WorkOrders from './components/WorkOrders';
 import WorkRequestPortal from './components/WorkRequestPortal';
+import RequestorWorkOrders from './components/RequestorWorkOrders';
 import AssetHierarchy from './components/AssetHierarchy';
 import Inventory from './components/Inventory';
 import TeamSchedule from './components/TeamSchedule';
 import NotificationCenter from './components/NotificationCenter';
-import LanguageSwitcher from './components/LanguageSwitcher';
+import Settings from './components/Settings';
 import UserRoleManagement from './components/UserRoleManagement';
 import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
 import { UserCircle2 } from 'lucide-react';
@@ -308,6 +309,14 @@ const App: React.FC = () => {
   // Load notifications when user logs in or changes
   useEffect(() => {
     if (currentUser) {
+      // Set default view based on role
+      if (currentUser.userRole === 'Requester') {
+        setCurrentView('requests');
+      } else if (currentUser.userRole === 'Technician' || currentUser.userRole === 'Head Technician') {
+        setCurrentView('work-orders');
+      }
+      // Admin stays on dashboard (default)
+
       // Check and create reminder notifications first, then load notifications
       const initNotifications = async () => {
         try {
@@ -470,6 +479,15 @@ const App: React.FC = () => {
         return <TeamSchedule />;
       case 'user-management':
         return <UserRoleManagement currentUser={currentUser} />;
+      case 'my-work-orders':
+        return (
+          <div className="p-6">
+            <h1 className="text-2xl font-bold text-stone-900 mb-6">{t('nav.myWorkOrders')}</h1>
+            <RequestorWorkOrders workOrders={workOrders} requestorName={currentUser.name} />
+          </div>
+        );
+      case 'settings':
+        return <Settings />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full text-slate-400">
@@ -480,53 +498,6 @@ const App: React.FC = () => {
         );
     }
   };
-
-  // Kiosk Mode for Requesters (No sidebar/header navigation)
-  if (currentUser.userRole === 'Requester') {
-    return (
-      <div className="h-screen bg-slate-50 font-sans flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shadow-sm shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
-            <span className="font-bold text-slate-800">Eureka <span className="text-brand-600">{t('requestor.requestPortal')}</span></span>
-          </div>
-          <div className="flex items-center gap-4">
-            {/* Notification Center for Requester */}
-            <NotificationCenter
-              notifications={notifications}
-              onNotificationsUpdate={loadNotifications}
-              onNavigateToWorkOrder={(woId) => {
-                // For Requester, they can only view their own work orders in the portal
-                // We can scroll to or highlight their WO
-                sessionStorage.setItem('openWorkOrderId', woId);
-                // Force re-render of the portal
-                window.dispatchEvent(new CustomEvent('openWorkOrder', { detail: woId }));
-              }}
-            />
-            <LanguageSwitcher variant="minimal" />
-            <button
-              onClick={handleLogout}
-              className="min-w-[100px] flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-stone-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              {t('nav.logout')}
-            </button>
-            <div className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full">
-              <UserCircle2 size={20} />
-              <span className="text-sm font-medium">{currentUser.name}</span>
-            </div>
-          </div>
-        </header>
-        <main className="flex-1 overflow-y-auto">
-          <WorkRequestPortal
-            onSubmitRequest={handleNewRequest}
-            currentUser={currentUser}
-            technicians={TECHNICIANS}
-            workOrders={workOrders}
-          />
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
@@ -546,9 +517,11 @@ const App: React.FC = () => {
           notifications={notifications}
           onNotificationsUpdate={loadNotifications}
           onNavigateToWorkOrder={(woId) => {
-            setCurrentView('work-orders');
+            // Requester goes to my-work-orders, others go to work-orders
+            const targetView = currentUser.userRole === 'Requester' ? 'my-work-orders' : 'work-orders';
+            setCurrentView(targetView);
             sessionStorage.setItem('openWorkOrderId', woId);
-            // Dispatch event after delay to allow WorkOrders to mount
+            // Dispatch event after delay to allow component to mount
             setTimeout(() => {
               window.dispatchEvent(new CustomEvent('openWorkOrder', { detail: woId }));
             }, 300);

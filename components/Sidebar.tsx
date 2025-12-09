@@ -3,9 +3,12 @@ import {
   LayoutDashboard,
   Wrench,
   FileText,
+  ClipboardList,
   Factory,
   Users,
   Settings,
+  Settings2,
+  UserCog,
   BarChart3,
   LogOut,
   Package,
@@ -45,10 +48,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   const allMenuItems = [
     { id: 'dashboard', labelKey: 'nav.dashboard' as const, icon: LayoutDashboard, roles: ['Admin'] },
     { id: 'work-orders', labelKey: 'nav.workOrders' as const, icon: Wrench, roles: ['Admin', 'Head Technician', 'Technician'] },
-    { id: 'requests', labelKey: 'nav.requests' as const, icon: FileText, roles: ['Admin', 'Head Technician', 'Technician'] },
+    { id: 'my-work-orders', labelKey: 'nav.myWorkOrders' as const, icon: ClipboardList, roles: ['Requester'] },
+    { id: 'requests', labelKey: 'nav.requests' as const, icon: FileText, roles: ['Admin', 'Head Technician', 'Technician', 'Requester'] },
     { id: 'inventory', labelKey: 'inventory.title' as const, icon: Package, roles: ['Admin', 'Head Technician', 'Technician'] },
     { id: 'team', labelKey: 'team.title' as const, icon: Users, roles: ['Admin', 'Head Technician'] },
-    { id: 'user-management', labelKey: 'nav.userManagement' as const, icon: Settings, roles: ['Admin'] },
+    { id: 'user-management', labelKey: 'nav.userManagement' as const, icon: UserCog, roles: ['Admin'] },
   ];
 
   const filteredItems = allMenuItems.filter(item => item.roles.includes(userRole));
@@ -94,7 +98,20 @@ const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      <div className="p-4 border-t border-stone-700">
+      <div className="p-4 border-t border-stone-700 space-y-1">
+        {/* Settings Button */}
+        <button
+          onClick={() => onChangeView('settings')}
+          title={isCollapsed ? t('nav.settings') : undefined}
+          className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-xl transition-all duration-200 ${
+            currentView === 'settings'
+              ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20'
+              : 'text-stone-400 hover:bg-stone-800 hover:text-white'
+          }`}
+        >
+          <Settings2 size={20} className="flex-shrink-0" />
+          {!isCollapsed && <span className="font-medium text-base">{t('nav.settings')}</span>}
+        </button>
         {/* Sign Out Button */}
         <button
           onClick={onLogout}

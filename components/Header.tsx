@@ -2,7 +2,6 @@ import React from 'react';
 import { Bell, Search, Globe, ChevronDown, UserCircle } from 'lucide-react';
 import { User, Notification } from '../types';
 import NotificationCenter from './NotificationCenter';
-import LanguageSwitcher from './LanguageSwitcher';
 import { useLanguage } from '../lib/i18n';
 
 interface HeaderProps {
@@ -29,9 +28,6 @@ const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificatio
 
       {/* Right Actions */}
       <div className="flex items-center space-x-4">
-        {/* Language Switcher */}
-        <LanguageSwitcher variant="minimal" />
-
         {/* Site Switcher */}
         <div className="hidden md:flex items-center space-x-2 text-base font-medium text-stone-600 hover:text-teal-600 cursor-pointer transition-all duration-200 bg-stone-50 px-4 py-2 rounded-xl border border-stone-200 hover:border-stone-300">
           <Globe size={18} />

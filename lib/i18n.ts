@@ -41,10 +41,12 @@ const translations = {
     'common.viewAll': 'View All',
     'common.back': 'Back',
     'common.backToHome': 'Back to Home',
+    'common.comingSoon': 'Coming Soon',
 
     // ============== Navigation ==============
     'nav.dashboard': 'Dashboard',
     'nav.workOrders': 'Work Orders',
+    'nav.myWorkOrders': 'My Work Orders',
     'nav.requests': 'Requests',
     'nav.assets': 'Assets',
     'nav.inventory': 'Inventory',
@@ -344,8 +346,23 @@ const translations = {
     // ============== Settings ==============
     'settings.title': 'Settings',
     'settings.language': 'Language',
+    'settings.languageDescription': 'Choose your preferred language',
     'settings.theme': 'Theme',
+    'settings.themeDescription': 'Customize the appearance of the application',
+    'settings.themePlaceholder': 'Light/Dark mode toggle will be available soon.',
     'settings.notifications': 'Notifications',
+    'settings.notificationsDescription': 'Manage your notification preferences',
+    'settings.notificationsPlaceholder': 'Email and push notification settings will be available soon.',
+    'settings.profile': 'Profile',
+    'settings.profileDescription': 'Manage your account information',
+    'settings.profilePlaceholder': 'Profile editing will be available soon.',
+    'settings.about': 'About',
+    'settings.aboutDescription': 'Application information',
+    'settings.description': 'Customize your experience',
+    'settings.version': 'Version',
+    'settings.tenant': 'Tenant',
+    'settings.environment': 'Environment',
+    'settings.lastUpdated': 'Last Updated',
 
     // ============== Landing Page ==============
     'landing.navFeatures': 'Features',
@@ -602,10 +619,12 @@ const translations = {
     'common.viewAll': 'ดูทั้งหมด',
     'common.back': 'กลับ',
     'common.backToHome': 'กลับหน้าแรก',
+    'common.comingSoon': 'เร็วๆ นี้',
 
     // ============== Navigation ==============
     'nav.dashboard': 'แดชบอร์ด',
     'nav.workOrders': 'ใบงาน',
+    'nav.myWorkOrders': 'ใบงานของฉัน',
     'nav.requests': 'คำร้อง',
     'nav.assets': 'สินทรัพย์',
     'nav.inventory': 'คลังสินค้า',
@@ -905,8 +924,23 @@ const translations = {
     // ============== Settings ==============
     'settings.title': 'ตั้งค่า',
     'settings.language': 'ภาษา',
+    'settings.languageDescription': 'เลือกภาษาที่ต้องการใช้งาน',
     'settings.theme': 'ธีม',
+    'settings.themeDescription': 'ปรับแต่งหน้าตาของแอปพลิเคชัน',
+    'settings.themePlaceholder': 'โหมดมืด/สว่าง จะเปิดให้ใช้งานเร็วๆ นี้',
     'settings.notifications': 'การแจ้งเตือน',
+    'settings.notificationsDescription': 'จัดการการตั้งค่าการแจ้งเตือน',
+    'settings.notificationsPlaceholder': 'ตั้งค่าอีเมลและ Push notification จะเปิดให้ใช้งานเร็วๆ นี้',
+    'settings.profile': 'โปรไฟล์',
+    'settings.profileDescription': 'จัดการข้อมูลบัญชีของคุณ',
+    'settings.profilePlaceholder': 'แก้ไขโปรไฟล์จะเปิดให้ใช้งานเร็วๆ นี้',
+    'settings.about': 'เกี่ยวกับ',
+    'settings.aboutDescription': 'ข้อมูลแอปพลิเคชัน',
+    'settings.description': 'ปรับแต่งการใช้งานของคุณ',
+    'settings.version': 'เวอร์ชัน',
+    'settings.tenant': 'องค์กร',
+    'settings.environment': 'สภาพแวดล้อม',
+    'settings.lastUpdated': 'อัพเดทล่าสุด',
 
     // ============== Landing Page ==============
     'landing.navFeatures': 'คุณสมบัติ',
