@@ -197,7 +197,11 @@ const renderActiveShape = (props: any) => {
   );
 };
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  onNavigateToWorkOrder?: (workOrderId: string) => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder }) => {
   const { t, language } = useLanguage();
   const [stats, setStats] = useState<DashboardStatsAPI | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1056,19 +1060,31 @@ const Dashboard: React.FC = () => {
             </div>
             
             {/* Footer */}
-            <div className="px-6 py-4 bg-stone-50 border-t border-stone-100">
+            <div className="px-6 py-4 bg-stone-50 border-t border-stone-100 space-y-2">
+              {onNavigateToWorkOrder && (
+                <button
+                  onClick={() => {
+                    onNavigateToWorkOrder(selectedWorkOrder.id);
+                    setSelectedWorkOrder(null);
+                  }}
+                  className={`w-full py-2.5 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
+                    {
+                      'Open': 'bg-blue-600 hover:bg-blue-700',
+                      'In Progress': 'bg-orange-600 hover:bg-orange-700',
+                      'Pending': 'bg-violet-600 hover:bg-violet-700',
+                      'Completed': 'bg-emerald-600 hover:bg-emerald-700',
+                      'Closed': 'bg-stone-600 hover:bg-stone-700',
+                      'Canceled': 'bg-pink-600 hover:bg-pink-700',
+                    }[selectedWorkOrder.status] || 'bg-teal-600 hover:bg-teal-700'
+                  }`}
+                >
+                  <FileText size={16} />
+                  {language === 'th' ? 'ดูรายละเอียดใบงาน' : 'View Work Order Details'}
+                </button>
+              )}
               <button
                 onClick={() => setSelectedWorkOrder(null)}
-                className={`w-full py-2.5 text-white rounded-lg transition-colors font-medium ${
-                  {
-                    'Open': 'bg-blue-600 hover:bg-blue-700',
-                    'In Progress': 'bg-orange-600 hover:bg-orange-700',
-                    'Pending': 'bg-violet-600 hover:bg-violet-700',
-                    'Completed': 'bg-emerald-600 hover:bg-emerald-700',
-                    'Closed': 'bg-stone-600 hover:bg-stone-700',
-                    'Canceled': 'bg-pink-600 hover:bg-pink-700',
-                  }[selectedWorkOrder.status] || 'bg-teal-600 hover:bg-teal-700'
-                }`}
+                className="w-full py-2.5 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300 transition-colors font-medium"
               >
                 {language === 'th' ? 'ปิด' : 'Close'}
               </button>
@@ -1216,14 +1232,26 @@ const Dashboard: React.FC = () => {
             </div>
             
             {/* Footer */}
-            <div className="px-6 py-4 bg-stone-50 border-t border-stone-100">
+            <div className="px-6 py-4 bg-stone-50 border-t border-stone-100 space-y-2">
+              {onNavigateToWorkOrder && selectedAlert.workOrderId && (
+                <button
+                  onClick={() => {
+                    onNavigateToWorkOrder(selectedAlert.workOrderId!);
+                    setSelectedAlert(null);
+                  }}
+                  className={`w-full py-2.5 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
+                    selectedAlert.type === 'overdue'
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-amber-600 hover:bg-amber-700'
+                  }`}
+                >
+                  <FileText size={16} />
+                  {language === 'th' ? 'ดูรายละเอียดใบงาน' : 'View Work Order Details'}
+                </button>
+              )}
               <button
                 onClick={() => setSelectedAlert(null)}
-                className={`w-full py-2.5 text-white rounded-lg transition-colors font-medium ${
-                  selectedAlert.type === 'overdue'
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-amber-600 hover:bg-amber-700'
-                }`}
+                className="w-full py-2.5 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300 transition-colors font-medium"
               >
                 {language === 'th' ? 'ปิด' : 'Close'}
               </button>

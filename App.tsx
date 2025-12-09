@@ -430,7 +430,11 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onNavigateToWorkOrder={(woId) => {
+          setCurrentView('work-orders');
+          // Store the WO ID to open in sessionStorage so WorkOrders can pick it up
+          sessionStorage.setItem('openWorkOrderId', woId);
+        }} />;
       case 'work-orders':
         return <WorkOrders workOrders={workOrders} currentUser={currentUser} technicians={TECHNICIANS} />;
       case 'requests':

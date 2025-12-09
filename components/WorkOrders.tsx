@@ -278,6 +278,18 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     fetchRejectHistory();
   }, [selectedWO?.id]);
 
+  // Check if there's a work order to open from navigation (e.g., from Dashboard)
+  useEffect(() => {
+    const openWorkOrderId = sessionStorage.getItem('openWorkOrderId');
+    if (openWorkOrderId) {
+      sessionStorage.removeItem('openWorkOrderId');
+      const woToOpen = workOrders.find(wo => wo.id === openWorkOrderId);
+      if (woToOpen) {
+        setSelectedWO(woToOpen);
+      }
+    }
+  }, [workOrders]);
+
   // Base technician scoping: technicians only ever see their own jobs
   const scopedWorkOrders = currentUser?.userRole === 'Technician'
     ? workOrders.filter(wo => wo.assignedTo === currentUser.name)
