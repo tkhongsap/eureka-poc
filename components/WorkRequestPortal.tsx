@@ -313,6 +313,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
         description: description,
         imageIds: savedImageIds,
         assignedTo: assignedToValue,
+        createdBy: currentUser?.name,  // Add createdBy to track who created the request
         locationData: selectedLocation || undefined,
         preferredDate: canSetPreferredDate ? (preferredDate || undefined) : undefined,
       });
@@ -621,20 +622,20 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
        </div>
 
        {/* Right Column: History */}
-       <div className="md:col-span-1">
+       <div className="md:col-span-1 overflow-hidden">
             <h3 className="font-semibold text-stone-800 mb-4 flex items-center gap-2">
                 <History size={20} className="text-stone-400" /> {t('request.myHistory')}
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-4 w-full max-w-full overflow-hidden">
                 {requests.map(req => (
                     <div
                       key={req.id}
                       onClick={() => setSelectedRequest(req)}
-                      className="bg-white p-4 rounded-2xl border border-stone-200/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                      className="bg-white p-4 rounded-2xl border border-stone-200/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden w-full max-w-full"
                     >
-                        <div className="flex justify-between items-start mb-2">
-                            <span className="text-xs font-mono text-stone-400">{req.id}</span>
-                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                        <div className="flex justify-between items-start mb-2 gap-2">
+                            <span className="text-xs font-mono text-stone-400 truncate max-w-[180px]">{req.id}</span>
+                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
                               req.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
                               req.status === 'In Progress' ? 'bg-teal-50 text-teal-700' :
                               'bg-amber-50 text-amber-700'
@@ -642,8 +643,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                                 {req.status}
                             </span>
                         </div>
-                        <p className="text-sm font-medium text-stone-800 mb-1">{req.desc}</p>
-                        <p className="text-xs text-stone-500 mb-2">📍 {req.location} • {t('workOrders.priority')}: {req.priority}</p>
+                        <p className="text-sm font-medium text-stone-800 mb-1 line-clamp-2 overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{req.desc}</p>
+                        <p className="text-xs text-stone-500 mb-2 line-clamp-2 overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>📍 {req.location} • {t('workOrders.priority')}: {req.priority}</p>
                         {req.preferredDate && canSetPreferredDate && (
                           <div className="flex items-center gap-1 text-xs text-violet-600 mb-2">
                             <Calendar size={12} />
@@ -722,7 +723,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
              <div className="p-6 space-y-4">
                <div>
                  <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">{t('workOrders.location')}</label>
-                 <p className="text-stone-800">{selectedRequest.location}</p>
+                 <p className="text-stone-800" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{selectedRequest.location}</p>
                </div>
 
                <div>
@@ -752,7 +753,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
 
                <div>
                  <label className="text-xs font-bold text-stone-500 uppercase mb-1 block">{t('request.description')}</label>
-                 <p className="text-stone-800 bg-stone-50 p-4 rounded-xl">{selectedRequest.desc}</p>
+                 <p className="text-stone-800 bg-stone-50 p-4 rounded-xl" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{selectedRequest.desc}</p>
                </div>
 
                {selectedRequest.assignedTo && (
@@ -775,7 +776,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                          <MapPin size={18} />
                        </div>
                        <div className="flex-1 min-w-0">
-                         <p className="text-sm text-stone-800 mb-1">{selectedRequest.locationData.address}</p>
+                         <p className="text-sm text-stone-800 mb-1" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{selectedRequest.locationData.address}</p>
                          <p className="text-xs text-stone-400 font-mono">
                            {selectedRequest.locationData.latitude.toFixed(6)}, {selectedRequest.locationData.longitude.toFixed(6)}
                          </p>
