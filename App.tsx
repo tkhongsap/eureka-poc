@@ -15,6 +15,10 @@ import Settings from './components/Settings';
 import Help from './components/Help';
 import Reports from './components/Reports';
 import UserRoleManagement from './components/UserRoleManagement';
+import PreventiveMaintenance from './components/PreventiveMaintenance';
+import EOC from './components/EOC';
+import SparePartCenter from './components/SparePartCenter';
+import SafetyCompliance from './components/SafetyCompliance';
 import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
 import { UserCircle2 } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
@@ -544,6 +548,14 @@ const App: React.FC = () => {
         return <Help />;
       case 'reports':
         return <Reports />;
+      case 'preventive-maintenance':
+        return <PreventiveMaintenance />;
+      case 'eoc':
+        return <EOC />;
+      case 'spare-part-center':
+        return <SparePartCenter />;
+      case 'safety':
+        return <SafetyCompliance />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full text-slate-400">
