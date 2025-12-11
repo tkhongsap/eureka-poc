@@ -51,6 +51,46 @@ const statusColors = {
   [Status.CANCELED]: 'bg-pink-50 dark:bg-pink-950/50 text-pink-600 dark:text-pink-300 border-pink-200 dark:border-pink-800',
 };
 
+// Column header colors for Kanban board
+const statusColumnColors = {
+  [Status.OPEN]: {
+    header: 'bg-blue-100/80 dark:bg-blue-950/60 border-blue-200/60 dark:border-blue-800',
+    dot: 'bg-blue-500',
+    title: 'text-blue-700 dark:text-blue-300',
+    count: 'bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-200',
+  },
+  [Status.IN_PROGRESS]: {
+    header: 'bg-orange-100/80 dark:bg-orange-950/60 border-orange-200/60 dark:border-orange-800',
+    dot: 'bg-orange-500',
+    title: 'text-orange-700 dark:text-orange-300',
+    count: 'bg-orange-200 dark:bg-orange-800 text-orange-700 dark:text-orange-200',
+  },
+  [Status.PENDING]: {
+    header: 'bg-violet-100/80 dark:bg-violet-950/60 border-violet-200/60 dark:border-violet-800',
+    dot: 'bg-violet-500',
+    title: 'text-violet-700 dark:text-violet-300',
+    count: 'bg-violet-200 dark:bg-violet-800 text-violet-700 dark:text-violet-200',
+  },
+  [Status.COMPLETED]: {
+    header: 'bg-emerald-100/80 dark:bg-emerald-950/60 border-emerald-200/60 dark:border-emerald-800',
+    dot: 'bg-emerald-500',
+    title: 'text-emerald-700 dark:text-emerald-300',
+    count: 'bg-emerald-200 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-200',
+  },
+  [Status.CLOSED]: {
+    header: 'bg-stone-200/80 dark:bg-stone-800/60 border-stone-300/60 dark:border-stone-700',
+    dot: 'bg-stone-500',
+    title: 'text-stone-700 dark:text-stone-300',
+    count: 'bg-stone-300 dark:bg-stone-700 text-stone-700 dark:text-stone-200',
+  },
+  [Status.CANCELED]: {
+    header: 'bg-pink-100/80 dark:bg-pink-950/60 border-pink-200/60 dark:border-pink-800',
+    dot: 'bg-pink-500',
+    title: 'text-pink-700 dark:text-pink-300',
+    count: 'bg-pink-200 dark:bg-pink-800 text-pink-700 dark:text-pink-200',
+  },
+};
+
 const priorityColors = {
   [Priority.CRITICAL]: 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/50 border-red-100 dark:border-red-800',
   [Priority.HIGH]: 'text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/50 border-orange-100 dark:border-orange-800',
@@ -1157,16 +1197,16 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       return (
                         <div
                           key={status}
-                          className="bg-stone-100/70 dark:bg-stone-800 rounded-xl flex flex-col min-h-0 border border-stone-200/60 dark:border-stone-700 w-12 flex-shrink-0 cursor-pointer hover:bg-stone-200/50 dark:hover:bg-stone-700 transition-colors"
+                          className={`rounded-xl flex flex-col min-h-0 border w-12 flex-shrink-0 cursor-pointer hover:opacity-80 transition-all ${statusColumnColors[status].header}`}
                           onClick={() => toggleColumnCollapse(status)}
                           onDragOver={handleDragOver}
                           onDrop={(e) => handleDrop(e, status)}
                         >
                           <div className="p-2 flex flex-col items-center gap-2">
                             <ChevronRight size={14} className="text-stone-500 dark:text-stone-400" />
-                            <div className={`w-2.5 h-2.5 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
-                            <span className="bg-stone-200 dark:bg-stone-600 text-stone-600 dark:text-stone-300 text-[10px] px-1.5 py-0.5 rounded-full font-medium">{columnWos.length}</span>
-                            <span className="writing-vertical text-[10px] font-semibold text-stone-600 dark:text-stone-400 whitespace-nowrap">
+                            <div className={`w-2.5 h-2.5 rounded-full ${statusColumnColors[status].dot}`}></div>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusColumnColors[status].count}`}>{columnWos.length}</span>
+                            <span className={`writing-vertical text-[10px] font-semibold whitespace-nowrap ${statusColumnColors[status].title}`}>
                               {translateStatus(status)}
                             </span>
                           </div>
@@ -1183,7 +1223,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         onDrop={(e) => handleDrop(e, status)}
                       >
                         {/* Column Header */}
-                        <div className="p-3 flex items-center justify-between bg-stone-100/70 dark:bg-stone-800 rounded-t-xl border-b border-stone-200/40 dark:border-stone-700">
+                        <div className={`p-3 flex items-center justify-between rounded-t-xl border-b ${statusColumnColors[status].header}`}>
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => toggleColumnCollapse(status)}
@@ -1192,9 +1232,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                             >
                               <ChevronDown size={14} />
                             </button>
-                            <div className={`w-2 h-2 rounded-full ${statusColors[status].split(' ')[0]}`}></div>
-                            <h3 className="font-semibold text-stone-700 dark:text-stone-200 text-sm">{translateStatus(status)}</h3>
-                            <span className="bg-stone-200 dark:bg-stone-600 text-stone-600 dark:text-stone-300 text-xs px-1.5 py-0.5 rounded-full">{columnWos.length}</span>
+                            <div className={`w-2 h-2 rounded-full ${statusColumnColors[status].dot}`}></div>
+                            <h3 className={`font-semibold text-sm ${statusColumnColors[status].title}`}>{translateStatus(status)}</h3>
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${statusColumnColors[status].count}`}>{columnWos.length}</span>
                           </div >
                         </div >
 
