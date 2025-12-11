@@ -42,7 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed: externalCollapsed,
   onToggleCollapse: externalToggle
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [internalCollapsed, setInternalCollapsed] = useState(false);
 
   // Use external state if provided, otherwise use internal state
@@ -103,7 +103,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }`}
             >
               <Icon size={20} className="flex-shrink-0" />
-              {!isCollapsed && <span className="font-medium text-base">{t(item.labelKey)}</span>}
+              {!isCollapsed && (
+                <span className={`font-medium ${language === 'en' && item.id === 'preventive-maintenance' ? 'text-sm' : 'text-base'}`}>
+                  {t(item.labelKey)}
+                </span>
+              )}
             </button>
           );
         })}
