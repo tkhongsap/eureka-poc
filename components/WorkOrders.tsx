@@ -368,26 +368,21 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     }
   };
 
-  // Admin assign & status advance
+  // Admin assign technician (does NOT auto-change status - Admin must drag card manually)
   const handleAdminAssign = async () => {
-    if (!selectedWO || currentUser?.userRole !== 'Admin') return;
+    if (!selectedWO || (currentUser?.userRole !== 'Admin' && currentUser?.userRole !== 'Head Technician')) return;
     // Require technician selection
     if (!adminAssignedTo) return;
     try {
-      const isFromOpen = selectedWO.status === Status.OPEN;
-      const nextStatus = isFromOpen ? Status.IN_PROGRESS : selectedWO.status;
+      // Only update assignedTo field, keep status unchanged
       const payload: any = {
         assignedTo: adminAssignedTo,
       };
-      // Only include status when moving from Open -> In Progress; avoid no-op transitions
-      if (isFromOpen) {
-        payload.status = nextStatus;
-      }
 
       const updated = await updateWorkOrder(selectedWO.id, payload);
 
-      // Create notification for assigned technician (only when assigning from Open)
-      if (isFromOpen && adminAssignedTo) {
+      // Create notification for assigned technician
+      if (adminAssignedTo) {
         const notification = createWOAssignedNotification(
           selectedWO.id,
           selectedWO.title,
@@ -397,11 +392,11 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         await createNotification(notification);
       }
 
-      // Reflect locally (map API fields to WorkOrder shape if needed)
+      // Reflect locally - status remains unchanged, only assignedTo is updated
       const updatedWO: WorkOrder = {
         ...selectedWO,
         assignedTo: updated.assignedTo,
-        status: nextStatus,
+        // status remains selectedWO.status (no auto-change)
       };
       setWorkOrders(prev => prev.map(wo => wo.id === updatedWO.id ? updatedWO : wo));
       setSelectedWO(updatedWO); // keep panel open showing new state
@@ -851,6 +846,12 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
       const wo = workOrders.find(w => w.id === id);
       if (!wo) return;
 
+      // If same status, do nothing
+      if (wo.status === newStatus) {
+        setDraggedWoId(null);
+        return;
+      }
+
       // Check if transition is allowed
       if (!canDragToStatus(wo.status, newStatus, currentUser.userRole)) {
         alert(`${t('workOrders.cannotMoveFrom')} "${translateStatus(wo.status)}" ${t('workOrders.to')} "${translateStatus(newStatus)}"`);
@@ -858,9 +859,17 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         return;
       }
 
+      // Special check: Moving to In Progress requires assignedTo
+      if (newStatus === Status.IN_PROGRESS && !wo.assignedTo) {
+        alert(t('workOrders.mustAssignTechnicianFirst') || 'Please assign a technician before moving to In Progress');
+        setDraggedWoId(null);
+        return;
+      }
+
       // Update via API
       try {
-        const updatedWO = await updateWorkOrder(id, { status: newStatus });
+        await updateWorkOrder(id, { status: newStatus });
+        // Update only the status, keep card position (no reordering)
         setWorkOrders(prev => prev.map(w =>
           w.id === id ? { ...w, status: newStatus } : w
         ));
@@ -1088,9 +1097,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         className="hover:bg-teal-50/50 cursor-pointer transition-colors duration-200 group"
                       >
                         <td className="px-6 py-4 text-base font-medium text-stone-900">{wo.id}</td>
-                        <td className="px-6 py-4 text-base text-stone-700 font-medium">
-                          {wo.title}
-                          <div className="text-sm text-stone-400 truncate max-w-[200px]">{wo.description}</div>
+                        <td className="px-6 py-4 text-base text-stone-700 font-medium max-w-[300px]">
+                          <div className="line-clamp-1" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{wo.title}</div>
+                          <div className="text-sm text-stone-400 line-clamp-1 max-w-[250px]" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{wo.description}</div>
                         </td>
                         <td className="px-6 py-4 text-base text-stone-600">{wo.assetName}</td>
                         <td className="px-6 py-4">
@@ -1207,7 +1216,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                   draggable={isDraggable}
                                   onDragStart={(e) => handleDragStart(e, wo.id)}
                                   onClick={() => setSelectedWO(wo)}
-                                  className={`bg-white p-3 rounded-lg shadow-sm border border-stone-200/60 ${isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group relative
+                                  className={`bg-white p-3 rounded-lg shadow-sm border border-stone-200/60 overflow-hidden ${isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group relative
                                                 ${draggedWoId === wo.id ? 'opacity-50 border-dashed border-stone-400' : ''}
                                                 ${currentUser?.name === wo.assignedTo ? 'border-l-3 border-l-teal-500' : ''}
                                                 ${!isDraggable ? 'opacity-75' : ''}
@@ -1219,14 +1228,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                       <button
                                         title={t('workOrders.dragToChange')}
                                         aria-label={t('workOrders.dragToChange')}
-                                        className="text-stone-300 hover:text-stone-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="text-stone-300 hover:text-stone-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                                       >
                                         <GripVertical size={12} />
                                       </button>
                                     )}
                                   </div>
 
-                                  <h4 className="font-medium text-stone-800 text-sm mb-2 leading-snug line-clamp-2">{wo.title}</h4>
+                                  <h4 className="font-medium text-stone-800 text-sm mb-2 leading-snug line-clamp-2 overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{wo.title}</h4>
 
                                   <div className="flex items-center justify-between mb-2">
                                     <span className={`px-1.5 py-0.5 rounded border text-xs uppercase font-bold ${priorityColors[wo.priority]}`}>
@@ -1237,7 +1246,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                   {/* Preferred Date - Show prominently if set */}
                                   {
                                     wo.preferredDate && (
-                                      <div className="mb-2 px-2 py-1.5 bg-violet-50 border border-violet-200 rounded-lg text-xs text-violet-700 flex items-center gap-1.5">
+                                      <div className="mb-2 px-2 py-1.5 bg-violet-50 border border-violet-200 rounded-lg text-xs text-violet-700 flex items-center gap-1.5 overflow-hidden">
                                         <Calendar size={12} className="text-violet-500" />
                                         <span className="font-medium">{t('workOrders.appointment')}: {formatDateDDMMYYYY(wo.preferredDate)}</span>
                                       </div>
@@ -1245,10 +1254,10 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                   }
 
                                   {/* Location Info */}
-                                  <div className="mb-2 text-sm text-stone-600">
+                                  <div className="mb-2 text-sm text-stone-600 overflow-hidden">
                                     <div className="flex items-start gap-1.5">
                                       <MapPin size={12} className="text-stone-400 mt-0.5 flex-shrink-0" />
-                                      <span className="line-clamp-1">{wo.location}</span>
+                                      <span className="line-clamp-1 overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{wo.location}</span>
                                     </div>
                                   </div>
 
@@ -1260,21 +1269,21 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         onClick={(e) => e.stopPropagation()}
-                                        className="flex items-center gap-1.5 mb-3 px-2 py-1.5 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg text-teal-700 text-sm transition-colors"
+                                        className="flex items-center gap-1.5 mb-3 px-2 py-1.5 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg text-teal-700 text-sm transition-colors overflow-hidden"
                                       >
-                                        <Navigation size={12} />
-                                        <span className="truncate flex-1 text-left">{wo.locationData.address.split(',')[0]}</span>
-                                        <span className="text-teal-500 font-medium">{t('workOrders.navigateBtn')}</span>
+                                        <Navigation size={12} className="flex-shrink-0" />
+                                        <span className="truncate flex-1 text-left min-w-0">{wo.locationData.address.split(',')[0]}</span>
+                                        <span className="text-teal-500 font-medium flex-shrink-0">{t('workOrders.navigateBtn')}</span>
                                       </a>
                                     )
                                   }
 
                                   <div className="flex items-center justify-between pt-3 border-t border-stone-100 mt-3">
-                                    <div className="flex items-center gap-1.5 text-sm text-stone-500">
-                                      <div className={`w-5 h-5 rounded-lg border border-stone-200 flex items-center justify-center text-xs font-bold ${wo.assignedTo === currentUser?.name ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-stone-100 text-stone-600'}`}>
+                                    <div className="flex items-center gap-1.5 text-sm text-stone-500 min-w-0">
+                                      <div className={`w-5 h-5 rounded-lg border border-stone-200 flex items-center justify-center text-xs font-bold flex-shrink-0 ${wo.assignedTo === currentUser?.name ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-stone-100 text-stone-600'}`}>
                                         {wo.assignedTo?.charAt(0) || '?'}
                                       </div>
-                                      <span className="text-xs text-stone-400">{formatDateShort(wo.dueDate)}</span>
+                                      <span className="text-xs text-stone-400 flex-shrink-0">{formatDateShort(wo.dueDate)}</span>
                                     </div>
                                   </div>
                                 </div >
@@ -1335,12 +1344,12 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                           draggable
                                           onDragStart={(e) => handleDragStart(e, wo.id)}
                                           onClick={() => setSelectedWO(wo)}
-                                          className="bg-white p-2 rounded-lg shadow-sm border border-stone-200/60 cursor-grab active:cursor-grabbing hover:shadow-md transition-all text-xs"
+                                          className="bg-white p-2 rounded-lg shadow-sm border border-stone-200/60 cursor-grab active:cursor-grabbing hover:shadow-md transition-all text-xs overflow-hidden"
                                         >
-                                          <div className="font-medium text-stone-800 line-clamp-1 mb-1">{wo.title}</div>
+                                          <div className="font-medium text-stone-800 line-clamp-1 mb-1 overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{wo.title}</div>
                                           <div className="flex items-center justify-between text-[10px] text-stone-500">
-                                            <span>{wo.assignedTo || t('workOrders.unassigned')}</span>
-                                            <span>{formatDateShort(wo.dueDate)}</span>
+                                            <span className="truncate max-w-[80px]">{wo.assignedTo || t('workOrders.unassigned')}</span>
+                                            <span className="flex-shrink-0">{formatDateShort(wo.dueDate)}</span>
                                           </div>
                                         </div>
                                       ))}
@@ -1402,14 +1411,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                             draggable
                                             onDragStart={(e) => handleDragStart(e, wo.id)}
                                             onClick={() => setSelectedWO(wo)}
-                                            className="bg-white p-2 rounded-lg shadow-sm border border-stone-200/60 cursor-grab active:cursor-grabbing hover:shadow-md transition-all text-xs"
+                                            className="bg-white p-2 rounded-lg shadow-sm border border-stone-200/60 cursor-grab active:cursor-grabbing hover:shadow-md transition-all text-xs overflow-hidden"
                                           >
-                                            <div className="font-medium text-stone-800 line-clamp-1 mb-1">{wo.title}</div>
+                                            <div className="font-medium text-stone-800 line-clamp-1 mb-1 overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{wo.title}</div>
                                             <div className="flex items-center justify-between text-[10px]">
-                                              <span className={`px-1.5 py-0.5 rounded border ${priorityColors[wo.priority]}`}>
+                                              <span className={`px-1.5 py-0.5 rounded border flex-shrink-0 ${priorityColors[wo.priority]}`}>
                                                 {translatePriority(wo.priority)}
                                               </span>
-                                              <span className="text-stone-500">{formatDateShort(wo.dueDate)}</span>
+                                              <span className="text-stone-500 flex-shrink-0">{formatDateShort(wo.dueDate)}</span>
                                             </div>
                                           </div>
                                         ))}
@@ -1450,8 +1459,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       </span>
                     </div>
                   )}
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <h2 className="font-serif text-2xl text-stone-900">{selectedWO.id}: {selectedWO.title}</h2>
+                  <div className="flex items-center gap-3 mb-2 flex-wrap w-full">
+                    <h2 className="font-serif text-2xl text-stone-900 max-w-full" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{selectedWO.id}: {selectedWO.title}</h2>
                     <span className={`px-2.5 py-1 rounded-lg text-sm font-bold border ${statusColors[selectedWO.status]}`}>{translateStatus(selectedWO.status)}</span>
                     {
                       selectedWOPermissions && (
@@ -1499,16 +1508,16 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 {/* Description */}
                 <div>
                   <h3 className="text-base font-bold text-stone-900 uppercase tracking-wide mb-2">{t('workOrders.description')}</h3>
-                  <p className="text-base text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100">
+                  <p className="text-base text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                     {selectedWO.description}
                   </p>
                   {/* Reject History Section (visible to all roles, fetched from backend) */}
                   <div className="mt-3">
                     <h4 className="text-sm font-bold text-red-700 uppercase tracking-wide mb-1 flex items-center gap-2">
-                      <X size={14} className="text-red-500" /> Reject History
+                      <X size={14} className="text-red-500" /> {t('workOrders.rejectHistory')}
                     </h4>
                     {isLoadingRejectHistory ? (
-                      <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-base text-red-700">Loading history...</div>
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-base text-red-700">{t('workOrders.loadingHistory')}</div>
                     ) : rejectHistory && rejectHistory.length > 0 ? (
                       <ul className="space-y-2">
                         {rejectHistory.map(item => (
@@ -1522,7 +1531,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         ))}
                       </ul>
                     ) : (
-                      <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm text-stone-600">No rejection history</div>
+                      <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm text-stone-600">{t('workOrders.noRejectionHistory')}</div>
                     )}
                   </div>
                   {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.PENDING && (
@@ -1851,8 +1860,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                         value={adminAssignedTo}
                         onChange={(e) => setAdminAssignedTo(e.target.value)}
                         className="flex-1 text-base border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-stone-50"
-                        title="Select technician"
-                        aria-label="Select technician"
+                        title={t('workOrders.selectTechnicianToAssign')}
+                        aria-label={t('workOrders.selectTechnicianToAssign')}
                       >
                         <option value="">{t('workOrders.selectTechnicianPlaceholder')}</option>
                         {TECHNICIANS.map(t => (
@@ -2028,8 +2037,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                               <span className="font-bold text-stone-700">${part.cost * part.quantity}</span>
                               <button
                                 onClick={() => removePartFromWo(idx)}
-                                title="Remove part"
-                                aria-label="Remove part"
+                                title={t('workOrders.removePart')}
+                                aria-label={t('workOrders.removePart')}
                                 className="text-red-400 hover:text-red-600 p-1 transition-colors"
                               >
                                 <Trash2 size={16} />
@@ -2052,8 +2061,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                     {!(currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED) && (
                       <div className="flex gap-2">
                         <select
-                          title="Add part from inventory"
-                          aria-label="Add part from inventory"
+                          title={t('workOrders.addPartFromInventory')}
+                          aria-label={t('workOrders.addPartFromInventory')}
                           className="flex-1 text-base border border-stone-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white transition-all duration-200"
                           onChange={(e) => {
                             addPartToWo(e.target.value);
@@ -2184,7 +2193,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       {technicianPreviewUrls.map((imgUrl, idx) => (
                         <div key={idx} className="relative rounded-xl overflow-hidden border border-stone-200">
                           <img src={imgUrl} alt={`img-${idx}`} className="w-full h-28 object-cover" />
-                          <button onClick={() => removeTechnicianImage(idx)} title="Remove image" aria-label="Remove image" className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
+                          <button onClick={() => removeTechnicianImage(idx)} title={t('workOrders.removeImage')} aria-label={t('workOrders.removeImage')} className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors">
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -2223,7 +2232,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             </button>
             <img
               src={fullscreenImage}
-              alt="Full size"
+              alt={t('workOrders.fullSize')}
               className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             />
