@@ -418,7 +418,7 @@
 | Global search (Cmd/Ctrl + K) | 🔄 | มี Search bar ใน Header แต่ยังไม่ทำงานจริง, ไม่มี keyboard shortcut |
 | Recent searches dropdown | ❌ | |
 | Quick filters by type | ❌ | |
-| Quick actions (create new) | ❌ | Phase 1 |
+| Quick actions (create new) | ✅ | Dashboard Quick Actions - นำไปหน้า Requests |
 | Notifications bell icon | ✅ | NotificationCenter |
 | Unread count badge | ✅ | |
 | Mark all as read | ✅ | มี API และ UI แล้ว |
@@ -440,12 +440,12 @@
 | 📢 Work Notifications menu | ✅ | เรียกว่า "Requests" |
 | 🏭 Assets menu | 🔄 | มี UI แต่ใช้ mock data, ไม่มี backend API |
 | 📦 Inventory menu | 🔄 | มี UI และ AI Analysis แต่ใช้ mock data, ไม่มี backend CRUD |
-| 🔧 Preventive Maintenance menu | ❌ | Phase 2 |
+| 🔧 Preventive Maintenance menu | 🔄 | มี UI placeholder พร้อม Coming Soon, Admin only |
 | 👥 Workforce menu | 🔄 | แสดง users จาก API แต่ไม่มี calendar/schedule จริง |
 | 📊 Reports & Analytics menu | 🔄 | WO Summary/Status/Priority ใช้ได้, ที่เหลือ Coming Soon |
-| 🏢 EOC menu | ❌ | Phase 2 |
-| 🏪 Spare Part Center menu | ❌ | Phase 2 |
-| 🔒 Safety & Compliance menu | ❌ | Phase 2 |
+| 🏢 EOC menu | 🔄 | มี UI placeholder พร้อม Coming Soon, Admin only |
+| 🏪 Spare Part Center menu | 🔄 | มี UI placeholder พร้อม Coming Soon, Admin only |
+| 🔒 Safety & Compliance menu | 🔄 | มี UI placeholder พร้อม Coming Soon, Admin only |
 | ⚙️ Settings menu | ✅ | Profile ✅, Notification Preferences ✅, About ✅ |
 | ❓ Help & Support menu | 🔄 | FAQs ✅, Shortcuts ✅, What's New ✅, User Guide/Video/Contact = Coming Soon |
 | Keyboard shortcuts (Cmd+B toggle) | ✅ | มีใน App.tsx - Ctrl+B / Cmd+B toggle sidebar |
