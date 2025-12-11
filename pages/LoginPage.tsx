@@ -133,8 +133,8 @@ const LoginPage: React.FC = () => {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3.5 top-3.5 text-stone-400 hover:text-stone-600 transition-colors duration-200"
-                    aria-label="Toggle password visibility"
-                    title={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={t('login.togglePasswordVisibility')}
+                    title={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
