@@ -1,18 +1,13 @@
 import React from 'react';
-import { Globe, Palette, Bell, User, Shield, Info } from 'lucide-react';
-import { useLanguage, Language } from '../lib/i18n';
+import { Bell, User, Info } from 'lucide-react';
+import { useLanguage } from '../lib/i18n';
 
 interface SettingsProps {
   // Future: add props for user preferences
 }
 
 const Settings: React.FC<SettingsProps> = () => {
-  const { language, setLanguage, t } = useLanguage();
-
-  const languages: { code: Language; label: string; flag: string; fullName: string }[] = [
-    { code: 'en', label: 'EN', flag: '🇺🇸', fullName: 'English' },
-    { code: 'th', label: 'TH', flag: '🇹🇭', fullName: 'ไทย' },
-  ];
+  const { t } = useLanguage();
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -24,40 +19,6 @@ const Settings: React.FC<SettingsProps> = () => {
 
       {/* Settings Sections */}
       <div className="space-y-6">
-        {/* Language Settings */}
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
-            <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center">
-              <Globe className="text-teal-600" size={20} />
-            </div>
-            <div>
-              <h2 className="font-semibold text-stone-900">{t('settings.language')}</h2>
-              <p className="text-sm text-stone-500">{t('settings.languageDescription')}</p>
-            </div>
-          </div>
-          <div className="p-6">
-            <div className="flex gap-3">
-              {languages.map((lang) => (
-                <button
-                  key={lang.code}
-                  onClick={() => setLanguage(lang.code)}
-                  className={`flex items-center gap-3 px-5 py-3 rounded-xl border-2 transition-all duration-200 min-w-[140px] ${
-                    language === lang.code
-                      ? 'border-teal-600 bg-teal-100 text-teal-800 shadow-sm'
-                      : 'border-stone-200 hover:border-stone-300 text-stone-700 hover:bg-stone-50'
-                  }`}
-                >
-                  <span className="text-2xl">{lang.flag}</span>
-                  <div className="text-left">
-                    <div className={`font-semibold ${language === lang.code ? 'text-teal-800' : ''}`}>{lang.fullName}</div>
-                    <div className={`text-xs ${language === lang.code ? 'text-teal-600' : 'text-stone-500'}`}>{lang.label}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* Notification Settings - Placeholder */}
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden opacity-60">
           <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
@@ -74,25 +35,6 @@ const Settings: React.FC<SettingsProps> = () => {
           </div>
           <div className="p-6 text-stone-400 text-sm">
             {t('settings.notificationsPlaceholder')}
-          </div>
-        </div>
-
-        {/* Theme Settings - Placeholder */}
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden opacity-60">
-          <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
-            <div className="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center">
-              <Palette className="text-violet-600" size={20} />
-            </div>
-            <div>
-              <h2 className="font-semibold text-stone-900">{t('settings.theme')}</h2>
-              <p className="text-sm text-stone-500">{t('settings.themeDescription')}</p>
-            </div>
-            <span className="ml-auto text-xs bg-stone-100 text-stone-500 px-2 py-1 rounded-full">
-              {t('common.comingSoon')}
-            </span>
-          </div>
-          <div className="p-6 text-stone-400 text-sm">
-            {t('settings.themePlaceholder')}
           </div>
         </div>
 

@@ -22,7 +22,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     return (
       <button
         onClick={() => setLanguage(language === 'en' ? 'th' : 'en')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors min-w-[70px] justify-center ${className}`}
+        className={`flex items-center gap-1.5 px-3 py-2 text-sm text-stone-600 hover:text-stone-900 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl transition-colors min-w-[70px] justify-center ${className}`}
         title={t('settings.language')}
       >
         <Globe size={16} />
