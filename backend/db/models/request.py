@@ -8,7 +8,7 @@ class Request(Base):
     __tablename__ = "requests"
 
     id = Column(String(50), primary_key=True)
-    location = Column(String(255), nullable=False)
+    location = Column(Text, nullable=False)  # Changed from String(255) to Text for long locations
     priority = Column(String(50), nullable=False, index=True)
     description = Column(Text, nullable=False)
     status = Column(String(50), default="Open", index=True)
