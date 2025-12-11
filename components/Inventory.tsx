@@ -30,6 +30,8 @@ const Inventory: React.FC = () => {
 
     // Site selection temporarily removed per request
     // const siteOptions = useMemo(() => ['Site A', 'Site B', 'Site C'], []);
+    // Site selection temporarily removed per request
+    // const siteOptions = useMemo(() => ['Site A', 'Site B', 'Site C'], []);
 
     const filteredInventory = useMemo(() => {
         const term = search.trim().toLowerCase();
@@ -242,36 +244,24 @@ const Inventory: React.FC = () => {
                             </button>
                             <button
                                 className="px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700"
-                                onClick={async () => {
-                                    if (!newPart.part_name || !newPart.category) return;
-                                    try {
-                                        const { addSparePart } = await import('../services/apiService');
-                                        const created = await addSparePart({
-                                            part_name: newPart.part_name,
-                                            category: newPart.category,
-                                            price_per_unit: newPart.price_per_unit,
-                                            quantity: newPart.quantity,
-                                        });
-                                        const now = new Date();
-                                        const item: InventoryItem = {
-                                            id: `SP-${created.id}`,
-                                            name: created.part_name,
-                                            sku: `${created.category.slice(0,3).toUpperCase()}-${created.id}`,
-                                            quantity: created.quantity || 0,
-                                            minLevel: Math.max(1, Math.floor((created.quantity || 0)/2)),
-                                            unit: 'pcs',
-                                            location: '',
-                                            category: created.category,
-                                            lastUpdated: now.toISOString().slice(0,10),
-                                            cost: created.price_per_unit || 0,
-                                        };
-                                        setInventory(prev => [item, ...prev]);
-                                        setIsAddOpen(false);
-                                        setNewPart({ part_name: '', category: '', quantity: 0, price_per_unit: 0 });
-                                    } catch (err) {
-                                        console.error('Add spare part failed', err);
-                                        alert('Failed to add spare part');
-                                    }
+                                onClick={() => {
+                                    if (!newPart.name || !newPart.type || !newPart.site) return;
+                                    const now = new Date();
+                                    const item: InventoryItem = {
+                                        id: `P-${Math.floor(Math.random()*900+100)}`,
+                                        name: newPart.name,
+                                        sku: `${newPart.type.slice(0,3).toUpperCase()}-${Math.floor(Math.random()*999)}`,
+                                        quantity: newPart.quantity || 0,
+                                        minLevel: Math.max(1, Math.floor((newPart.quantity || 0)/2) ),
+                                        unit: 'pcs',
+                                        location: newPart.site,
+                                        category: newPart.type,
+                                        lastUpdated: now.toISOString().slice(0,10),
+                                        cost: newPart.pricePerUnit || 0,
+                                    };
+                                    setInventory(prev => [item, ...prev]);
+                                    setIsAddOpen(false);
+                                    setNewPart({ name: '', type: '', quantity: 0, pricePerUnit: 0, site: '' });
                                 }}
                             >
                                 Add Part
