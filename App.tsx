@@ -192,14 +192,39 @@ const App: React.FC = () => {
         try {
           const parsed = JSON.parse(storedUser);
           const role = parsed.role;
-          console.log('Loading user from sessionStorage:', role);
+          const userName = parsed.name;
+          console.log('Loading user from sessionStorage:', role, userName);
 
           if (role && USERS[role as UserRole]) {
-            const user = USERS[role as UserRole];
-            console.log('User loaded:', user);
-            setCurrentUser(user);
+            const baseUser = USERS[role as UserRole];
+            
+            // Try to fetch latest profile from API to get updated avatar
+            try {
+              const response = await fetch('/api/users/me', {
+                headers: { 'X-User-Name': userName || baseUser.name },
+              });
+              if (response.ok) {
+                const profileData = await response.json();
+                const user: User = {
+                  ...baseUser,
+                  name: profileData.name || baseUser.name,
+                  avatarUrl: profileData.avatar_url || baseUser.avatarUrl,
+                };
+                console.log('User loaded with API profile:', user);
+                setCurrentUser(user);
+                setIsLoggedIn(true);
+                setUserContext(user.userRole, user.name);
+                return;
+              }
+            } catch (apiError) {
+              console.log('Could not fetch profile from API, using cached data');
+            }
+            
+            // Fallback to hardcoded user
+            console.log('User loaded (fallback):', baseUser);
+            setCurrentUser(baseUser);
             setIsLoggedIn(true);
-            setUserContext(user.userRole, user.name);
+            setUserContext(baseUser.userRole, baseUser.name);
           }
         } catch (e) {
           console.error('Failed to parse stored user:', e);
@@ -209,6 +234,25 @@ const App: React.FC = () => {
 
     verifySession();
   }, []);
+
+  // Listen for profile updates from Settings
+  useEffect(() => {
+    const handleProfileUpdate = (event: CustomEvent) => {
+      const updated = event.detail;
+      if (updated && currentUser) {
+        setCurrentUser(prev => prev ? {
+          ...prev,
+          name: updated.name || prev.name,
+          avatarUrl: updated.avatar_url || prev.avatarUrl,
+        } : prev);
+      }
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    };
+  }, [currentUser]);
 
   // Handle logout
   const handleLogout = async () => {

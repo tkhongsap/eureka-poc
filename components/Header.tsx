@@ -1,7 +1,8 @@
-import React from 'react';
-import { Bell, Search, Globe, ChevronDown, UserCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bell, Search, Globe, ChevronDown, UserCircle, Sun, Moon } from 'lucide-react';
 import { User, Notification } from '../types';
 import NotificationCenter from './NotificationCenter';
+import LanguageSwitcher from './LanguageSwitcher';
 import { useLanguage } from '../lib/i18n';
 
 interface HeaderProps {
@@ -13,6 +14,29 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificationsUpdate = () => { }, onNavigateToWorkOrder }) => {
   const { t } = useLanguage();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Load theme preference on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      setIsDarkMode(true);
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  // Toggle theme
+  const toggleTheme = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   return (
     <header className="h-16 bg-white/80 backdrop-blur-md border-b border-stone-200/60 flex items-center justify-between px-6 fixed top-0 right-0 left-64 z-[9]">
@@ -27,13 +51,29 @@ const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificatio
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-3">
         {/* Site Switcher */}
-        <div className="hidden md:flex items-center space-x-2 text-base font-medium text-stone-600 hover:text-teal-600 cursor-pointer transition-all duration-200 bg-stone-50 px-4 py-2 rounded-xl border border-stone-200 hover:border-stone-300">
+        <div className="hidden lg:flex items-center space-x-2 text-base font-medium text-stone-600 hover:text-teal-600 cursor-pointer transition-all duration-200 bg-stone-50 px-4 py-2 rounded-xl border border-stone-200 hover:border-stone-300">
           <Globe size={18} />
           <span>Plant A - Assembly</span>
           <ChevronDown size={16} />
         </div>
+
+        {/* Language Toggle */}
+        <LanguageSwitcher variant="minimal" />
+
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl transition-all duration-200"
+          title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {isDarkMode ? (
+            <Sun size={18} className="text-amber-500" />
+          ) : (
+            <Moon size={18} className="text-stone-500" />
+          )}
+        </button>
 
         {/* Notifications */}
         <NotificationCenter

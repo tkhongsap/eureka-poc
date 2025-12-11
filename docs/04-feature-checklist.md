@@ -424,8 +424,8 @@
 | Mark all as read | ✅ | มี API และ UI แล้ว |
 | User menu dropdown | ✅ | |
 | User avatar with status | ✅ | แสดง avatar ใน Header (รองรับ Google avatar) |
-| Theme toggle (light/dark) | ❌ | |
-| Language selector | ✅ | TH/EN switcher |
+| Theme toggle (light/dark) | 🔄 | มีปุ่ม Sun/Moon ใน Header แล้ว แต่ยังไม่มี dark mode CSS |
+| Language selector | ✅ | TH/EN switcher ใน Header |
 
 ### Sidebar Navigation
 
@@ -446,8 +446,8 @@
 | 🏢 EOC menu | ❌ | Phase 2 |
 | 🏪 Spare Part Center menu | ❌ | Phase 2 |
 | 🔒 Safety & Compliance menu | ❌ | Phase 2 |
-| ⚙️ Settings menu | 🔄 | มี Settings.tsx - Language ใช้ได้, Theme/Profile ยังเป็น placeholder |
-| ❓ Help & Support menu | 🔄 | มี Help.tsx - บาง section ยังเป็น Coming Soon |
+| ⚙️ Settings menu | 🔄 | Notification Preferences ✅, Profile placeholder, About ✅ |
+| ❓ Help & Support menu | 🔄 | User Guide ✅, FAQs ✅, Keyboard Shortcuts ✅, What's New ✅, Video Tutorials ❌ |
 | Keyboard shortcuts (Cmd+B toggle) | ✅ | มีใน App.tsx - Ctrl+B / Cmd+B toggle sidebar |
 | Breadcrumb navigation | ✅ | มี Breadcrumb.tsx - แสดง path navigation |
 | Mobile slide-out drawer | ❌ | รอทำ responsive mobile |
@@ -569,12 +569,12 @@
 | Location Services | 3 | 0 | 3 | 6 | 50% |
 | Native Mobile App | 0 | 0 | 5 | 5 | 0% |
 | Integrations | 0 | 0 | 6 | 6 | 0% |
-| Top Navigation | 7 | 2 | 4 | 13 | 54% |
+| Top Navigation | 7 | 3 | 3 | 13 | 54% |
 | Sidebar | 10 | 4 | 5 | 19 | 53% |
 | Dashboard | 10 | 1 | 0 | 11 | 91% |
 | Design System | 11 | 2 | 1 | 14 | 79% |
 | เพิ่มเติมจาก PRD | 19 | 0 | 0 | 19 | 100% |
-| **รวมทั้งหมด** | **107** | **21** | **177** | **305** | **35%** |
+| **รวมทั้งหมด** | **107** | **22** | **176** | **305** | **35%** |
 
 ---
 

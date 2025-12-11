@@ -4,9 +4,25 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class NotificationPreferences(BaseModel):
+    """User notification preferences"""
+    wo_assigned: bool = True  # Notify when work order assigned
+    wo_status_changed: bool = True  # Notify when status changes
+    wo_overdue: bool = True  # Notify when work orders become overdue
+    wo_due_soon: bool = True  # Remind 7 days before due
+    email_digest: bool = False  # Daily email digest
+
+
 class UserSettings(BaseModel):
-    # Future implementation
-    pass
+    """User settings including notification preferences"""
+    notifications: Optional[NotificationPreferences] = None
+
+
+class ProfileUpdate(BaseModel):
+    """Profile fields that users can update themselves"""
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 
 class UserCreate(BaseModel):
