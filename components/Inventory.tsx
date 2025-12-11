@@ -29,7 +29,8 @@ const Inventory: React.FC = () => {
         site: '',
     });
 
-    const siteOptions = useMemo(() => ['Site A', 'Site B', 'Site C'], []);
+    // Site selection temporarily removed per request
+    // const siteOptions = useMemo(() => ['Site A', 'Site B', 'Site C'], []);
 
     const filteredInventory = useMemo(() => {
         const term = search.trim().toLowerCase();
@@ -223,19 +224,7 @@ const Inventory: React.FC = () => {
                                     />
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-stone-700 mb-1">Site</label>
-                                <select
-                                    className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                    value={newPart.site}
-                                    onChange={(e) => setNewPart(p => ({ ...p, site: e.target.value }))}
-                                >
-                                    <option value="" disabled>Select a site</option>
-                                    {siteOptions.map(s => (
-                                        <option key={s} value={s}>{s}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            {/* Site selection removed temporarily */}
                         </div>
                         <div className="px-6 py-4 border-t border-stone-200 flex justify-end gap-2">
                             <button
@@ -247,7 +236,7 @@ const Inventory: React.FC = () => {
                             <button
                                 className="px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700"
                                 onClick={() => {
-                                    if (!newPart.name || !newPart.type || !newPart.site) return;
+                                    if (!newPart.name || !newPart.type) return;
                                     const now = new Date();
                                     const item: InventoryItem = {
                                         id: `P-${Math.floor(Math.random()*900+100)}`,
@@ -256,7 +245,7 @@ const Inventory: React.FC = () => {
                                         quantity: newPart.quantity || 0,
                                         minLevel: Math.max(1, Math.floor((newPart.quantity || 0)/2) ),
                                         unit: 'pcs',
-                                        location: newPart.site,
+                                        location: '',
                                         category: newPart.type,
                                         lastUpdated: now.toISOString().slice(0,10),
                                         cost: newPart.pricePerUnit || 0,
