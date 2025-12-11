@@ -7,7 +7,7 @@
 - 🔄 กำลังทำ  
 - ❌ ยังไม่ได้ทำ
 
-**อัพเดทล่าสุด:** 2025-12-09
+**อัพเดทล่าสุด:** 2025-12-11
 
 ---
 
@@ -41,8 +41,8 @@
 | User management | ✅ | Phase 1 |
 | Two-Factor Authentication | ❌ | |
 | Keycloak integration | ❌ | Phase 2 |
-| User profile | 🔄 | Settings.tsx มี placeholder สำหรับ Profile |
-| User preferences | 🔄 | Settings.tsx มี Language switcher ทำงานแล้ว, Theme/Notifications เป็น placeholder |
+| User profile | ✅ | Settings.tsx - ดู/แก้ไขชื่อ, เบอร์โทร, เปลี่ยนรูปโปรไฟล์ได้ |
+| User preferences | ✅ | Settings.tsx - Notification preferences บันทึกลง DB แล้ว |
 | Team structure (teamId) | ✅ | เพิ่มเติม - Technician → Head Technician routing |
 
 ---
@@ -415,7 +415,7 @@
 |---------|-------|----------|
 | Logo (clickable to dashboard) | ✅ | Eureka CMMS logo |
 | Tenant selector | 🔄 | มี Site Switcher UI ใน Header แต่ยังไม่ทำงาน (hardcoded "Plant A") |
-| Global search (Cmd/Ctrl + K) | 🔄 | มี Search bar ใน Header แต่ยังไม่ทำงานจริง |
+| Global search (Cmd/Ctrl + K) | 🔄 | มี Search bar ใน Header แต่ยังไม่ทำงานจริง, ไม่มี keyboard shortcut |
 | Recent searches dropdown | ❌ | |
 | Quick filters by type | ❌ | |
 | Quick actions (create new) | ❌ | Phase 1 |
@@ -423,31 +423,31 @@
 | Unread count badge | ✅ | |
 | Mark all as read | ✅ | มี API และ UI แล้ว |
 | User menu dropdown | ✅ | |
-| User avatar with status | ✅ | แสดง avatar ใน Header (รองรับ Google avatar) |
-| Theme toggle (light/dark) | 🔄 | มีปุ่ม Sun/Moon ใน Header แล้ว แต่ยังไม่มี dark mode CSS |
+| User avatar with status | ✅ | แสดง avatar ใน Header, รองรับ upload รูปใหม่ได้ |
+| Theme toggle (light/dark) | 🔄 | มีปุ่ม Sun/Moon, toggle state ได้ แต่ไม่มี dark mode CSS จริง |
 | Language selector | ✅ | TH/EN switcher ใน Header |
 
 ### Sidebar Navigation
 
 | Feature | สถานะ | หมายเหตุ |
 |---------|-------|----------|
-| Collapsible sidebar | ✅ | เพิ่งเพิ่ม toggle |
+| Collapsible sidebar | ✅ | Toggle ได้ |
 | Role-based menu visibility | ✅ | Different menus per role |
 | Active state highlight | ✅ | |
 | Badge indicators (counts) | ✅ | Notification count |
 | 🏠 Dashboard menu | ✅ | Admin only |
 | 📋 Work Orders menu | ✅ | List view |
 | 📢 Work Notifications menu | ✅ | เรียกว่า "Requests" |
-| 🏭 Assets menu | 🔄 | มีเมนูแล้ว แต่ยังใช้ mock data, ไม่มี backend |
-| 📦 Inventory menu | ✅ | มีแล้ว |
+| 🏭 Assets menu | 🔄 | มี UI แต่ใช้ mock data, ไม่มี backend API |
+| 📦 Inventory menu | 🔄 | มี UI และ AI Analysis แต่ใช้ mock data, ไม่มี backend CRUD |
 | 🔧 Preventive Maintenance menu | ❌ | Phase 2 |
-| 👥 Workforce menu | ✅ | "Team Schedule" - UI only |
-| 📊 Reports & Analytics menu | 🔄 | มี Reports.tsx - บาง report ใช้ได้, ส่วนใหญ่ยังเป็น Coming Soon |
+| 👥 Workforce menu | 🔄 | แสดง users จาก API แต่ไม่มี calendar/schedule จริง |
+| 📊 Reports & Analytics menu | 🔄 | WO Summary/Status/Priority ใช้ได้, ที่เหลือ Coming Soon |
 | 🏢 EOC menu | ❌ | Phase 2 |
 | 🏪 Spare Part Center menu | ❌ | Phase 2 |
 | 🔒 Safety & Compliance menu | ❌ | Phase 2 |
-| ⚙️ Settings menu | 🔄 | Notification Preferences ✅, Profile placeholder, About ✅ |
-| ❓ Help & Support menu | 🔄 | User Guide ✅, FAQs ✅, Keyboard Shortcuts ✅, What's New ✅, Video Tutorials ❌ |
+| ⚙️ Settings menu | ✅ | Profile ✅, Notification Preferences ✅, About ✅ |
+| ❓ Help & Support menu | 🔄 | FAQs ✅, Shortcuts ✅, What's New ✅, User Guide/Video/Contact = Coming Soon |
 | Keyboard shortcuts (Cmd+B toggle) | ✅ | มีใน App.tsx - Ctrl+B / Cmd+B toggle sidebar |
 | Breadcrumb navigation | ✅ | มี Breadcrumb.tsx - แสดง path navigation |
 | Mobile slide-out drawer | ❌ | รอทำ responsive mobile |
@@ -543,6 +543,9 @@
 | Navigate to WO from notification | ✅ | กด notification แล้วเปิด WO detail panel ทันที (ทุก role) |
 | Work Orders by Technician detail | ✅ | แสดง In Progress, Completed, Open, Pending ของแต่ละช่าง |
 | Request page authentication | ✅ | /request ต้อง login ก่อนเข้าถึง |
+| Profile avatar upload | ✅ | กดที่รูปโปรไฟล์เพื่อ upload รูปใหม่ |
+| Image serve endpoint | ✅ | /api/images/{id}/raw สำหรับแสดงรูปภาพ |
+| Profile sync to Header | ✅ | อัปเดตรูปใน Header ทันทีหลังบันทึก |
 
 ---
 
@@ -551,7 +554,7 @@
 | หมวดหมู่ | เสร็จแล้ว | กำลังทำ | ยังไม่ได้ทำ | รวม | % |
 |----------|-----------|---------|-------------|-----|---|
 | Tenant & Site Management | 0 | 0 | 11 | 11 | 0% |
-| Authentication | 6 | 2 | 3 | 11 | 54% |
+| Authentication | 8 | 0 | 3 | 11 | 73% |
 | Work Notifications | 12 | 0 | 2 | 14 | 86% |
 | Work Order Management | 25 | 1 | 20 | 46 | 54% |
 | Technician Features | 3 | 0 | 12 | 15 | 20% |
@@ -570,11 +573,11 @@
 | Native Mobile App | 0 | 0 | 5 | 5 | 0% |
 | Integrations | 0 | 0 | 6 | 6 | 0% |
 | Top Navigation | 7 | 3 | 3 | 13 | 54% |
-| Sidebar | 10 | 4 | 5 | 19 | 53% |
+| Sidebar | 11 | 5 | 3 | 19 | 58% |
 | Dashboard | 10 | 1 | 0 | 11 | 91% |
 | Design System | 11 | 2 | 1 | 14 | 79% |
-| เพิ่มเติมจาก PRD | 19 | 0 | 0 | 19 | 100% |
-| **รวมทั้งหมด** | **107** | **22** | **176** | **305** | **35%** |
+| เพิ่มเติมจาก PRD | 22 | 0 | 0 | 22 | 100% |
+| **รวมทั้งหมด** | **113** | **25** | **171** | **309** | **37%** |
 
 ---
 

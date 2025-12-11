@@ -203,9 +203,10 @@ const renderActiveShape = (props: any) => {
 
 interface DashboardProps {
   onNavigateToWorkOrder?: (workOrderId: string) => void;
+  onNavigateToRequests?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigateToRequests }) => {
   const { t, language } = useLanguage();
   const [stats, setStats] = useState<DashboardStatsAPI | null>(null);
   const [loading, setLoading] = useState(true);
@@ -343,41 +344,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder }) => {
                   <button
                     onClick={() => {
                       setShowQuickActions(false);
-                      // TODO: Open create work order modal
-                      alert(language === 'th' ? 'สร้างใบงานใหม่ (Coming soon)' : 'Create Work Order (Coming soon)');
+                      onNavigateToRequests?.();
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-stone-50 transition-colors"
                   >
-                    <div className="p-1.5 bg-blue-100 rounded-lg">
-                      <ClipboardList size={16} className="text-blue-600" />
+                    <div className="p-1.5 bg-teal-100 rounded-lg">
+                      <ClipboardList size={16} className="text-teal-600" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-stone-800">
-                        {language === 'th' ? 'สร้างใบงาน' : 'New Work Order'}
+                        {language === 'th' ? 'สร้างใบงาน / แจ้งซ่อม' : 'New Work Order'}
                       </p>
                       <p className="text-xs text-stone-500">
-                        {language === 'th' ? 'สร้างใบงานใหม่' : 'Create a new work order'}
-                      </p>
-                    </div>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      setShowQuickActions(false);
-                      // TODO: Navigate to request portal
-                      alert(language === 'th' ? 'สร้างการแจ้งซ่อม (Coming soon)' : 'Create Work Notification (Coming soon)');
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-stone-50 transition-colors"
-                  >
-                    <div className="p-1.5 bg-amber-100 rounded-lg">
-                      <Bell size={16} className="text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-stone-800">
-                        {language === 'th' ? 'แจ้งซ่อม' : 'Work Notification'}
-                      </p>
-                      <p className="text-xs text-stone-500">
-                        {language === 'th' ? 'แจ้งปัญหาใหม่' : 'Report a new issue'}
+                        {language === 'th' ? 'สร้างใบงานหรือแจ้งปัญหาใหม่' : 'Create a work order or report issue'}
                       </p>
                     </div>
                   </button>

@@ -15,7 +15,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Building2,
-  HelpCircle
+  HelpCircle,
+  Calendar,
+  Shield,
+  Globe
 } from 'lucide-react';
 import { UserRole, User } from '../types';
 import { useLanguage } from '../lib/i18n';
@@ -39,7 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed: externalCollapsed,
   onToggleCollapse: externalToggle
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [internalCollapsed, setInternalCollapsed] = useState(false);
 
   // Use external state if provided, otherwise use internal state
@@ -54,7 +57,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'requests', labelKey: 'nav.requests' as const, icon: FileText, roles: ['Admin', 'Head Technician', 'Technician', 'Requester'] },
     { id: 'assets', labelKey: 'nav.assets' as const, icon: Building2, roles: ['Admin', 'Head Technician', 'Technician'] },
     { id: 'inventory', labelKey: 'inventory.title' as const, icon: Package, roles: ['Admin', 'Head Technician', 'Technician'] },
+    { id: 'preventive-maintenance', labelKey: 'nav.preventiveMaintenance' as const, icon: Calendar, roles: ['Admin', 'Head Technician'] },
     { id: 'team', labelKey: 'team.title' as const, icon: Users, roles: ['Admin', 'Head Technician'] },
+    { id: 'eoc', labelKey: 'nav.eoc' as const, icon: Globe, roles: ['Admin'] },
+    { id: 'spare-part-center', labelKey: 'nav.sparePartCenter' as const, icon: Package, roles: ['Admin'] },
+    { id: 'safety', labelKey: 'nav.safety' as const, icon: Shield, roles: ['Admin', 'Head Technician'] },
     { id: 'reports', labelKey: 'nav.reports' as const, icon: BarChart3, roles: ['Admin'] },
     { id: 'user-management', labelKey: 'nav.userManagement' as const, icon: UserCog, roles: ['Admin'] },
   ];
@@ -96,7 +103,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }`}
             >
               <Icon size={20} className="flex-shrink-0" />
-              {!isCollapsed && <span className="font-medium text-base">{t(item.labelKey)}</span>}
+              {!isCollapsed && (
+                <span className={`font-medium ${language === 'en' && item.id === 'preventive-maintenance' ? 'text-sm' : 'text-base'}`}>
+                  {t(item.labelKey)}
+                </span>
+              )}
             </button>
           );
         })}

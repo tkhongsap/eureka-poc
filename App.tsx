@@ -15,6 +15,10 @@ import Settings from './components/Settings';
 import Help from './components/Help';
 import Reports from './components/Reports';
 import UserRoleManagement from './components/UserRoleManagement';
+import PreventiveMaintenance from './components/PreventiveMaintenance';
+import EOC from './components/EOC';
+import SparePartCenter from './components/SparePartCenter';
+import SafetyCompliance from './components/SafetyCompliance';
 import { WorkOrder, Status, Priority, User, UserRole, Notification } from './types';
 import { UserCircle2 } from 'lucide-react';
 import { generateTitleFromDescription } from './services/geminiService';
@@ -501,14 +505,19 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard onNavigateToWorkOrder={(woId) => {
-          setCurrentView('work-orders');
-          sessionStorage.setItem('openWorkOrderId', woId);
-          // Dispatch event after delay to allow WorkOrders to mount
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('openWorkOrder', { detail: woId }));
-          }, 300);
-        }} />;
+        return <Dashboard 
+          onNavigateToWorkOrder={(woId) => {
+            setCurrentView('work-orders');
+            sessionStorage.setItem('openWorkOrderId', woId);
+            // Dispatch event after delay to allow WorkOrders to mount
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('openWorkOrder', { detail: woId }));
+            }, 300);
+          }}
+          onNavigateToRequests={() => {
+            setCurrentView('requests');
+          }}
+        />;
       case 'work-orders':
         return <WorkOrders workOrders={workOrders} currentUser={currentUser} technicians={TECHNICIANS} />;
       case 'requests':
@@ -539,6 +548,14 @@ const App: React.FC = () => {
         return <Help />;
       case 'reports':
         return <Reports />;
+      case 'preventive-maintenance':
+        return <PreventiveMaintenance />;
+      case 'eoc':
+        return <EOC />;
+      case 'spare-part-center':
+        return <SparePartCenter />;
+      case 'safety':
+        return <SafetyCompliance />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full text-slate-400">
