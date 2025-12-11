@@ -872,6 +872,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
                 
                 const AlertIcon = alertConfig.icon;
 
+                // Priority badge colors (same as Recent Work Orders)
+                const priorityColor = {
+                  'Critical': 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
+                  'High': 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
+                  'Medium': 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+                  'Low': 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
+                }[alert.priority] || null;
+
                 return (
                   <div 
                     key={alert.id}
@@ -881,9 +889,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
                     <div className="flex items-start gap-3">
                       <AlertIcon size={18} className={`${alertConfig.iconColor} flex-shrink-0 mt-0.5`} />
                       <div className="min-w-0 flex-1">
-                        <p className={`text-sm font-medium truncate ${alertConfig.textColor}`}>
-                          {alert.title}
-                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-sm font-medium truncate ${alertConfig.textColor}`}>
+                            {alert.title}
+                          </p>
+                          {priorityColor && (
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full border flex-shrink-0 ${priorityColor}`}>
+                              {alert.priority}
+                            </span>
+                          )}
+                        </div>
                         <p className={`text-xs mt-0.5 ${alertConfig.subTextColor}`}>
                           {alert.message}
                         </p>

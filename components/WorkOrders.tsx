@@ -54,10 +54,10 @@ const statusColors = {
 // Column header colors for Kanban board
 const statusColumnColors = {
   [Status.OPEN]: {
-    header: 'bg-blue-100/80 dark:bg-blue-950/60 border-blue-200/60 dark:border-blue-800',
+    header: 'bg-blue-200/80 dark:bg-blue-950/60 border-blue-300/60 dark:border-blue-800',
     dot: 'bg-blue-500',
     title: 'text-blue-700 dark:text-blue-300',
-    count: 'bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-200',
+    count: 'bg-blue-300 dark:bg-blue-800 text-blue-700 dark:text-blue-200',
   },
   [Status.IN_PROGRESS]: {
     header: 'bg-orange-100/80 dark:bg-orange-950/60 border-orange-200/60 dark:border-orange-800',
@@ -66,10 +66,10 @@ const statusColumnColors = {
     count: 'bg-orange-200 dark:bg-orange-800 text-orange-700 dark:text-orange-200',
   },
   [Status.PENDING]: {
-    header: 'bg-violet-100/80 dark:bg-violet-950/60 border-violet-200/60 dark:border-violet-800',
+    header: 'bg-violet-200/80 dark:bg-violet-950/60 border-violet-300/60 dark:border-violet-800',
     dot: 'bg-violet-500',
     title: 'text-violet-700 dark:text-violet-300',
-    count: 'bg-violet-200 dark:bg-violet-800 text-violet-700 dark:text-violet-200',
+    count: 'bg-violet-300 dark:bg-violet-800 text-violet-700 dark:text-violet-200',
   },
   [Status.COMPLETED]: {
     header: 'bg-emerald-100/80 dark:bg-emerald-950/60 border-emerald-200/60 dark:border-emerald-800',
@@ -84,18 +84,18 @@ const statusColumnColors = {
     count: 'bg-stone-300 dark:bg-stone-700 text-stone-700 dark:text-stone-200',
   },
   [Status.CANCELED]: {
-    header: 'bg-pink-100/80 dark:bg-pink-950/60 border-pink-200/60 dark:border-pink-800',
+    header: 'bg-pink-200/80 dark:bg-pink-950/60 border-pink-300/60 dark:border-pink-800',
     dot: 'bg-pink-500',
     title: 'text-pink-700 dark:text-pink-300',
-    count: 'bg-pink-200 dark:bg-pink-800 text-pink-700 dark:text-pink-200',
+    count: 'bg-pink-300 dark:bg-pink-800 text-pink-700 dark:text-pink-200',
   },
 };
 
 const priorityColors = {
-  [Priority.CRITICAL]: 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/50 border-red-100 dark:border-red-800',
-  [Priority.HIGH]: 'text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/50 border-orange-100 dark:border-orange-800',
-  [Priority.MEDIUM]: 'text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/50 border-teal-100 dark:border-teal-800',
-  [Priority.LOW]: 'text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/50 border-sky-100 dark:border-sky-800',
+  [Priority.CRITICAL]: 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-950/50 border-red-200 dark:border-red-800',
+  [Priority.HIGH]: 'text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-950/50 border-orange-200 dark:border-orange-800',
+  [Priority.MEDIUM]: 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800',
+  [Priority.LOW]: 'text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-950/50 border-green-200 dark:border-green-800',
 };
 
 // Mock parts for selection
