@@ -38,6 +38,9 @@ STATUS_TRANSITIONS: Dict[Tuple[str, str], Set[str]] = {
     # Admin assigns technician (Open → In Progress)
     (Status.OPEN, Status.IN_PROGRESS): {UserRole.ADMIN, UserRole.HEAD_TECHNICIAN},
     
+    # Admin can move back from In Progress to Open for corrections
+    (Status.IN_PROGRESS, Status.OPEN): {UserRole.ADMIN},
+    
     # Technician completes work (In Progress → Pending) — allow Admin to move as well
     (Status.IN_PROGRESS, Status.PENDING): {UserRole.TECHNICIAN, UserRole.ADMIN},
     # Head Technician rejects and sends back (Pending → In Progress) - Only Head Tech
@@ -48,6 +51,8 @@ STATUS_TRANSITIONS: Dict[Tuple[str, str], Set[str]] = {
     (Status.COMPLETED, Status.CLOSED): {UserRole.ADMIN},
     # Admin can move back from Completed to In Progress for corrections
     (Status.COMPLETED, Status.IN_PROGRESS): {UserRole.ADMIN},
+    # Admin can move back from Closed to Completed for corrections
+    (Status.CLOSED, Status.COMPLETED): {UserRole.ADMIN},
     # Admin cancels (Open → Canceled)
     (Status.OPEN, Status.CANCELED): {UserRole.ADMIN},
 }

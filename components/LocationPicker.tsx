@@ -200,12 +200,12 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         <div className="p-3 sm:p-4 border-b border-stone-200 flex justify-between items-center bg-gradient-to-r from-teal-500 to-teal-600 flex-shrink-0">
           <div className="flex items-center gap-2 text-white">
             <MapPin size={24} />
-            <h3 className="font-semibold text-lg">Select Location</h3>
+            <h3 className="font-semibold text-lg">{t('location.selectLocation')}</h3>
           </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/20 rounded-xl text-white transition-colors"
-            title="Close"
+            title={t('location.close')}
           >
             <X size={20} />
           </button>
@@ -629,7 +629,7 @@ export const InlineLocationPicker: React.FC<{
                 type="button"
                 onClick={handleClear}
                 className="p-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition-colors"
-                title="Clear location"
+                title={t('location.clearLocation')}
               >
                 <X size={16} />
               </button>

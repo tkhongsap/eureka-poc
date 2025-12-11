@@ -71,6 +71,9 @@ const translations = {
     'login.technicianDesc': 'Execute maintenance tasks',
     'login.requester': 'Requester',
     'login.requesterDesc': 'Submit maintenance requests',
+    'login.showPassword': 'Show password',
+    'login.hidePassword': 'Hide password',
+    'login.togglePasswordVisibility': 'Toggle password visibility',
 
     // ============== Dashboard ==============
     'dashboard.title': 'Dashboard',
@@ -611,6 +614,23 @@ const translations = {
     'workOrders.addPartFromInventory': 'Add part from inventory',
     'workOrders.cancelWO': 'Cancel this work order',
     'workOrders.closeModal': 'Close modal',
+    'workOrders.mustAssignTechnicianFirst': 'Please assign a technician before moving to In Progress',
+    'workOrders.rejectHistory': 'Reject History',
+    'workOrders.loadingHistory': 'Loading history...',
+    'workOrders.noRejectionHistory': 'No rejection history',
+    'workOrders.fullSize': 'Full size',
+
+    // ============== Sidebar ==============
+    'sidebar.expandSidebar': 'Expand sidebar',
+    'sidebar.collapseSidebar': 'Collapse sidebar',
+
+    // ============== Location Picker ==============
+    'location.selectLocation': 'Select Location',
+    'location.close': 'Close',
+    'location.clearLocation': 'Clear location',
+
+    // ============== User Management ==============
+    'userManagement.loadingUsers': 'Loading users...',
   },
 
   th: {
@@ -674,6 +694,9 @@ const translations = {
     'login.technicianDesc': 'ดำเนินการงานบำรุงรักษา',
     'login.requester': 'ผู้แจ้งซ่อม',
     'login.requesterDesc': 'แจ้งซ่อมบำรุง',
+    'login.showPassword': 'แสดงรหัสผ่าน',
+    'login.hidePassword': 'ซ่อนรหัสผ่าน',
+    'login.togglePasswordVisibility': 'สลับการแสดงรหัสผ่าน',
 
     // ============== Dashboard ==============
     'dashboard.title': 'แดชบอร์ด',
@@ -1208,6 +1231,23 @@ const translations = {
     'workOrders.addPartFromInventory': 'เพิ่มอะไหล่จากคลัง',
     'workOrders.cancelWO': 'ยกเลิกใบงานนี้',
     'workOrders.closeModal': 'ปิดหน้าต่าง',
+    'workOrders.mustAssignTechnicianFirst': 'กรุณามอบหมายช่างก่อนเปลี่ยนสถานะเป็น กำลังดำเนินการ',
+    'workOrders.rejectHistory': 'ประวัติการปฏิเสธ',
+    'workOrders.loadingHistory': 'กำลังโหลดประวัติ...',
+    'workOrders.noRejectionHistory': 'ไม่มีประวัติการปฏิเสธ',
+    'workOrders.fullSize': 'ขนาดเต็ม',
+
+    // ============== Sidebar ==============
+    'sidebar.expandSidebar': 'ขยาย Sidebar',
+    'sidebar.collapseSidebar': 'ย่อ Sidebar',
+
+    // ============== Location Picker ==============
+    'location.selectLocation': 'เลือกตำแหน่ง',
+    'location.close': 'ปิด',
+    'location.clearLocation': 'ล้างตำแหน่ง',
+
+    // ============== User Management ==============
+    'userManagement.loadingUsers': 'กำลังโหลดผู้ใช้...',
   }
 } as const;
 

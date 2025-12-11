@@ -190,7 +190,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full max-w-full overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-stone-800 flex items-center gap-2">
           <Package size={20} className="text-stone-400" /> 
@@ -201,7 +201,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
         </h3>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3 w-full max-w-full overflow-hidden">
         {myWorkOrders.map(wo => {
           const statusInfo = statusConfig[wo.status] || statusConfig[Status.OPEN]; // Fallback to OPEN if status not found
           const StatusIcon = statusInfo.icon;
@@ -210,12 +210,12 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
             <div
               key={wo.id}
               onClick={() => setSelectedWO(wo)}
-              className="bg-white p-4 rounded-2xl border border-stone-200/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group"
+              className="bg-white p-4 rounded-2xl border border-stone-200/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group overflow-hidden w-full max-w-full"
             >
               {/* Header with ID and Status */}
               <div className="flex justify-between items-start mb-3">
-                <span className="text-xs font-mono text-stone-400">{wo.id}</span>
-                <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-stone-400 truncate max-w-[150px]">{wo.id}</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <span className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-lg border ${statusInfo.color}`}>
                     {wo.status}
                   </span>
@@ -223,21 +223,21 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
               </div>
 
               {/* Title */}
-              <h4 className="font-medium text-stone-800 text-sm mb-2 leading-snug">
+              <h4 className="font-medium text-stone-800 text-sm mb-2 leading-snug line-clamp-2 overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                 {wo.title}
               </h4>
 
               {/* Description */}
-              <p className="text-xs text-stone-500 mb-3 line-clamp-2">
+              <p className="text-xs text-stone-500 mb-3 line-clamp-2 overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                 {wo.description}
               </p>
 
               {/* Priority and Asset */}
-              <div className="flex items-center gap-2 mb-3">
-                <span className={`px-2 py-0.5 rounded-lg border text-[10px] uppercase font-bold tracking-wider ${priorityColors[wo.priority]}`}>
+              <div className="flex items-center gap-2 mb-3 overflow-hidden flex-wrap">
+                <span className={`px-2 py-0.5 rounded-lg border text-[10px] uppercase font-bold tracking-wider flex-shrink-0 ${priorityColors[wo.priority]}`}>
                   {wo.priority}
                 </span>
-                <span className="text-xs text-stone-500">
+                <span className="text-xs text-stone-500" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                   📍 {wo.assetName}
                 </span>
               </div>
@@ -247,15 +247,15 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                 <div className="flex items-center gap-2">
                   <StatusIcon size={16} className={statusInfo.iconColor} />
                   {wo.assignedTo && (
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-lg border border-stone-200 bg-stone-100 flex items-center justify-center text-[10px] font-bold text-stone-600">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="w-5 h-5 rounded-lg border border-stone-200 bg-stone-100 flex items-center justify-center text-[10px] font-bold text-stone-600 flex-shrink-0">
                         {wo.assignedTo.charAt(0)}
                       </div>
-                      <span className="text-xs text-stone-600">{wo.assignedTo}</span>
+                      <span className="text-xs text-stone-600 truncate max-w-[80px]">{wo.assignedTo}</span>
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-1 text-[10px] text-stone-400">
+                <div className="flex items-center gap-1 text-[10px] text-stone-400 flex-shrink-0">
                   <Calendar size={12} />
                   <span>{t('workOrders.dueDateLabel')} {formatDateShort(wo.dueDate)}</span>
                 </div>
@@ -263,8 +263,8 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
 
               {/* Request Reference */}
               {wo.requestId && (
-                <div className="mt-2 pt-2 border-t border-stone-100">
-                  <span className="text-[10px] text-stone-400">
+                <div className="mt-2 pt-2 border-t border-stone-100 overflow-hidden">
+                  <span className="text-[10px] text-stone-400 block truncate">
                     {t('requestor.createdFromRequest')}: <span className="font-mono">{wo.requestId}</span>
                   </span>
                 </div>
@@ -289,10 +289,10 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
           <div className="relative w-full max-w-2xl bg-white shadow-2xl h-full overflow-y-auto flex flex-col">
 
             {/* Modal Header */}
-            <div className="p-6 border-b border-stone-100 bg-white sticky top-0 z-20 flex justify-between items-start">
-              <div className="flex-1">
+            <div className="p-6 border-b border-stone-100 bg-white sticky top-0 z-20 flex justify-between items-start gap-4">
+              <div className="flex-1 min-w-0 overflow-hidden">
                 <div className="flex items-center gap-3 mb-2 flex-wrap">
-                  <h2 className="font-serif text-xl text-stone-900">{selectedWO.id}: {selectedWO.title}</h2>
+                  <h2 className="font-serif text-xl text-stone-900 break-words">{selectedWO.id}: <span className="break-all">{selectedWO.title}</span></h2>
                   <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${statusConfig[selectedWO.status].color}`}>
                     {selectedWO.status}
                   </span>
@@ -349,7 +349,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                     placeholder={t('request.descriptionPlaceholder')}
                   />
                 ) : (
-                  <p className="text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100">
+                  <p className="text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100 break-words overflow-hidden">
                     {selectedWO.description}
                   </p>
                 )}
@@ -358,14 +358,14 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
               {/* Asset Information */}
               <div>
                 <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2">{t('workOrders.asset')} & {t('workOrders.location')}</h3>
-                <div className="bg-stone-50 p-4 rounded-xl border border-stone-100 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-stone-500">{t('workOrders.asset')}:</span>
-                    <span className="text-sm font-medium text-stone-800">{selectedWO.assetName}</span>
+                <div className="bg-stone-50 p-4 rounded-xl border border-stone-100 space-y-2 overflow-hidden">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-sm text-stone-500 flex-shrink-0">{t('workOrders.asset')}:</span>
+                    <span className="text-sm font-medium text-stone-800 text-right break-words min-w-0">{selectedWO.assetName}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-stone-500">{t('workOrders.location')}:</span>
-                    <span className="text-sm font-medium text-stone-800">{selectedWO.location}</span>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-sm text-stone-500 flex-shrink-0">{t('workOrders.location')}:</span>
+                    <span className="text-sm font-medium text-stone-800 text-right break-words min-w-0">{selectedWO.location}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-stone-500">{t('workOrders.priority')}:</span>
@@ -570,7 +570,7 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
           </button>
           <img
             src={fullscreenImage}
-            alt="Full size"
+            alt={t('workOrders.fullSize')}
             className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />

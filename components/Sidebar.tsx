@@ -75,7 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <button
           onClick={toggleCollapse}
           className={`w-7 h-7 bg-stone-800 hover:bg-stone-700 rounded-lg flex items-center justify-center transition-all duration-200 flex-shrink-0`}
-          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={isCollapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
         >
           {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
