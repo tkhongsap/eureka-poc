@@ -446,8 +446,8 @@
 | 🏢 EOC menu | ❌ | Phase 2 |
 | 🏪 Spare Part Center menu | ❌ | Phase 2 |
 | 🔒 Safety & Compliance menu | ❌ | Phase 2 |
-| ⚙️ Settings menu | 🔄 | มี Settings.tsx - Language ใช้ได้, Theme/Profile ยังเป็น placeholder |
-| ❓ Help & Support menu | 🔄 | มี Help.tsx - บาง section ยังเป็น Coming Soon |
+| ⚙️ Settings menu | 🔄 | Notification Preferences ✅, Profile placeholder, About ✅ |
+| ❓ Help & Support menu | 🔄 | User Guide ✅, FAQs ✅, Keyboard Shortcuts ✅, What's New ✅, Video Tutorials ❌ |
 | Keyboard shortcuts (Cmd+B toggle) | ✅ | มีใน App.tsx - Ctrl+B / Cmd+B toggle sidebar |
 | Breadcrumb navigation | ✅ | มี Breadcrumb.tsx - แสดง path navigation |
 | Mobile slide-out drawer | ❌ | รอทำ responsive mobile |

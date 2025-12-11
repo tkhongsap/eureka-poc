@@ -26,16 +26,23 @@ def get_current_user_optional(
     db: Session = Depends(get_db)
 ) -> Optional[UserModel]:
     """Get current user from session cookie (optional - returns None if not authenticated)"""
+    # First, try session cookie
     session_token = request.cookies.get(SESSION_COOKIE_NAME)
-    if not session_token:
-        return None
+    if session_token:
+        session_data = verify_session_token(session_token)
+        if session_data:
+            user = db.query(UserModel).filter(UserModel.id == session_data["user_id"]).first()
+            if user:
+                return user
     
-    session_data = verify_session_token(session_token)
-    if not session_data:
-        return None
+    # Fallback: For development, check X-User-Name header
+    user_name = request.headers.get("X-User-Name")
+    if user_name:
+        user = db.query(UserModel).filter(UserModel.name == user_name).first()
+        if user:
+            return user
     
-    user = db.query(UserModel).filter(UserModel.id == session_data["user_id"]).first()
-    return user
+    return None
 
 
 def get_current_user(

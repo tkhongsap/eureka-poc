@@ -2,8 +2,10 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.attributes import flag_modified
 
 from schemas import UserCreate, User, UserUpdate, RoleUpdateRequest
+from schemas.user import NotificationPreferences
 from db import get_db
 from db.models import User as UserModel
 from db.models import AuditLog
@@ -14,6 +16,49 @@ from utils.workflow_rules import UserRole
 router = APIRouter(prefix="/api/users", tags=["Users"])
 
 VALID_ROLES = {role.value for role in UserRole}
+
+
+# ============== Preferences API ==============
+
+@router.get("/me/preferences", response_model=NotificationPreferences)
+async def get_my_preferences(
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """Get current user's notification preferences"""
+    settings = current_user.settings or {}
+    notifications = settings.get("notifications", {})
+    
+    # Return with defaults
+    return NotificationPreferences(
+        wo_assigned=notifications.get("wo_assigned", True),
+        wo_status_changed=notifications.get("wo_status_changed", True),
+        wo_overdue=notifications.get("wo_overdue", True),
+        wo_due_soon=notifications.get("wo_due_soon", True),
+        email_digest=notifications.get("email_digest", False),
+    )
+
+
+@router.put("/me/preferences", response_model=NotificationPreferences)
+async def update_my_preferences(
+    preferences: NotificationPreferences,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """Update current user's notification preferences"""
+    # Get existing settings or create empty dict
+    settings = dict(current_user.settings) if current_user.settings else {}
+    
+    # Update notifications section
+    settings["notifications"] = preferences.model_dump()
+    
+    # Save to database - must reassign for SQLAlchemy to detect change
+    current_user.settings = settings
+    flag_modified(current_user, "settings")
+    db.commit()
+    db.refresh(current_user)
+    
+    return preferences
 
 
 @router.post("", response_model=User)

@@ -767,6 +767,51 @@ export const checkAndCreateReminders = async (): Promise<{ message: string; noti
   return response.json();
 };
 
+// --- User Preferences API ---
+export interface NotificationPreferences {
+  wo_assigned: boolean;
+  wo_status_changed: boolean;
+  wo_overdue: boolean;
+  wo_due_soon: boolean;
+  email_digest: boolean;
+}
+
+export const getNotificationPreferences = async (): Promise<NotificationPreferences> => {
+  const response = await fetch(`${API_BASE_URL}/users/me/preferences`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    // Return defaults if not found
+    return {
+      wo_assigned: true,
+      wo_status_changed: true,
+      wo_overdue: true,
+      wo_due_soon: true,
+      email_digest: false,
+    };
+  }
+
+  return response.json();
+};
+
+export const updateNotificationPreferences = async (preferences: NotificationPreferences): Promise<NotificationPreferences> => {
+  const response = await fetch(`${API_BASE_URL}/users/me/preferences`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+    body: JSON.stringify(preferences),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update preferences');
+  }
+
+  return response.json();
+};
+
 // --- Health Check ---
 export const checkHealth = async (): Promise<boolean> => {
   try {

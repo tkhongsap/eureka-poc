@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   HelpCircle, 
   BookOpen, 
@@ -8,12 +8,22 @@ import {
   ExternalLink,
   Mail,
   FileText,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useLanguage } from '../lib/i18n';
 
+interface FAQItem {
+  questionEn: string;
+  questionTh: string;
+  answerEn: string;
+  answerTh: string;
+}
+
 const Help: React.FC = () => {
   const { t, language } = useLanguage();
+  const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
 
   const helpSections = [
     {
@@ -24,6 +34,7 @@ const Help: React.FC = () => {
       descTh: 'เรียนรู้วิธีใช้งาน Eureka CMMS อย่างมีประสิทธิภาพ',
       color: 'bg-blue-50 text-blue-600 border-blue-200',
       available: true,
+      link: '/docs/01-prd-eureka-cmms.md',
     },
     {
       icon: Video,
@@ -35,15 +46,6 @@ const Help: React.FC = () => {
       available: false,
     },
     {
-      icon: MessageCircle,
-      titleEn: 'FAQs',
-      titleTh: 'คำถามที่พบบ่อย',
-      descEn: 'Find answers to common questions',
-      descTh: 'ค้นหาคำตอบสำหรับคำถามทั่วไป',
-      color: 'bg-amber-50 text-amber-600 border-amber-200',
-      available: false,
-    },
-    {
       icon: Mail,
       titleEn: 'Contact Support',
       titleTh: 'ติดต่อฝ่ายสนับสนุน',
@@ -51,6 +53,46 @@ const Help: React.FC = () => {
       descTh: 'รับความช่วยเหลือจากทีมสนับสนุน',
       color: 'bg-teal-50 text-teal-600 border-teal-200',
       available: true,
+      link: 'mailto:support@eureka-cmms.com',
+    },
+  ];
+
+  const faqItems: FAQItem[] = [
+    {
+      questionEn: 'How do I create a new Work Order?',
+      questionTh: 'จะสร้าง Work Order ใหม่ได้อย่างไร?',
+      answerEn: 'Go to Work Orders page, click the "+" button or "New Work Order". Fill in the required fields like title, priority, and location. You can also attach photos and assign to a technician.',
+      answerTh: 'ไปที่หน้า Work Orders คลิกปุ่ม "+" หรือ "สร้าง Work Order ใหม่" กรอกข้อมูลที่จำเป็น เช่น ชื่องาน, ความเร่งด่วน, และสถานที่ สามารถแนบรูปภาพและมอบหมายให้ช่างได้',
+    },
+    {
+      questionEn: 'How do I submit a maintenance request?',
+      questionTh: 'จะแจ้งซ่อมได้อย่างไร?',
+      answerEn: 'Go to Requests page and click "New Request". Describe the problem, attach photos if needed, and select the priority. The system will automatically generate a title using AI.',
+      answerTh: 'ไปที่หน้า Requests แล้วคลิก "แจ้งซ่อมใหม่" อธิบายปัญหา แนบรูปถ้าต้องการ และเลือกความเร่งด่วน ระบบจะสร้างชื่อเรื่องให้อัตโนมัติด้วย AI',
+    },
+    {
+      questionEn: 'How do I change the language?',
+      questionTh: 'จะเปลี่ยนภาษาได้อย่างไร?',
+      answerEn: 'Click the globe icon (🌐) in the top navigation bar and select EN for English or TH for Thai.',
+      answerTh: 'คลิกไอคอนลูกโลก (🌐) ที่แถบด้านบน แล้วเลือก EN สำหรับภาษาอังกฤษ หรือ TH สำหรับภาษาไทย',
+    },
+    {
+      questionEn: 'How do I assign a work order to a technician?',
+      questionTh: 'จะมอบหมายงานให้ช่างได้อย่างไร?',
+      answerEn: 'Open the Work Order detail, click "Assign Technician" dropdown, and select the technician. Only Admin and Head Technician can assign work orders.',
+      answerTh: 'เปิดรายละเอียด Work Order คลิก "มอบหมายให้ช่าง" แล้วเลือกช่างที่ต้องการ เฉพาะ Admin และ Head Technician เท่านั้นที่สามารถมอบหมายงานได้',
+    },
+    {
+      questionEn: 'What do the different status colors mean?',
+      questionTh: 'สีสถานะต่างๆ หมายความว่าอะไร?',
+      answerEn: 'Open (Blue) = New work order, In Progress (Yellow) = Being worked on, Pending (Orange) = Waiting for parts/approval, Completed (Green) = Finished, Canceled (Gray) = Canceled.',
+      answerTh: 'Open (น้ำเงิน) = งานใหม่, In Progress (เหลือง) = กำลังดำเนินการ, Pending (ส้ม) = รอชิ้นส่วน/อนุมัติ, Completed (เขียว) = เสร็จสิ้น, Canceled (เทา) = ยกเลิก',
+    },
+    {
+      questionEn: 'How do I toggle the sidebar?',
+      questionTh: 'จะเปิด/ปิด Sidebar ได้อย่างไร?',
+      answerEn: 'Click the arrow button at the top of the sidebar, or use the keyboard shortcut Ctrl+B (Windows) or ⌘+B (Mac).',
+      answerTh: 'คลิกปุ่มลูกศรที่ด้านบนของ Sidebar หรือใช้ปุ่มลัด Ctrl+B (Windows) หรือ ⌘+B (Mac)',
     },
   ];
 
@@ -134,6 +176,47 @@ const Help: React.FC = () => {
             </div>
           );
         })}
+      </div>
+
+      {/* FAQs Section */}
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden mb-8">
+        <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
+          <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
+            <MessageCircle className="text-amber-600" size={20} />
+          </div>
+          <div>
+            <h2 className="font-semibold text-stone-900">
+              {language === 'en' ? 'Frequently Asked Questions' : 'คำถามที่พบบ่อย'}
+            </h2>
+            <p className="text-sm text-stone-500">
+              {language === 'en' ? 'Quick answers to common questions' : 'คำตอบสำหรับคำถามทั่วไป'}
+            </p>
+          </div>
+        </div>
+        <div className="divide-y divide-stone-100">
+          {faqItems.map((faq, idx) => (
+            <div key={idx} className="px-6">
+              <button
+                onClick={() => setExpandedFAQ(expandedFAQ === idx ? null : idx)}
+                className="w-full py-4 flex items-center justify-between text-left hover:bg-stone-50 transition-colors -mx-6 px-6"
+              >
+                <span className="font-medium text-stone-800">
+                  {language === 'en' ? faq.questionEn : faq.questionTh}
+                </span>
+                {expandedFAQ === idx ? (
+                  <ChevronUp size={18} className="text-stone-400 flex-shrink-0" />
+                ) : (
+                  <ChevronDown size={18} className="text-stone-400 flex-shrink-0" />
+                )}
+              </button>
+              {expandedFAQ === idx && (
+                <div className="pb-4 text-stone-600 text-sm leading-relaxed">
+                  {language === 'en' ? faq.answerEn : faq.answerTh}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Keyboard Shortcuts */}
