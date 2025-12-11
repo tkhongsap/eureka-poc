@@ -33,8 +33,7 @@ const Help: React.FC = () => {
       descEn: 'Learn how to use Eureka CMMS effectively',
       descTh: 'เรียนรู้วิธีใช้งาน Eureka CMMS อย่างมีประสิทธิภาพ',
       color: 'bg-blue-50 text-blue-600 border-blue-200',
-      available: true,
-      link: '/docs/01-prd-eureka-cmms.md',
+      available: false,
     },
     {
       icon: Video,
@@ -52,8 +51,7 @@ const Help: React.FC = () => {
       descEn: 'Get help from our support team',
       descTh: 'รับความช่วยเหลือจากทีมสนับสนุน',
       color: 'bg-teal-50 text-teal-600 border-teal-200',
-      available: true,
-      link: 'mailto:support@eureka-cmms.com',
+      available: false,
     },
   ];
 
@@ -71,10 +69,22 @@ const Help: React.FC = () => {
       answerTh: 'ไปที่หน้า Requests แล้วคลิก "แจ้งซ่อมใหม่" อธิบายปัญหา แนบรูปถ้าต้องการ และเลือกความเร่งด่วน ระบบจะสร้างชื่อเรื่องให้อัตโนมัติด้วย AI',
     },
     {
+      questionEn: 'How do I change my profile picture?',
+      questionTh: 'จะเปลี่ยนรูปโปรไฟล์ได้อย่างไร?',
+      answerEn: 'Go to Settings page, click on your profile picture in the Profile section. Select an image file from your device, then click "Save Profile" to save the changes.',
+      answerTh: 'ไปที่หน้าตั้งค่า คลิกที่รูปโปรไฟล์ของคุณในส่วนโปรไฟล์ เลือกไฟล์รูปภาพจากอุปกรณ์ของคุณ จากนั้นกด "บันทึกโปรไฟล์" เพื่อบันทึกการเปลี่ยนแปลง',
+    },
+    {
+      questionEn: 'How do I manage notification settings?',
+      questionTh: 'จะตั้งค่าการแจ้งเตือนได้อย่างไร?',
+      answerEn: 'Go to Settings page and scroll to "Notifications" section. Toggle the switches to enable/disable different notification types like work order assignments, status changes, and overdue reminders.',
+      answerTh: 'ไปที่หน้าตั้งค่า เลื่อนไปที่ส่วน "การแจ้งเตือน" เปิด/ปิดสวิตช์เพื่อเลือกประเภทการแจ้งเตือนที่ต้องการ เช่น การมอบหมายงาน การเปลี่ยนสถานะ และการเตือนงานใกล้ถึงกำหนด',
+    },
+    {
       questionEn: 'How do I change the language?',
       questionTh: 'จะเปลี่ยนภาษาได้อย่างไร?',
-      answerEn: 'Click the globe icon (🌐) in the top navigation bar and select EN for English or TH for Thai.',
-      answerTh: 'คลิกไอคอนลูกโลก (🌐) ที่แถบด้านบน แล้วเลือก EN สำหรับภาษาอังกฤษ หรือ TH สำหรับภาษาไทย',
+      answerEn: 'Click the language button (EN/TH) in the top navigation bar to switch between English and Thai.',
+      answerTh: 'คลิกปุ่มเปลี่ยนภาษา (EN/TH) ที่แถบด้านบน เพื่อสลับระหว่างภาษาอังกฤษและภาษาไทย',
     },
     {
       questionEn: 'How do I assign a work order to a technician?',
@@ -87,6 +97,18 @@ const Help: React.FC = () => {
       questionTh: 'สีสถานะต่างๆ หมายความว่าอะไร?',
       answerEn: 'Open (Blue) = New work order, In Progress (Yellow) = Being worked on, Pending (Orange) = Waiting for parts/approval, Completed (Green) = Finished, Canceled (Gray) = Canceled.',
       answerTh: 'Open (น้ำเงิน) = งานใหม่, In Progress (เหลือง) = กำลังดำเนินการ, Pending (ส้ม) = รอชิ้นส่วน/อนุมัติ, Completed (เขียว) = เสร็จสิ้น, Canceled (เทา) = ยกเลิก',
+    },
+    {
+      questionEn: 'What are the different user roles?',
+      questionTh: 'บทบาทผู้ใช้ต่างๆ มีอะไรบ้าง?',
+      answerEn: 'Admin = Full system access, Head Technician = Manage technicians and assign work, Technician = Handle assigned work orders, Requester = Submit maintenance requests only.',
+      answerTh: 'Admin = เข้าถึงระบบได้ทั้งหมด, Head Technician = จัดการช่างและมอบหมายงาน, Technician = ทำงานตาม Work Order ที่ได้รับ, Requester = แจ้งซ่อมได้อย่างเดียว',
+    },
+    {
+      questionEn: 'How do I track my submitted requests?',
+      questionTh: 'จะติดตามคำขอแจ้งซ่อมที่ส่งไปได้อย่างไร?',
+      answerEn: 'Go to "My Work Orders" page to see all requests you have submitted and their current status. You will also receive notifications when the status changes.',
+      answerTh: 'ไปที่หน้า "งานของฉัน" เพื่อดูคำขอแจ้งซ่อมทั้งหมดที่คุณส่งไปและสถานะปัจจุบัน คุณจะได้รับการแจ้งเตือนเมื่อสถานะเปลี่ยนแปลงด้วย',
     },
     {
       questionEn: 'How do I toggle the sidebar?',

@@ -501,14 +501,19 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard onNavigateToWorkOrder={(woId) => {
-          setCurrentView('work-orders');
-          sessionStorage.setItem('openWorkOrderId', woId);
-          // Dispatch event after delay to allow WorkOrders to mount
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('openWorkOrder', { detail: woId }));
-          }, 300);
-        }} />;
+        return <Dashboard 
+          onNavigateToWorkOrder={(woId) => {
+            setCurrentView('work-orders');
+            sessionStorage.setItem('openWorkOrderId', woId);
+            // Dispatch event after delay to allow WorkOrders to mount
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('openWorkOrder', { detail: woId }));
+            }, 300);
+          }}
+          onNavigateToRequests={() => {
+            setCurrentView('requests');
+          }}
+        />;
       case 'work-orders':
         return <WorkOrders workOrders={workOrders} currentUser={currentUser} technicians={TECHNICIANS} />;
       case 'requests':
