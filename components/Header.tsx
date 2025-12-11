@@ -69,9 +69,9 @@ const Header: React.FC<HeaderProps> = ({ user, notifications = [], onNotificatio
           title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           {isDarkMode ? (
-            <Sun size={18} className="text-amber-500" />
+            <Moon size={18} className="text-indigo-400" />
           ) : (
-            <Moon size={18} className="text-stone-500" />
+            <Sun size={18} className="text-amber-500" />
           )}
         </button>
 
