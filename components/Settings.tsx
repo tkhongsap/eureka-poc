@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Bell, User, Info, Mail, CheckCircle, AlertTriangle, Clock, Wrench, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Bell, User, Info, Mail, CheckCircle, AlertTriangle, Clock, Wrench, Loader2, Save, Phone, Briefcase, AtSign, Camera } from 'lucide-react';
 import { useLanguage } from '../lib/i18n';
-import { getNotificationPreferences, updateNotificationPreferences, NotificationPreferences, getUserContext } from '../services/apiService';
+import { getNotificationPreferences, updateNotificationPreferences, NotificationPreferences, getUserContext, getMyProfile, updateMyProfile, UserProfile, uploadImage } from '../services/apiService';
 
 interface NotificationPreference {
   id: keyof NotificationPreferences;
@@ -16,6 +16,20 @@ const Settings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Profile state
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileSuccess, setProfileSuccess] = useState(false);
+  const [editedProfile, setEditedProfile] = useState<{name: string; phone: string; avatar_url: string}>({
+    name: '',
+    phone: '',
+    avatar_url: '',
+  });
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   
   // Notification preferences state
   const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreference[]>([
@@ -55,6 +69,102 @@ const Settings: React.FC = () => {
       enabled: false,
     },
   ]);
+
+  // Load profile from API
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setProfileLoading(true);
+        const data = await getMyProfile();
+        setProfile(data);
+        setEditedProfile({
+          name: data.name || '',
+          phone: data.phone || '',
+          avatar_url: data.avatar_url || '',
+        });
+        setProfileError(null);
+      } catch (e) {
+        console.error('Failed to load profile:', e);
+        setProfileError('Failed to load profile');
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+    loadProfile();
+  }, []);
+
+  // Save profile
+  const handleSaveProfile = async () => {
+    if (!profile) return;
+    
+    setProfileSaving(true);
+    setProfileSuccess(false);
+    try {
+      const updated = await updateMyProfile(editedProfile);
+      setProfile(updated);
+      setProfileError(null);
+      setProfileSuccess(true);
+      setTimeout(() => setProfileSuccess(false), 3000);
+      
+      // Update sessionStorage so Header gets new avatar
+      const storedAuth = sessionStorage.getItem('authUser');
+      if (storedAuth) {
+        try {
+          const authData = JSON.parse(storedAuth);
+          authData.avatar_url = updated.avatar_url;
+          authData.name = updated.name;
+          sessionStorage.setItem('authUser', JSON.stringify(authData));
+          // Dispatch event to notify App.tsx to refresh user
+          window.dispatchEvent(new CustomEvent('profileUpdated', { detail: updated }));
+        } catch (e) {
+          console.log('Could not update sessionStorage');
+        }
+      }
+    } catch (e) {
+      console.error('Failed to save profile:', e);
+      setProfileError('Failed to save profile');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  // Handle avatar upload
+  const handleAvatarClick = () => {
+    avatarInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setProfileError('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileError('Image size must be less than 5MB');
+      return;
+    }
+
+    setAvatarUploading(true);
+    setProfileError(null);
+
+    try {
+      // Upload to image API
+      const result = await uploadImage(file);
+      // Use the raw endpoint URL for direct image display
+      const avatarUrl = `/api/images/${result.id}/raw`;
+      setEditedProfile(prev => ({ ...prev, avatar_url: avatarUrl }));
+    } catch (e) {
+      console.error('Failed to upload avatar:', e);
+      setProfileError('Failed to upload image');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   // Load preferences from API
   useEffect(() => {
@@ -189,8 +299,8 @@ const Settings: React.FC = () => {
           )}
         </div>
 
-        {/* Profile Settings - Placeholder */}
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden opacity-60">
+        {/* Profile Settings */}
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
               <User className="text-blue-600" size={20} />
@@ -199,13 +309,137 @@ const Settings: React.FC = () => {
               <h2 className="font-semibold text-stone-900">{t('settings.profile')}</h2>
               <p className="text-sm text-stone-500">{t('settings.profileDescription')}</p>
             </div>
-            <span className="ml-auto text-xs bg-stone-100 text-stone-500 px-2 py-1 rounded-full">
-              {t('common.comingSoon')}
-            </span>
           </div>
-          <div className="p-6 text-stone-400 text-sm">
-            {t('settings.profilePlaceholder')}
-          </div>
+          {profileLoading ? (
+            <div className="p-6 flex items-center justify-center">
+              <Loader2 className="animate-spin text-blue-600" size={24} />
+            </div>
+          ) : profile ? (
+            <div className="p-6 space-y-6">
+              {/* Avatar and Info (read-only info) */}
+              <div className="flex items-center gap-4 pb-4 border-b border-stone-100">
+                {/* Clickable Avatar */}
+                <div className="relative group">
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={handleAvatarClick}
+                    disabled={avatarUploading}
+                    className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-stone-200 hover:border-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    <img 
+                      src={editedProfile.avatar_url || profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`}
+                      alt={profile.name}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      {avatarUploading ? (
+                        <Loader2 size={20} className="text-white animate-spin" />
+                      ) : (
+                        <Camera size={20} className="text-white" />
+                      )}
+                    </div>
+                  </button>
+                  <p className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-stone-400 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                    {t('settings.changePhoto')}
+                  </p>
+                </div>
+                <div>
+                  <div className="font-semibold text-stone-900 text-lg">{profile.name}</div>
+                  <div className="flex items-center gap-1 text-stone-500 text-sm">
+                    <AtSign size={14} />
+                    {profile.email || '-'}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="px-2 py-0.5 bg-teal-50 text-teal-700 text-xs font-medium rounded-full">
+                      {profile.userRole}
+                    </span>
+                    {profile.job_title && (
+                      <span className="flex items-center gap-1 text-stone-500 text-xs">
+                        <Briefcase size={12} />
+                        {profile.job_title}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Error/Success messages */}
+              {profileError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
+                  <AlertTriangle size={16} />
+                  {profileError}
+                </div>
+              )}
+              {profileSuccess && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-center gap-2">
+                  <CheckCircle size={16} />
+                  {t('settings.profileSaved')}
+                </div>
+              )}
+              
+              {/* Editable fields */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
+                    {t('settings.name')}
+                  </label>
+                  <div className="relative">
+                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    <input
+                      type="text"
+                      value={editedProfile.name}
+                      onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={t('settings.namePlaceholder')}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
+                    {t('settings.phone')}
+                  </label>
+                  <div className="relative">
+                    <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    <input
+                      type="tel"
+                      value={editedProfile.phone}
+                      onChange={(e) => setEditedProfile(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={t('settings.phonePlaceholder')}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Save button */}
+              <div className="pt-2">
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={profileSaving}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {profileSaving ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Save size={18} />
+                  )}
+                  {t('settings.saveProfile')}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 text-stone-400 text-sm">
+              {t('settings.profileError')}
+            </div>
+          )}
         </div>
 
         {/* About Section */}

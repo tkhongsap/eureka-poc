@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.attributes import flag_modified
 
 from schemas import UserCreate, User, UserUpdate, RoleUpdateRequest
-from schemas.user import NotificationPreferences
+from schemas.user import NotificationPreferences, ProfileUpdate
 from db import get_db
 from db.models import User as UserModel
 from db.models import AuditLog
@@ -16,6 +16,38 @@ from utils.workflow_rules import UserRole
 router = APIRouter(prefix="/api/users", tags=["Users"])
 
 VALID_ROLES = {role.value for role in UserRole}
+
+
+# ============== Profile API ==============
+
+@router.get("/me", response_model=User)
+async def get_my_profile(
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """Get current user's profile"""
+    return current_user
+
+
+@router.put("/me", response_model=User)
+async def update_my_profile(
+    profile: ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+):
+    """Update current user's profile"""
+    # Only update fields that were provided
+    if profile.name is not None:
+        current_user.name = profile.name
+    if profile.phone is not None:
+        current_user.phone = profile.phone
+    if profile.avatar_url is not None:
+        current_user.avatar_url = profile.avatar_url
+    
+    db.commit()
+    db.refresh(current_user)
+    
+    return current_user
 
 
 # ============== Preferences API ==============

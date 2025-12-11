@@ -86,6 +86,33 @@ async def get_image(image_id: str, db: Session = Depends(get_db)):
     return JSONResponse(content=image_info)
 
 
+@router.get("/{image_id}/raw")
+async def get_image_raw(image_id: str, db: Session = Depends(get_db)):
+    """Get image as binary data for direct display in img src"""
+    from fastapi.responses import Response
+    
+    image = db.query(ImageModel).filter(ImageModel.id == image_id).first()
+
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    # Decode base64 to binary
+    image_bytes = base64.b64decode(image.base64_data)
+    
+    # Determine content type from filename
+    ext = os.path.splitext(image.filename)[1].lower()
+    content_types = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+    }
+    content_type = content_types.get(ext, 'image/jpeg')
+    
+    return Response(content=image_bytes, media_type=content_type)
+
+
 @router.get("", response_model=List[ImageInfo])
 async def list_images(db: Session = Depends(get_db)):
     """List all images"""

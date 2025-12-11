@@ -767,6 +767,56 @@ export const checkAndCreateReminders = async (): Promise<{ message: string; noti
   return response.json();
 };
 
+// --- User Profile API ---
+export interface UserProfile {
+  id: string;
+  email: string | null;
+  name: string;
+  phone: string | null;
+  avatar_url: string | null;
+  employee_id: string | null;
+  job_title: string | null;
+  role: string | null;
+  userRole: string;
+  status: string | null;
+  created_at: string | null;
+}
+
+export interface ProfileUpdate {
+  name?: string;
+  phone?: string;
+  avatar_url?: string;
+}
+
+export const getMyProfile = async (): Promise<UserProfile> => {
+  const response = await fetch(`${API_BASE_URL}/users/me`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to get profile');
+  }
+
+  return response.json();
+};
+
+export const updateMyProfile = async (profile: ProfileUpdate): Promise<UserProfile> => {
+  const response = await fetch(`${API_BASE_URL}/users/me`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+    body: JSON.stringify(profile),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update profile');
+  }
+
+  return response.json();
+};
+
 // --- User Preferences API ---
 export interface NotificationPreferences {
   wo_assigned: boolean;

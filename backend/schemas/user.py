@@ -18,6 +18,13 @@ class UserSettings(BaseModel):
     notifications: Optional[NotificationPreferences] = None
 
 
+class ProfileUpdate(BaseModel):
+    """Profile fields that users can update themselves"""
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
 class UserCreate(BaseModel):
     email: Optional[str] = None
     password_hash: Optional[str] = None
