@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Search, Filter, AlertCircle, TrendingUp, Package, ArrowDown, ArrowUp } from 'lucide-react';
 import { InventoryItem } from '../types';
 import { predictInventoryNeeds } from '../services/geminiService';
@@ -16,6 +16,29 @@ const Inventory: React.FC = () => {
     const { t } = useLanguage();
     const [aiRecommendations, setAiRecommendations] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [inventory, setInventory] = useState<InventoryItem[]>(MOCK_INVENTORY);
+    const [search, setSearch] = useState('');
+
+    // Add Part Modal State
+    const [isAddOpen, setIsAddOpen] = useState(false);
+    const [newPart, setNewPart] = useState({
+        name: '',
+        type: '',
+        quantity: 0,
+        pricePerUnit: 0,
+        site: '',
+    });
+
+    const siteOptions = useMemo(() => ['Site A', 'Site B', 'Site C'], []);
+
+    const filteredInventory = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        if (!term) return inventory;
+        return inventory.filter(i =>
+            i.sku.toLowerCase().includes(term) ||
+            i.name.toLowerCase().includes(term)
+        );
+    }, [search, inventory]);
 
     const runInventoryAI = async () => {
         setLoading(true);
@@ -65,12 +88,26 @@ const Inventory: React.FC = () => {
             <div className="bg-white dark:bg-stone-800 rounded-2xl shadow-sm border border-stone-200/60 dark:border-stone-700 flex-1 overflow-hidden flex flex-col">
                 <div className="p-4 border-b border-stone-200 dark:border-stone-700 flex gap-4 bg-stone-50 dark:bg-stone-900">
                     <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3.5 top-3 text-stone-400 dark:text-stone-500" size={16} />
-                        <input type="text" placeholder={t('inventory.searchBySku')} className="w-full pl-10 pr-4 py-2.5 text-sm border border-stone-200 dark:border-stone-700 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500" />
+                        <Search className="absolute left-3.5 top-3 text-stone-400" size={16} />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder={t('inventory.searchBySku')}
+                            className="w-full pl-10 pr-4 py-2.5 text-sm border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
+                        />
                     </div>
                     <button className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-sm text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-stone-300 dark:hover:border-stone-600 transition-all duration-200">
                         <Filter size={16} />
                         {t('common.filter')}
+                    </button>
+                    <div className="flex-1"/>
+                    <button
+                        onClick={() => setIsAddOpen(true)}
+                        className="ml-auto px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 transition-all"
+                        title="Add Parts"
+                    >
+                        + Add Parts
                     </button>
                 </div>
 
@@ -86,7 +123,7 @@ const Inventory: React.FC = () => {
                                 <th className="px-6 py-3.5 border-b border-stone-200 dark:border-stone-700">{t('inventory.status')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 dark:divide-stone-700 text-sm">
+                        <tbody className="divide-y divide-stone-100 text-sm">
                             {MOCK_INVENTORY.map((item) => {
                                 const isLowStock = item.quantity <= item.minLevel;
                                 return (
@@ -138,6 +175,103 @@ const Inventory: React.FC = () => {
                     </table>
                 </div>
             </div>
+
+            {isAddOpen && (
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-stone-200">
+                        <div className="px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-stone-900">Add Part</h3>
+                            <button onClick={() => setIsAddOpen(false)} className="text-stone-500 hover:text-stone-700">✕</button>
+                        </div>
+                        <div className="px-6 py-4 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-stone-700 mb-1">Name</label>
+                                <input
+                                    className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                    value={newPart.name}
+                                    onChange={(e) => setNewPart(p => ({ ...p, name: e.target.value }))}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-stone-700 mb-1">Type</label>
+                                <input
+                                    className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                    value={newPart.type}
+                                    onChange={(e) => setNewPart(p => ({ ...p, type: e.target.value }))}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-stone-700 mb-1">Quantity</label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                        value={newPart.quantity}
+                                        onChange={(e) => setNewPart(p => ({ ...p, quantity: Number(e.target.value) }))}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-stone-700 mb-1">Price / Unit</label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        step="0.01"
+                                        className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                        value={newPart.pricePerUnit}
+                                        onChange={(e) => setNewPart(p => ({ ...p, pricePerUnit: Number(e.target.value) }))}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-stone-700 mb-1">Site</label>
+                                <select
+                                    className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                    value={newPart.site}
+                                    onChange={(e) => setNewPart(p => ({ ...p, site: e.target.value }))}
+                                >
+                                    <option value="" disabled>Select a site</option>
+                                    {siteOptions.map(s => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 border-t border-stone-200 flex justify-end gap-2">
+                            <button
+                                className="px-4 py-2 rounded-lg border border-stone-300 text-stone-700 hover:bg-stone-50"
+                                onClick={() => setIsAddOpen(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700"
+                                onClick={() => {
+                                    if (!newPart.name || !newPart.type || !newPart.site) return;
+                                    const now = new Date();
+                                    const item: InventoryItem = {
+                                        id: `P-${Math.floor(Math.random()*900+100)}`,
+                                        name: newPart.name,
+                                        sku: `${newPart.type.slice(0,3).toUpperCase()}-${Math.floor(Math.random()*999)}`,
+                                        quantity: newPart.quantity || 0,
+                                        minLevel: Math.max(1, Math.floor((newPart.quantity || 0)/2) ),
+                                        unit: 'pcs',
+                                        location: newPart.site,
+                                        category: newPart.type,
+                                        lastUpdated: now.toISOString().slice(0,10),
+                                        cost: newPart.pricePerUnit || 0,
+                                    };
+                                    setInventory(prev => [item, ...prev]);
+                                    setIsAddOpen(false);
+                                    setNewPart({ name: '', type: '', quantity: 0, pricePerUnit: 0, site: '' });
+                                }}
+                            >
+                                Add Part
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
