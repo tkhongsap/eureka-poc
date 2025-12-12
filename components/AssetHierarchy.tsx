@@ -93,7 +93,7 @@ const AssetNode: React.FC<{ asset: Asset; onSelect: (a: Asset) => void; selected
   return (
     <div className="select-none">
       <div 
-        className={`flex items-center py-2 px-2 cursor-pointer transition-colors rounded-lg ${isSelected ? 'bg-brand-50 text-brand-700 font-medium' : 'hover:bg-slate-50 text-slate-700'}`}
+        className={`flex items-center py-2 px-2 cursor-pointer transition-colors rounded-lg ${isSelected ? 'bg-teal-50 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 font-medium' : 'hover:bg-stone-50 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300'}`}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={(e) => {
             e.stopPropagation();
@@ -105,7 +105,7 @@ const AssetNode: React.FC<{ asset: Asset; onSelect: (a: Asset) => void; selected
             e.stopPropagation();
             setExpanded(!expanded);
           }}
-          className={`mr-2 p-1 rounded hover:bg-slate-200 text-slate-400 ${!hasChildren ? 'invisible' : ''}`}
+          className={`mr-2 p-1 rounded hover:bg-stone-200 dark:hover:bg-stone-600 text-stone-400 dark:text-stone-500 ${!hasChildren ? 'invisible' : ''}`}
         >
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </button>
@@ -145,12 +145,12 @@ const AssetHierarchy: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200 m-8">
+    <div className="flex h-full bg-white dark:bg-stone-900 rounded-xl shadow-sm overflow-hidden border border-stone-200 dark:border-stone-700 m-8">
       {/* Left Pane: Tree */}
-      <div className="w-1/3 border-r border-slate-200 flex flex-col bg-slate-50/50">
-        <div className="p-4 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center">
+      <div className="w-1/3 border-r border-stone-200 dark:border-stone-700 flex flex-col bg-stone-50/50 dark:bg-stone-800/50">
+        <div className="p-4 border-b border-stone-200 dark:border-stone-700 font-bold text-stone-700 dark:text-stone-200 flex justify-between items-center">
             <span>{t('assets.hierarchy')}</span>
-            <span className="text-xs bg-slate-200 px-2 py-1 rounded-full text-slate-600">Plant A</span>
+            <span className="text-xs bg-stone-200 dark:bg-stone-700 px-2 py-1 rounded-full text-stone-600 dark:text-stone-300">Plant A</span>
         </div>
         <div className="overflow-y-auto p-2 flex-1">
           {INITIAL_ASSETS.map(asset => (
@@ -165,12 +165,12 @@ const AssetHierarchy: React.FC = () => {
              <div className="p-8">
                 <div className="flex justify-between items-start mb-6">
                     <div>
-                        <div className="text-sm text-slate-500 mb-1">{selectedAsset.type} • {selectedAsset.id}</div>
-                        <h2 className="text-3xl font-bold text-slate-900">{selectedAsset.name}</h2>
+                        <div className="text-sm text-stone-500 dark:text-stone-400 mb-1">{selectedAsset.type} • {selectedAsset.id}</div>
+                        <h2 className="text-3xl font-bold text-stone-900 dark:text-stone-100">{selectedAsset.name}</h2>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-sm font-bold flex items-center gap-2 ${
-                        selectedAsset.status === 'Operational' ? 'bg-green-100 text-green-700' : 
-                        selectedAsset.status === 'Downtime' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+                        selectedAsset.status === 'Operational' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 
+                        selectedAsset.status === 'Downtime' ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300' : 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
                     }`}>
                         <div className={`w-2 h-2 rounded-full ${
                              selectedAsset.status === 'Operational' ? 'bg-green-600' : 
@@ -182,55 +182,60 @@ const AssetHierarchy: React.FC = () => {
 
                 {/* KPI Grid */}
                 <div className="grid grid-cols-3 gap-6 mb-8">
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="text-slate-500 text-sm mb-1">{t('assets.healthScore')}</div>
-                        <div className="text-3xl font-bold text-brand-600">{selectedAsset.healthScore}%</div>
+                    <div className="p-4 bg-stone-50 dark:bg-stone-800 rounded-xl border border-stone-100 dark:border-stone-700">
+                        <div className="text-stone-500 dark:text-stone-400 text-sm mb-1">{t('assets.healthScore')}</div>
+                        <div className="text-3xl font-bold text-teal-600 dark:text-teal-400">{selectedAsset.healthScore}%</div>
                     </div>
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="text-slate-500 text-sm mb-1">{t('assets.criticality')}</div>
-                        <div className={`text-3xl font-bold ${selectedAsset.criticality === 'Critical' ? 'text-red-600' : 'text-slate-700'}`}>
+                    <div className="p-4 bg-stone-50 dark:bg-stone-800 rounded-xl border border-stone-100 dark:border-stone-700">
+                        <div className="text-stone-500 dark:text-stone-400 text-sm mb-1">{t('assets.criticality')}</div>
+                        <div className={`text-3xl font-bold ${
+                            selectedAsset.criticality === 'Critical' ? 'text-red-600 dark:text-red-400' : 
+                            selectedAsset.criticality === 'High' ? 'text-orange-600 dark:text-orange-400' : 
+                            selectedAsset.criticality === 'Medium' ? 'text-blue-600 dark:text-blue-400' : 
+                            'text-green-600 dark:text-green-400'
+                        }`}>
                             {selectedAsset.criticality}
                         </div>
                     </div>
-                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="text-slate-500 text-sm mb-1">{t('assets.location')}</div>
-                        <div className="text-lg font-bold text-slate-700 mt-1">{selectedAsset.location}</div>
+                     <div className="p-4 bg-stone-50 dark:bg-stone-800 rounded-xl border border-stone-100 dark:border-stone-700">
+                        <div className="text-stone-500 dark:text-stone-400 text-sm mb-1">{t('assets.location')}</div>
+                        <div className="text-lg font-bold text-stone-700 dark:text-stone-200 mt-1">{selectedAsset.location}</div>
                     </div>
                 </div>
 
                 {/* Details Tab */}
                 <div className="mb-8">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">{t('assets.technicalDetails')}</h3>
+                    <h3 className="text-lg font-bold text-stone-800 dark:text-stone-100 mb-4 border-b border-stone-200 dark:border-stone-700 pb-2">{t('assets.technicalDetails')}</h3>
                     <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="flex justify-between py-2 border-b border-slate-100">
-                            <span className="text-slate-500">{t('assets.model')}</span>
-                            <span className="font-medium text-slate-800">{selectedAsset.model || 'N/A'}</span>
+                        <div className="flex justify-between py-2 border-b border-stone-100 dark:border-stone-700">
+                            <span className="text-stone-500 dark:text-stone-400">{t('assets.model')}</span>
+                            <span className="font-medium text-stone-800 dark:text-stone-200">{selectedAsset.model || 'N/A'}</span>
                         </div>
-                        <div className="flex justify-between py-2 border-b border-slate-100">
-                            <span className="text-slate-500">{t('assets.installDate')}</span>
-                            <span className="font-medium text-slate-800">{formatDateDDMMYYYY(selectedAsset.installDate)}</span>
+                        <div className="flex justify-between py-2 border-b border-stone-100 dark:border-stone-700">
+                            <span className="text-stone-500 dark:text-stone-400">{t('assets.installDate')}</span>
+                            <span className="font-medium text-stone-800 dark:text-stone-200">{formatDateDDMMYYYY(selectedAsset.installDate)}</span>
                         </div>
-                        <div className="flex justify-between py-2 border-b border-slate-100">
-                            <span className="text-slate-500">{t('assets.serialNumber')}</span>
-                            <span className="font-medium text-slate-800">SN-{selectedAsset.id}-2022</span>
+                        <div className="flex justify-between py-2 border-b border-stone-100 dark:border-stone-700">
+                            <span className="text-stone-500 dark:text-stone-400">{t('assets.serialNumber')}</span>
+                            <span className="font-medium text-stone-800 dark:text-stone-200">SN-{selectedAsset.id}-2022</span>
                         </div>
-                        <div className="flex justify-between py-2 border-b border-slate-100">
-                            <span className="text-slate-500">{t('assets.manufacturer')}</span>
-                            <span className="font-medium text-slate-800">Industrial Corp Ltd.</span>
+                        <div className="flex justify-between py-2 border-b border-stone-100 dark:border-stone-700">
+                            <span className="text-stone-500 dark:text-stone-400">{t('assets.manufacturer')}</span>
+                            <span className="font-medium text-stone-800 dark:text-stone-200">Industrial Corp Ltd.</span>
                         </div>
                     </div>
                 </div>
 
                 {/* AI Section */}
-                <div className="bg-gradient-to-r from-violet-50 to-purple-50 p-6 rounded-xl border border-violet-100">
+                <div className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/50 dark:to-purple-950/50 p-6 rounded-xl border border-violet-100 dark:border-violet-800">
                     <div className="flex items-center gap-2 mb-4">
-                        <Zap className="text-violet-600" size={20} />
-                        <h3 className="text-lg font-bold text-violet-900">{t('assets.aiAnalysis')}</h3>
+                        <Zap className="text-violet-600 dark:text-violet-400" size={20} />
+                        <h3 className="text-lg font-bold text-violet-900 dark:text-violet-200">{t('assets.aiAnalysis')}</h3>
                     </div>
                     
                     {!aiInsight ? (
                         <div className="text-center py-4">
-                            <p className="text-slate-600 mb-4 text-sm">{t('assets.analyzeDesc')}</p>
+                            <p className="text-stone-600 dark:text-stone-400 mb-4 text-sm">{t('assets.analyzeDesc')}</p>
                             <button 
                                 onClick={handleAnalyze}
                                 disabled={loadingAi}
@@ -242,17 +247,17 @@ const AssetHierarchy: React.FC = () => {
                         </div>
                     ) : (
                         <div className="animate-fade-in">
-                            <div className="bg-white/80 p-4 rounded-lg border border-violet-100 text-slate-700 text-sm leading-relaxed">
+                            <div className="bg-white/80 dark:bg-stone-800/80 p-4 rounded-lg border border-violet-100 dark:border-violet-800 text-stone-700 dark:text-stone-300 text-sm leading-relaxed">
                                 {aiInsight}
                             </div>
-                            <button onClick={handleAnalyze} className="text-xs text-violet-600 underline mt-3 hover:text-violet-800">{t('assets.updateAnalysis')}</button>
+                            <button onClick={handleAnalyze} className="text-xs text-violet-600 dark:text-violet-400 underline mt-3 hover:text-violet-800 dark:hover:text-violet-300">{t('assets.updateAnalysis')}</button>
                         </div>
                     )}
                 </div>
 
              </div>
          ) : (
-             <div className="flex flex-col items-center justify-center h-full text-slate-400">
+             <div className="flex flex-col items-center justify-center h-full text-stone-400 dark:text-stone-500">
                  <Activity size={48} className="mb-4 opacity-20" />
                  <p>{t('assets.selectToView')}</p>
              </div>
