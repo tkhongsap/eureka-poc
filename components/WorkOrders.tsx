@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Plus, Filter, Download, MoreHorizontal, BrainCircuit, X, AlertTriangle, CheckSquare, Clock, ArrowRight, Zap,
   LayoutGrid, List, GripVertical, Calendar, Package, Trash2, Image as ImageIcon, Upload, Save, PlusCircle, HardHat, UserPlus,
-  Loader2, CheckCircle2, XCircle, Navigation, MapPin, UserCircle2, ChevronDown, ChevronRight, Settings, Users, Layers
+  Loader2, CheckCircle2, XCircle, Navigation, MapPin, UserCircle2, ChevronDown, ChevronRight, ChevronLeft, Settings, Users, Layers
 } from 'lucide-react';
 import { DateInputSmall } from './DateInput';
 import { useLanguage } from '../lib/i18n';
@@ -25,7 +25,7 @@ const formatDateShort = (dateString: string): string => {
 };
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageDataUrl, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, adminCloseWorkOrder, createNotification, getUsersByRole, getTeamHeadTechnician, getWorkOrderRejectHistory, RejectHistoryItem } from '../services/apiService';
+import { getImageDataUrl, getMediaInfo, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, adminCloseWorkOrder, createNotification, getUsersByRole, getTeamHeadTechnician, getWorkOrderRejectHistory, RejectHistoryItem } from '../services/apiService';
 import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules';
 import { 
   createWOAssignedNotification, 
@@ -96,13 +96,15 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [viewMode, setViewMode] = useState<'list' | 'board'>('board');
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(initialWorkOrders);
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
-  const [selectedWOImages, setSelectedWOImages] = useState<string[]>([]); // Original request images
-  const [selectedTechImages, setSelectedTechImages] = useState<string[]>([]); // Technician work images for display
+  const [selectedWOMedia, setSelectedWOMedia] = useState<Array<{url: string; isVideo: boolean}>>([]); // Original request media
+  const [selectedTechMedia, setSelectedTechMedia] = useState<Array<{url: string; isVideo: boolean}>>([]); // Technician work media for display
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [checklist, setChecklist] = useState<string[]>([]);
   const [draggedWoId, setDraggedWoId] = useState<string | null>(null);
-  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  // Fullscreen media viewer state
+  const [fullscreenMedia, setFullscreenMedia] = useState<{items: Array<{url: string; isVideo: boolean}>; currentIndex: number} | null>(null);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null); // Keep for backward compatibility
 
   // Collapsible columns state for Kanban board
   const [collapsedColumns, setCollapsedColumns] = useState<Set<Status>>(new Set());
@@ -209,24 +211,42 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
   // Load images when selecting a work order
   useEffect(() => {
-    const loadImages = async () => {
-      // Load original request images
+    const loadMedia = async () => {
+      // Load original request images/videos
       if (selectedWO && selectedWO.imageIds && selectedWO.imageIds.length > 0) {
-        const imageUrls = await Promise.all(selectedWO.imageIds.map(id => getImageDataUrl(id)));
-        setSelectedWOImages(imageUrls);
+        const mediaItems = await Promise.all(
+          selectedWO.imageIds.map(async (id) => {
+            const info = await getMediaInfo(id);
+            const url = await getImageDataUrl(id);
+            const isVideo = info.mediaType === 'video' || 
+              (info.contentType?.startsWith('video/')) ||
+              (info.filename?.match(/\.(mp4|mov|avi|webm|mkv|m4v|3gp)$/i) !== null);
+            return { url, isVideo };
+          })
+        );
+        setSelectedWOMedia(mediaItems);
       } else {
-        setSelectedWOImages([]);
+        setSelectedWOMedia([]);
       }
 
-      // Load technician work images for display (separate from upload state)
+      // Load technician work images/videos for display (separate from upload state)
       if (selectedWO && selectedWO.technicianImages && selectedWO.technicianImages.length > 0) {
-        const techImageUrls = await Promise.all(selectedWO.technicianImages.map(id => getImageDataUrl(id)));
-        setSelectedTechImages(techImageUrls);
+        const techMediaItems = await Promise.all(
+          selectedWO.technicianImages.map(async (id) => {
+            const info = await getMediaInfo(id);
+            const url = await getImageDataUrl(id);
+            const isVideo = info.mediaType === 'video' || 
+              (info.contentType?.startsWith('video/')) ||
+              (info.filename?.match(/\.(mp4|mov|avi|webm|mkv|m4v|3gp)$/i) !== null);
+            return { url, isVideo };
+          })
+        );
+        setSelectedTechMedia(techMediaItems);
       } else {
-        setSelectedTechImages([]);
+        setSelectedTechMedia([]);
       }
     };
-    loadImages();
+    loadMedia();
 
     // Initialize technician fields when selecting a work order so technician can edit inline
     if (selectedWO) {
@@ -431,21 +451,16 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
   // Admin cancel (Open -> Canceled)
   const handleAdminCancel = async () => {
-    console.log('[handleAdminCancel] Starting...', { selectedWO, currentUser });
     if (!selectedWO || currentUser?.userRole !== 'Admin') {
-      console.log('[handleAdminCancel] Early return - no selectedWO or not Admin');
       return;
     }
     if (selectedWO.status !== Status.OPEN) {
-      console.log('[handleAdminCancel] Early return - status is not OPEN:', selectedWO.status);
       return;
     }
     try {
-      console.log('[handleAdminCancel] Updating WO status to CANCELED...');
       await updateWorkOrder(selectedWO.id, { status: Status.CANCELED });
       
       // Create notification for Requestor (createdBy)
-      console.log('[handleAdminCancel] createdBy:', selectedWO.createdBy);
       if (selectedWO.createdBy) {
         const notification = createWOCanceledNotification(
           selectedWO.id,
@@ -453,11 +468,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           currentUser.name,
           selectedWO.createdBy
         );
-        console.log('[handleAdminCancel] Creating notification:', notification);
         await createNotification(notification);
-        console.log('[handleAdminCancel] Notification created successfully');
-      } else {
-        console.log('[handleAdminCancel] No createdBy - skipping notification');
       }
       
       setWorkOrders(prev => prev.map(wo => wo.id === selectedWO.id ? { ...wo, status: Status.CANCELED } : wo));
@@ -864,6 +875,17 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         alert(t('workOrders.mustAssignTechnicianFirst') || 'Please assign a technician before moving to In Progress');
         setDraggedWoId(null);
         return;
+      }
+
+      // Special check: Technician moving to Pending requires repair results (notes or images)
+      if (newStatus === Status.PENDING && wo.status === Status.IN_PROGRESS && currentUser.userRole === 'Technician') {
+        const hasNotes = wo.technicianNotes && wo.technicianNotes.trim().length > 0;
+        const hasImages = wo.technicianImages && wo.technicianImages.length > 0;
+        if (!hasNotes && !hasImages) {
+          alert(t('workOrders.mustSubmitRepairResults') || 'Please submit repair results (notes or images) before moving to Pending');
+          setDraggedWoId(null);
+          return;
+        }
       }
 
       // Update via API
@@ -1511,14 +1533,12 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                   <p className="text-base text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-xl border border-stone-100" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                     {selectedWO.description}
                   </p>
-                  {/* Reject History Section (visible to all roles, fetched from backend) */}
-                  <div className="mt-3">
-                    <h4 className="text-sm font-bold text-red-700 uppercase tracking-wide mb-1 flex items-center gap-2">
-                      <X size={14} className="text-red-500" /> {t('workOrders.rejectHistory')}
-                    </h4>
-                    {isLoadingRejectHistory ? (
-                      <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-base text-red-700">{t('workOrders.loadingHistory')}</div>
-                    ) : rejectHistory && rejectHistory.length > 0 ? (
+                  {/* Reject History Section - only show if there's actual reject history */}
+                  {rejectHistory && rejectHistory.length > 0 && (
+                    <div className="mt-3">
+                      <h4 className="text-sm font-bold text-red-700 uppercase tracking-wide mb-1 flex items-center gap-2">
+                        <X size={14} className="text-red-500" /> {t('workOrders.rejectHistory')}
+                      </h4>
                       <ul className="space-y-2">
                         {rejectHistory.map(item => (
                           <li key={item.id} className="bg-red-50 border border-red-200 rounded-xl p-3">
@@ -1530,10 +1550,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                           </li>
                         ))}
                       </ul>
-                    ) : (
-                      <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm text-stone-600">{t('workOrders.noRejectionHistory')}</div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   {currentUser?.userRole === 'Admin' && selectedWO?.status === Status.PENDING && (
                     <div className="mt-4">
                       <label className="block text-sm font-medium text-stone-700 mb-1.5">{t('workOrders.review')}</label>
@@ -1550,8 +1568,6 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 </div>
 
                 {/* GPS Location Section with Map */}
-                {/* Debug: check if locationData exists */}
-                {console.log('selectedWO.locationData:', selectedWO.locationData)}
                 {selectedWO.locationData && (
                   <div>
                     <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
@@ -1636,14 +1652,24 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                             {t('workOrders.workPhotos')} ({selectedWO.technicianImages.length}):
                           </p>
                           <div className="grid grid-cols-3 gap-2">
-                            {selectedTechImages.map((imgUrl, idx) => (
-                              <img
-                                key={idx}
-                                src={imgUrl}
-                                alt={`Work photo ${idx + 1}`}
-                                className="w-full h-20 object-cover rounded-lg border border-stone-200 cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => setFullscreenImage(imgUrl)}
-                              />
+                            {selectedTechMedia.map((media, idx) => (
+                              media.isVideo ? (
+                                <video
+                                  key={idx}
+                                  src={media.url}
+                                  controls
+                                  className="w-full h-20 object-cover rounded-lg border border-stone-200"
+                                  playsInline
+                                />
+                              ) : (
+                                <img
+                                  key={idx}
+                                  src={media.url}
+                                  alt={`Work photo ${idx + 1}`}
+                                  className="w-full h-20 object-cover rounded-lg border border-stone-200 cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setFullscreenImage(media.url)}
+                                />
+                              )
                             ))}
                           </div>
                         </div>
@@ -1786,7 +1812,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                           <span>{isUploading ? t('workOrders.uploading') : t('workOrders.addPhotos')}</span>
                           <input
                             type="file"
-                            accept="image/*"
+                            accept="image/*,video/*"
                             multiple
                             onChange={handleImageUpload}
                             className="hidden"
@@ -1849,8 +1875,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                   </div>
                 )}
 
-                {/* Admin Assignment Block (appears before AI Assistant) */}
-                {currentUser?.userRole === 'Admin' && (
+                {/* Admin/Head Tech Assignment Block (appears before AI Assistant) */}
+                {(currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician') && (
                   <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
                     <h3 className="text-base font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
                       <UserPlus size={16} className="text-purple-600" /> {t('workOrders.assign')}
@@ -1878,62 +1904,100 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                   </div>
                 )}
 
-                {/* Original Request Images */}
-                {selectedWOImages.length > 0 && (
+                {/* Original Request Images/Videos */}
+                {selectedWOMedia.length > 0 && (
                   <div>
                     <h3 className="text-base font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <ImageIcon size={16} className="text-teal-600" /> {t('workOrders.originalRequestImages')} ({selectedWOImages.length})
+                      <ImageIcon size={16} className="text-teal-600" /> {t('workOrders.originalRequestImages')} ({selectedWOMedia.length})
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {selectedWOImages.map((imgUrl, idx) => (
+                      {selectedWOMedia.map((media, idx) => (
                         <div
                           key={idx}
                           className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-teal-200 hover:border-teal-400 transition-all duration-200"
-                          onClick={() => setFullscreenImage(imgUrl)}
+                          onClick={() => setFullscreenMedia({ items: selectedWOMedia, currentIndex: idx })}
                         >
-                          <img
-                            src={imgUrl}
-                            alt={`Request image ${idx + 1}`}
-                            className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
-                            <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
-                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                              </svg>
+                          {media.isVideo ? (
+                            <div className="relative w-full h-32 sm:h-40 bg-stone-900 flex items-center justify-center">
+                              <video
+                                src={media.url}
+                                className="w-full h-full object-cover"
+                                muted
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center">
+                                  <svg className="w-6 h-6 text-stone-800 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                  </svg>
+                                </div>
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            <>
+                              <img
+                                src={media.url}
+                                alt={`Request image ${idx + 1}`}
+                                className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
+                                <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
+                                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                  </svg>
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Technician Work Images */}
-                {selectedTechImages.length > 0 && (
+                {/* Technician Work Images/Videos */}
+                {selectedTechMedia.length > 0 && (
                   <div>
                     <h3 className="text-base font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <ImageIcon size={16} className="text-violet-600" /> {t('workOrders.technicianWorkImages')} ({selectedTechImages.length})
+                      <ImageIcon size={16} className="text-violet-600" /> {t('workOrders.technicianWorkImages')} ({selectedTechMedia.length})
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {selectedTechImages.map((imgUrl, idx) => (
+                      {selectedTechMedia.map((media, idx) => (
                         <div
                           key={idx}
                           className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-violet-200 hover:border-violet-400 transition-all duration-200"
-                          onClick={() => setFullscreenImage(imgUrl)}
+                          onClick={() => setFullscreenMedia({ items: selectedTechMedia, currentIndex: idx })}
                         >
-                          <img
-                            src={imgUrl}
-                            alt={`Technician image ${idx + 1}`}
-                            className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
-                            <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
-                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                              </svg>
+                          {media.isVideo ? (
+                            <div className="relative w-full h-32 sm:h-40 bg-stone-900 flex items-center justify-center">
+                              <video
+                                src={media.url}
+                                className="w-full h-full object-cover"
+                                muted
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center">
+                                  <svg className="w-6 h-6 text-stone-800 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                  </svg>
+                                </div>
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            <>
+                              <img
+                                src={media.url}
+                                alt={`Technician image ${idx + 1}`}
+                                className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
+                                <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
+                                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                  </svg>
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -2184,7 +2248,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                     <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-base hover:bg-stone-100 transition-colors duration-200">
                       <Upload size={16} />
                       <span>{isUploading ? t('workOrders.uploading') : t('workOrders.selectImages')}</span>
-                      <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+                      <input type="file" accept="image/*,video/*" multiple onChange={handleImageUpload} className="hidden" />
                     </label>
                     {isUploading && <span className="text-sm text-stone-500">{t('workOrders.uploading')}</span>}
                   </div>
@@ -2215,9 +2279,89 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
         )
       }
 
-      {/* Fullscreen Image Modal */}
+      {/* Fullscreen Media Modal with Navigation */}
       {
-        fullscreenImage && (
+        fullscreenMedia && (
+          <div
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setFullscreenMedia(null)}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setFullscreenMedia(null)}
+              className="absolute top-4 right-4 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
+              title={t('common.close')}
+              aria-label={t('common.close')}
+            >
+              <X size={28} />
+            </button>
+
+            {/* Previous button */}
+            {fullscreenMedia.items.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFullscreenMedia({
+                    ...fullscreenMedia,
+                    currentIndex: (fullscreenMedia.currentIndex - 1 + fullscreenMedia.items.length) % fullscreenMedia.items.length
+                  });
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
+                title="Previous"
+              >
+                <ChevronLeft size={32} />
+              </button>
+            )}
+
+            {/* Next button */}
+            {fullscreenMedia.items.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFullscreenMedia({
+                    ...fullscreenMedia,
+                    currentIndex: (fullscreenMedia.currentIndex + 1) % fullscreenMedia.items.length
+                  });
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
+                title="Next"
+              >
+                <ChevronRight size={32} />
+              </button>
+            )}
+
+            {/* Media content */}
+            {fullscreenMedia.items[fullscreenMedia.currentIndex]?.isVideo ? (
+              <video
+                src={fullscreenMedia.items[fullscreenMedia.currentIndex].url}
+                controls
+                autoPlay
+                className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <img
+                src={fullscreenMedia.items[fullscreenMedia.currentIndex]?.url}
+                alt={t('workOrders.fullSize')}
+                className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            )}
+
+            {/* Counter and instructions */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm bg-black/50 px-4 py-2 rounded-full flex items-center gap-3">
+              {fullscreenMedia.items.length > 1 && (
+                <span className="font-medium">{fullscreenMedia.currentIndex + 1} / {fullscreenMedia.items.length}</span>
+              )}
+              <span>{t('workOrders.clickOutsideToClose')}</span>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Legacy Fullscreen Image Modal (keep for backward compatibility) */}
+      {
+        fullscreenImage && !fullscreenMedia && (
           <div
             className="fixed inset-0 z-20 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setFullscreenImage(null)}

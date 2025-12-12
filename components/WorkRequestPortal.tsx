@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Send, MapPin, AlertCircle, History, Clock, CheckCircle, X, Image as ImageIcon, UserCheck, Navigation, Calendar } from 'lucide-react';
+import { Camera, Send, MapPin, AlertCircle, History, Clock, CheckCircle, X, Image as ImageIcon, UserCheck, Navigation, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import DateInput from './DateInput';
 import { useLanguage } from '../lib/i18n';
 
@@ -16,6 +16,7 @@ import {
   createRequest, 
   listRequests, 
   getImageDataUrl,
+  getMediaInfo,
   RequestItem as ApiRequestItem,
   ImageInfo,
   createNotification,
@@ -45,6 +46,7 @@ interface TempImage {
   file: File;
   preview: string;
   name: string;
+  isVideo?: boolean;  // Flag to identify video files
 }
 
 interface WorkRequestPortalProps {
@@ -82,7 +84,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
   const [preferredDate, setPreferredDate] = useState<string>(''); // Preferred maintenance date
   const [tempImages, setTempImages] = useState<TempImage[]>([]); // Temporary images before submit
   const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
-  const [selectedRequestImages, setSelectedRequestImages] = useState<string[]>([]); // Image URLs
+  const [selectedRequestMedia, setSelectedRequestMedia] = useState<Array<{url: string; isVideo: boolean}>>([]);
+  const [fullscreenMedia, setFullscreenMedia] = useState<{items: Array<{url: string; isVideo: boolean}>; currentIndex: number} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -131,17 +134,26 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
     }
   }, [currentUser]);
 
-  // Load image URLs when selecting a request
+  // Load image/video URLs when selecting a request
   useEffect(() => {
-    const loadImages = async () => {
+    const loadMedia = async () => {
       if (selectedRequest && selectedRequest.imageIds.length > 0) {
-        const imageUrls = await Promise.all(selectedRequest.imageIds.map(id => getImageDataUrl(id)));
-        setSelectedRequestImages(imageUrls);
+        const mediaItems = await Promise.all(
+          selectedRequest.imageIds.map(async (id) => {
+            const info = await getMediaInfo(id);
+            const url = await getImageDataUrl(id);
+            const isVideo = info.mediaType === 'video' || 
+              (info.contentType?.startsWith('video/')) ||
+              (info.filename?.match(/\.(mp4|mov|avi|webm|mkv|m4v|3gp)$/i) !== null);
+            return { url, isVideo };
+          })
+        );
+        setSelectedRequestMedia(mediaItems);
       } else {
-        setSelectedRequestImages([]);
+        setSelectedRequestMedia([]);
       }
     };
-    loadImages();
+    loadMedia();
   }, [selectedRequest]);
 
   // Auto-hide success toast after 2.5 seconds
@@ -210,7 +222,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
             const preview = URL.createObjectURL(compressedFile);
             setTempImages(prev => {
               if (prev.length >= maxImages) return prev;
-              return [...prev, { file: compressedFile, preview, name: file.name }];
+              return [...prev, { file: compressedFile, preview, name: file.name, isVideo: false }];
             });
           }).catch(() => {
             alert(`Image "${file.name}" is too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Please use a smaller image.`);
@@ -219,6 +231,7 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
         }
         
         const preview = URL.createObjectURL(file);
+        const isVideo = file.type.startsWith('video/');
         setTempImages(prev => {
           // Double check we don't exceed the limit
           if (prev.length >= maxImages) {
@@ -228,7 +241,8 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
           return [...prev, { 
             file: file,
             preview: preview, 
-            name: file.name 
+            name: file.name,
+            isVideo: isVideo
           }];
         });
       }
@@ -566,11 +580,29 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-64 overflow-auto pr-2">
                                 {tempImages.map((img, idx) => (
                                   <div key={idx} className="relative group">
-                                    <img
-                                      src={img.preview}
-                                      alt={`Upload ${idx + 1}`}
-                                      className="w-full h-24 object-cover rounded-xl border border-stone-200"
-                                    />
+                                    {img.isVideo ? (
+                                      <video
+                                        src={img.preview}
+                                        className="w-full h-24 object-cover rounded-xl border border-stone-200"
+                                        muted
+                                        playsInline
+                                      />
+                                    ) : (
+                                      <img
+                                        src={img.preview}
+                                        alt={`Upload ${idx + 1}`}
+                                        className="w-full h-24 object-cover rounded-xl border border-stone-200"
+                                      />
+                                    )}
+                                    {img.isVideo && (
+                                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <div className="bg-black/50 rounded-full p-1">
+                                          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                                          </svg>
+                                        </div>
+                                      </div>
+                                    )}
                                     <button
                                       type="button"
                                       onClick={() => removeImage(idx)}
@@ -796,17 +828,39 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                  </div>
                )}
 
-               {selectedRequestImages.length > 0 && (
+               {selectedRequestMedia.length > 0 && (
                  <div>
                    <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">{t('request.attachedImages')}</label>
                    <div className="grid grid-cols-2 gap-3">
-                     {selectedRequestImages.map((imgUrl, idx) => (
-                       <img
-                         key={idx}
-                         src={imgUrl}
-                         alt={`Attachment ${idx + 1}`}
-                         className="w-full h-32 object-cover rounded-xl border border-stone-200"
-                       />
+                     {selectedRequestMedia.map((media, idx) => (
+                       <div 
+                         key={idx} 
+                         className="relative cursor-pointer group"
+                         onClick={() => setFullscreenMedia({ items: selectedRequestMedia, currentIndex: idx })}
+                       >
+                         {media.isVideo ? (
+                           <div className="relative w-full h-32 bg-stone-900 rounded-xl border border-stone-200 overflow-hidden">
+                             <video
+                               src={media.url}
+                               className="w-full h-full object-cover"
+                               muted
+                             />
+                             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                               <div className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center">
+                                 <svg className="w-5 h-5 text-stone-800 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                   <path d="M8 5v14l11-7z"/>
+                                 </svg>
+                               </div>
+                             </div>
+                           </div>
+                         ) : (
+                           <img
+                             src={media.url}
+                             alt={`Attachment ${idx + 1}`}
+                             className="w-full h-32 object-cover rounded-xl border border-stone-200 group-hover:opacity-90 transition-opacity"
+                           />
+                         )}
+                       </div>
                      ))}
                    </div>
                  </div>
@@ -822,6 +876,82 @@ const WorkRequestPortal: React.FC<WorkRequestPortalProps> = ({
                </button>
              </div>
            </div>
+         </div>
+       )}
+
+       {/* Fullscreen Media Modal with Navigation */}
+       {fullscreenMedia && (
+         <div
+           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
+           onClick={() => setFullscreenMedia(null)}
+         >
+           {/* Close button */}
+           <button
+             onClick={() => setFullscreenMedia(null)}
+             className="absolute top-4 right-4 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
+             title={t('common.close')}
+           >
+             <X size={28} />
+           </button>
+
+           {/* Previous button */}
+           {fullscreenMedia.items.length > 1 && (
+             <button
+               onClick={(e) => {
+                 e.stopPropagation();
+                 setFullscreenMedia({
+                   ...fullscreenMedia,
+                   currentIndex: (fullscreenMedia.currentIndex - 1 + fullscreenMedia.items.length) % fullscreenMedia.items.length
+                 });
+               }}
+               className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
+               title={t('common.previous')}
+             >
+               <ChevronLeft size={32} />
+             </button>
+           )}
+
+           {/* Next button */}
+           {fullscreenMedia.items.length > 1 && (
+             <button
+               onClick={(e) => {
+                 e.stopPropagation();
+                 setFullscreenMedia({
+                   ...fullscreenMedia,
+                   currentIndex: (fullscreenMedia.currentIndex + 1) % fullscreenMedia.items.length
+                 });
+               }}
+               className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
+               title={t('common.next')}
+             >
+               <ChevronRight size={32} />
+             </button>
+           )}
+
+           {/* Media content */}
+           {fullscreenMedia.items[fullscreenMedia.currentIndex]?.isVideo ? (
+             <video
+               src={fullscreenMedia.items[fullscreenMedia.currentIndex].url}
+               controls
+               autoPlay
+               className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+               onClick={(e) => e.stopPropagation()}
+             />
+           ) : (
+             <img
+               src={fullscreenMedia.items[fullscreenMedia.currentIndex]?.url}
+               alt="Full size"
+               className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+               onClick={(e) => e.stopPropagation()}
+             />
+           )}
+
+           {/* Counter */}
+           {fullscreenMedia.items.length > 1 && (
+             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm bg-black/50 px-4 py-2 rounded-full">
+               {fullscreenMedia.currentIndex + 1} / {fullscreenMedia.items.length}
+             </div>
+           )}
          </div>
        )}
     </div>
