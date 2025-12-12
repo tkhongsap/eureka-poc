@@ -8,7 +8,7 @@ class SparePartBase(BaseModel):
     category: str
     price_per_unit: float
     quantity: int
-    site_id: int
+
 
 
 class SparePartCreate(SparePartBase):
@@ -20,7 +20,6 @@ class SparePartUpdate(BaseModel):
     category: Optional[str] = None
     price_per_unit: Optional[float] = None
     quantity: Optional[int] = None
-    site_id: Optional[int] = None
 
 
 class SparePart(SparePartBase):

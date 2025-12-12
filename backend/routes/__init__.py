@@ -7,6 +7,7 @@ from .auth import router as auth_router
 from .dashboard import router as dashboard_router
 from .audit import router as audit_router
 from .assets import router as assets_router
+from .spare_parts import router as spare_parts_router
 
 __all__ = [
     "images_router",
@@ -17,5 +18,4 @@ __all__ = [
     "auth_router",
     "dashboard_router",
     "audit_router",
-    "assets_router",
 ]

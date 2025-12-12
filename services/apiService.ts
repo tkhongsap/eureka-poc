@@ -1406,3 +1406,67 @@ export const getAssetStatistics = async (): Promise<AssetStatistics> => {
   if (!response.ok) throw new Error('Failed to fetch asset statistics');
   return response.json();
 };
+
+// --- Spare Parts API ---
+export interface SparePartItem {
+  id: number;
+  part_name: string;
+  category: string;
+  price_per_unit: number;
+  quantity: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSparePartData {
+  part_name: string;
+  category: string;
+  price_per_unit: number;
+  quantity: number;
+}
+
+export interface UpdateSparePartData {
+  part_name?: string;
+  category?: string;
+  price_per_unit?: number;
+  quantity?: number;
+}
+
+export const listSpareParts = async (): Promise<SparePartItem[]> => {
+  const response = await fetch(`${API_BASE_URL}/spare-parts/`);
+  if (!response.ok) {
+    throw new Error('Failed to list spare parts');
+  }
+  return response.json();
+};
+
+export const createSparePart = async (data: CreateSparePartData): Promise<SparePartItem> => {
+  const response = await fetch(`${API_BASE_URL}/spare-parts/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create spare part');
+  }
+  return response.json();
+};
+
+export const updateSparePart = async (id: number, data: UpdateSparePartData): Promise<SparePartItem> => {
+  const response = await fetch(`${API_BASE_URL}/spare-parts/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update spare part');
+  }
+  return response.json();
+};
+
+export const deleteSparePart = async (id: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/spare-parts/${id}`, { method: 'DELETE' });
+  if (!response.ok) {
+    throw new Error('Failed to delete spare part');
+  }
+};

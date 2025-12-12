@@ -18,6 +18,7 @@ from routes import (
     dashboard_router,
     audit_router,
     assets_router,
+    spare_parts_router,
 )
 
 from utils import PICTURES_DIR
@@ -72,7 +73,6 @@ app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(dashboard_router)
 app.include_router(audit_router)
-app.include_router(assets_router)
 
 
 @app.get("/api/health", tags=["Health"])
