@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { WorkOrder, Status, Priority } from '../types';
-import { Clock, CheckCircle, AlertCircle, XCircle, Package, Calendar, X, Image as ImageIcon, FileText, Wrench, Eye, Edit2, Save, Lock } from 'lucide-react';
-import { getImageDataUrl, updateWorkOrder } from '../services/apiService';
+import { Clock, CheckCircle, AlertCircle, XCircle, Package, Calendar, X, Image as ImageIcon, FileText, Wrench, Eye, Edit2, Save, Lock, ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { getImageDataUrl, getMediaInfo, updateWorkOrder } from '../services/apiService';
 import { getWorkOrderPermissions } from '../utils/workflowRules';
 import { useLanguage } from '../lib/i18n';
 
@@ -70,9 +70,9 @@ const priorityColors = {
 const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, requestorName }) => {
   const { t } = useLanguage();
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
-  const [selectedWOImages, setSelectedWOImages] = useState<string[]>([]);
-  const [technicianImages, setTechnicianImages] = useState<string[]>([]);
-  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [selectedWOMedia, setSelectedWOMedia] = useState<Array<{url: string; isVideo: boolean}>>([]);
+  const [technicianMedia, setTechnicianMedia] = useState<Array<{url: string; isVideo: boolean}>>([]);
+  const [fullscreenMedia, setFullscreenMedia] = useState<{items: Array<{url: string; isVideo: boolean}>; currentIndex: number} | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -116,22 +116,40 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
     ? getWorkOrderPermissions(selectedWO.status, 'Requester', selectedWO.assignedTo, requestorName)
     : null;
 
-  // Load images when selecting a work order
+  // Load images/videos when selecting a work order
   useEffect(() => {
-    const loadImages = async () => {
+    const loadMedia = async () => {
       if (selectedWO) {
         if (selectedWO.imageIds && selectedWO.imageIds.length > 0) {
-          const imageUrls = await Promise.all(selectedWO.imageIds.map(id => getImageDataUrl(id)));
-          setSelectedWOImages(imageUrls);
+          const mediaItems = await Promise.all(
+            selectedWO.imageIds.map(async (id) => {
+              const info = await getMediaInfo(id);
+              const url = await getImageDataUrl(id);
+              const isVideo = info.mediaType === 'video' || 
+                (info.contentType?.startsWith('video/')) ||
+                (info.filename?.match(/\.(mp4|mov|avi|webm|mkv|m4v|3gp)$/i) !== null);
+              return { url, isVideo };
+            })
+          );
+          setSelectedWOMedia(mediaItems);
         } else {
-          setSelectedWOImages([]);
+          setSelectedWOMedia([]);
         }
 
         if (selectedWO.technicianImages && selectedWO.technicianImages.length > 0) {
-          const techImgUrls = await Promise.all(selectedWO.technicianImages.map(id => getImageDataUrl(id)));
-          setTechnicianImages(techImgUrls);
+          const techMediaItems = await Promise.all(
+            selectedWO.technicianImages.map(async (id) => {
+              const info = await getMediaInfo(id);
+              const url = await getImageDataUrl(id);
+              const isVideo = info.mediaType === 'video' || 
+                (info.contentType?.startsWith('video/')) ||
+                (info.filename?.match(/\.(mp4|mov|avi|webm|mkv|m4v|3gp)$/i) !== null);
+              return { url, isVideo };
+            })
+          );
+          setTechnicianMedia(techMediaItems);
         } else {
-          setTechnicianImages([]);
+          setTechnicianMedia([]);
         }
 
         // Initialize edit fields
@@ -139,12 +157,12 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
         setEditPriority(selectedWO.priority);
         setIsEditMode(false);
       } else {
-        setSelectedWOImages([]);
-        setTechnicianImages([]);
+        setSelectedWOMedia([]);
+        setTechnicianMedia([]);
         setIsEditMode(false);
       }
     };
-    loadImages();
+    loadMedia();
   }, [selectedWO]);
 
   const handleSave = async () => {
@@ -390,24 +408,39 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                 </div>
               </div>
 
-              {/* Original Request Images */}
-              {selectedWOImages.length > 0 && (
+              {/* Original Request Images/Videos */}
+              {selectedWOMedia.length > 0 && (
                 <div>
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-teal-600" /> {t('requestor.originalImages')} ({selectedWOImages.length})
+                    <ImageIcon size={16} className="text-teal-600" /> {t('requestor.originalImages')} ({selectedWOMedia.length})
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {selectedWOImages.map((imgUrl, idx) => (
+                    {selectedWOMedia.map((media, idx) => (
                       <div
                         key={idx}
                         className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-stone-200 hover:border-teal-400 transition-all duration-200"
-                        onClick={() => setFullscreenImage(imgUrl)}
+                        onClick={() => setFullscreenMedia({ items: selectedWOMedia, currentIndex: idx })}
                       >
-                        <img
-                          src={imgUrl}
-                          alt={`Request attachment ${idx + 1}`}
-                          className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
-                        />
+                        {media.isVideo ? (
+                          <>
+                            <video
+                              src={media.url}
+                              className="w-full h-32 sm:h-40 object-cover"
+                              muted
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <div className="bg-white/90 rounded-full p-3 shadow-lg">
+                                <Play size={24} className="text-teal-600 fill-teal-600" />
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <img
+                            src={media.url}
+                            alt={`Request attachment ${idx + 1}`}
+                            className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                        )}
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
                           <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
                             <Eye size={20} />
@@ -433,24 +466,39 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
                 </div>
               )}
 
-              {/* Technician Images */}
-              {technicianImages.length > 0 && (
+              {/* Technician Images/Videos */}
+              {technicianMedia.length > 0 && (
                 <div>
                   <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                    <ImageIcon size={16} className="text-violet-600" /> {t('requestor.technicianImages')} ({technicianImages.length})
+                    <ImageIcon size={16} className="text-violet-600" /> {t('requestor.technicianImages')} ({technicianMedia.length})
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {technicianImages.map((imgUrl, idx) => (
+                    {technicianMedia.map((media, idx) => (
                       <div
                         key={idx}
                         className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-violet-200 hover:border-violet-400 transition-all duration-200"
-                        onClick={() => setFullscreenImage(imgUrl)}
+                        onClick={() => setFullscreenMedia({ items: technicianMedia, currentIndex: idx })}
                       >
-                        <img
-                          src={imgUrl}
-                          alt={`Technician image ${idx + 1}`}
-                          className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
-                        />
+                        {media.isVideo ? (
+                          <>
+                            <video
+                              src={media.url}
+                              className="w-full h-32 sm:h-40 object-cover"
+                              muted
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <div className="bg-white/90 rounded-full p-3 shadow-lg">
+                                <Play size={24} className="text-violet-600 fill-violet-600" />
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <img
+                            src={media.url}
+                            alt={`Technician image ${idx + 1}`}
+                            className="w-full h-32 sm:h-40 object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                        )}
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
                           <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
                             <Eye size={20} />
@@ -554,27 +602,77 @@ const RequestorWorkOrders: React.FC<RequestorWorkOrdersProps> = ({ workOrders, r
         </div>
       )}
 
-      {/* Fullscreen Image Modal */}
-      {fullscreenImage && (
+      {/* Fullscreen Media Modal */}
+      {fullscreenMedia && (
         <div
           className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setFullscreenImage(null)}
+          onClick={() => setFullscreenMedia(null)}
         >
+          {/* Close button */}
           <button
-            onClick={() => setFullscreenImage(null)}
+            onClick={() => setFullscreenMedia(null)}
             className="absolute top-4 right-4 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
             title={t('common.close')}
             aria-label={t('common.close')}
           >
             <X size={28} />
           </button>
-          <img
-            src={fullscreenImage}
-            alt={t('workOrders.fullSize')}
-            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
+
+          {/* Previous button */}
+          {fullscreenMedia.items.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setFullscreenMedia({
+                  ...fullscreenMedia,
+                  currentIndex: (fullscreenMedia.currentIndex - 1 + fullscreenMedia.items.length) % fullscreenMedia.items.length
+                });
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
+              title={t('common.previous')}
+            >
+              <ChevronLeft size={32} />
+            </button>
+          )}
+
+          {/* Next button */}
+          {fullscreenMedia.items.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setFullscreenMedia({
+                  ...fullscreenMedia,
+                  currentIndex: (fullscreenMedia.currentIndex + 1) % fullscreenMedia.items.length
+                });
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-stone-300 bg-black/50 hover:bg-black/70 rounded-xl p-3 transition-all duration-200 z-10"
+              title={t('common.next')}
+            >
+              <ChevronRight size={32} />
+            </button>
+          )}
+
+          {/* Media content */}
+          {fullscreenMedia.items[fullscreenMedia.currentIndex]?.isVideo ? (
+            <video
+              src={fullscreenMedia.items[fullscreenMedia.currentIndex].url}
+              controls
+              autoPlay
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <img
+              src={fullscreenMedia.items[fullscreenMedia.currentIndex]?.url}
+              alt={t('workOrders.fullSize')}
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
+
+          {/* Counter and hint */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm bg-black/50 px-4 py-2 rounded-full">
+            {fullscreenMedia.items.length > 1 && `${fullscreenMedia.currentIndex + 1}/${fullscreenMedia.items.length} • `}
             {t('requestor.clickOutsideToClose')}
           </div>
         </div>
