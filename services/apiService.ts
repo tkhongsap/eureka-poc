@@ -57,12 +57,14 @@ const getAuthHeaders = (): Record<string, string> => {
   return headers;
 };
 
-// --- Image API ---
+// --- Image/Video API ---
 export interface ImageInfo {
   id: string;
   originalName: string;
   filename?: string;
   base64Data: string;
+  mediaType?: string;  // 'image' or 'video'
+  contentType?: string;  // MIME type like 'image/jpeg' or 'video/mp4'
   createdAt: string;
 }
 
@@ -93,14 +95,68 @@ export const uploadImage = async (file: File): Promise<ImageInfo> => {
   return response.json();
 };
 
+// Helper function to convert base64 to blob
+const base64ToBlob = (base64: string, mimeType: string): Blob => {
+  const byteCharacters = atob(base64);
+  const byteArrays: Uint8Array[] = [];
+  
+  for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+    const slice = byteCharacters.slice(offset, offset + 512);
+    const byteNumbers = new Array(slice.length);
+    for (let i = 0; i < slice.length; i++) {
+      byteNumbers[i] = slice.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    byteArrays.push(byteArray);
+  }
+  
+  return new Blob(byteArrays, { type: mimeType });
+};
+
 export const getImageDataUrl = async (imageId: string): Promise<string> => {
   const response = await fetch(`${API_BASE_URL}/images/${imageId}`);
   if (!response.ok) {
     throw new Error('Failed to get image');
   }
   const data: ImageInfo = await response.json();
-  const ext = (data.filename && data.filename.split('.').pop()) || 'jpg';
-  return `data:image/${ext};base64,${data.base64Data}`;
+  // Use stored contentType if available, otherwise determine from filename
+  let mimeType = data.contentType;
+  if (!mimeType) {
+    const ext = (data.filename && data.filename.split('.').pop()?.toLowerCase()) || 'jpg';
+    const mimeTypes: Record<string, string> = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'mp4': 'video/mp4',
+      'mov': 'video/quicktime',
+      'avi': 'video/x-msvideo',
+      'webm': 'video/webm',
+      'mkv': 'video/x-matroska',
+      'm4v': 'video/x-m4v',
+      '3gp': 'video/3gpp',
+    };
+    mimeType = mimeTypes[ext] || 'image/jpeg';
+  }
+  
+  // For videos, use Blob URL (better performance for large files)
+  if (mimeType.startsWith('video/')) {
+    const blob = base64ToBlob(data.base64Data, mimeType);
+    return URL.createObjectURL(blob);
+  }
+  
+  // For images, use Data URL
+  return `data:${mimeType};base64,${data.base64Data}`;
+};
+
+// Get media info including type (image/video)
+export const getMediaInfo = async (mediaId: string): Promise<ImageInfo> => {
+  const response = await fetch(`${API_BASE_URL}/images/${mediaId}`);
+  if (!response.ok) {
+    throw new Error('Failed to get media info');
+  }
+  return response.json();
 };
 
 export const listImages = async (): Promise<ImageInfo[]> => {
