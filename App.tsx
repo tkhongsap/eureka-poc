@@ -528,7 +528,7 @@ const App: React.FC = () => {
           workOrders={workOrders}
         />;
       case 'assets':
-        return <AssetHierarchy />;
+        return <AssetHierarchy currentUser={currentUser} />;
       case 'inventory':
         return <Inventory />;
       case 'team':
