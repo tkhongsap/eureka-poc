@@ -11,10 +11,10 @@ const TeamSchedule: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
 
     const statusColors: Record<string, string> = {
-        'Available': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        'Busy': 'bg-amber-50 text-amber-700 border-amber-200',
-        'Off-Shift': 'bg-stone-100 text-stone-500 border-stone-200',
-        'On-Leave': 'bg-red-50 text-red-600 border-red-200',
+        'Available': 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+        'Busy': 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+        'Off-Shift': 'bg-stone-100 dark:bg-stone-700 text-stone-500 dark:text-stone-300 border-stone-200 dark:border-stone-600',
+        'On-Leave': 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-300 border-red-200 dark:border-red-800',
     };
 
     const getStatusLabel = (status: string) => {
@@ -62,14 +62,14 @@ const TeamSchedule: React.FC = () => {
         }
         if (error) {
             return (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+                <div className="p-4 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300">
                     {error}
                 </div>
             );
         }
         if (members.length === 0) {
             return (
-                <div className="flex flex-col items-center justify-center h-64 text-stone-400">
+                <div className="flex flex-col items-center justify-center h-64 text-stone-400 dark:text-stone-500">
                     <UserCircle size={48} className="mb-3" />
                     <p className="text-sm">No team members found</p>
                 </div>
@@ -78,14 +78,14 @@ const TeamSchedule: React.FC = () => {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {members.map(member => (
-                    <div key={member.id} className="bg-white rounded-2xl border border-stone-200/60 p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
+                    <div key={member.id} className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200/60 dark:border-stone-700 p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
 
                         <div className="flex justify-between items-start mb-4">
-                            <div className="w-16 h-16 rounded-xl bg-stone-100 p-1 border border-stone-100 flex items-center justify-center overflow-hidden">
+                            <div className="w-16 h-16 rounded-xl bg-stone-100 dark:bg-stone-700 p-1 border border-stone-100 dark:border-stone-600 flex items-center justify-center overflow-hidden">
                                 {member.avatarUrl ? (
                                     <img src={member.avatarUrl} alt={member.name} className="w-full h-full object-cover rounded-lg" referrerPolicy="no-referrer" />
                                 ) : (
-                                    <UserCircle size={60} className="text-stone-400" />
+                                    <UserCircle size={60} className="text-stone-400 dark:text-stone-500" />
                                 )}
                             </div>
                             <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${statusColors[member.status] || statusColors['Available']}`}>
@@ -93,11 +93,11 @@ const TeamSchedule: React.FC = () => {
                             </span>
                         </div>
 
-                        <h3 className="font-serif text-lg text-stone-900">{member.name}</h3>
-                        <p className="text-sm text-teal-600 font-medium mb-4">{member.role}</p>
+                        <h3 className="font-serif text-lg text-stone-900 dark:text-stone-100">{member.name}</h3>
+                        <p className="text-sm text-teal-600 dark:text-teal-400 font-medium mb-4">{member.role}</p>
 
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-xs text-stone-500">
+                            <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
                                 <Briefcase size={14} />
                                 <span>
                                     {member.currentTask ? `${t('team.workingOn')} ${member.currentTask}` : t('team.noActiveTask')}
@@ -107,7 +107,7 @@ const TeamSchedule: React.FC = () => {
                             {member.skills.length > 0 && (
                                 <div className="flex flex-wrap gap-1">
                                     {member.skills.map((skill, i) => (
-                                        <span key={i} className="px-2 py-0.5 bg-stone-100 text-stone-600 text-[10px] rounded-lg uppercase font-bold tracking-wider">
+                                        <span key={i} className="px-2 py-0.5 bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 text-[10px] rounded-lg uppercase font-bold tracking-wider">
                                             {skill}
                                         </span>
                                     ))}
@@ -115,11 +115,11 @@ const TeamSchedule: React.FC = () => {
                             )}
                         </div>
 
-                        <div className="mt-6 pt-4 border-t border-stone-100 flex justify-between items-center opacity-60 group-hover:opacity-100 transition-opacity duration-200">
-                            <div className="text-xs text-stone-400 flex items-center gap-1">
+                        <div className="mt-6 pt-4 border-t border-stone-100 dark:border-stone-700 flex justify-between items-center opacity-60 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="text-xs text-stone-400 dark:text-stone-500 flex items-center gap-1">
                                 <Clock size={12} /> {t('team.shift')}: 08:00 - 17:00
                             </div>
-                            <button className="p-2 hover:bg-teal-50 rounded-xl text-stone-500 hover:text-teal-600 transition-colors duration-200">
+                            <button className="p-2 hover:bg-teal-50 dark:hover:bg-teal-900/50 rounded-xl text-stone-500 dark:text-stone-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200">
                                 <Phone size={16} />
                             </button>
                         </div>
@@ -130,14 +130,14 @@ const TeamSchedule: React.FC = () => {
     }, [members, loading, error, statusColors, t]);
 
     return (
-        <div className="p-8">
+        <div className="p-8 bg-stone-50/50 dark:bg-stone-900 min-h-full">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h2 className="font-serif text-3xl text-stone-900">{t('team.teamAndShifts')}</h2>
-                    <p className="text-stone-500 mt-1">{t('team.manageWorkforce')}</p>
+                    <h2 className="font-serif text-3xl text-stone-900 dark:text-stone-100">{t('team.teamAndShifts')}</h2>
+                    <p className="text-stone-500 dark:text-stone-400 mt-1">{t('team.manageWorkforce')}</p>
                 </div>
                 <div className="flex gap-3">
-                    <button className="px-4 py-2.5 border border-stone-200 bg-white rounded-xl text-sm text-stone-600 hover:bg-stone-50 hover:border-stone-300 flex items-center gap-2 transition-all duration-200">
+                    <button className="px-4 py-2.5 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-sm text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-stone-300 dark:hover:border-stone-600 flex items-center gap-2 transition-all duration-200">
                         <Calendar size={16} /> {t('team.scheduleView')}
                     </button>
                     <button className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 hover:-translate-y-0.5 transition-all duration-200">
