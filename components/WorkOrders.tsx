@@ -1576,8 +1576,8 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                   {/* Reject History Section - only show if there's actual reject history */}
                   {rejectHistory && rejectHistory.length > 0 && (
                     <div className="mt-3">
-                      <h4 className="text-sm font-bold text-red-700 uppercase tracking-wide mb-1 flex items-center gap-2">
-                        <X size={14} className="text-red-500" /> {t('workOrders.rejectHistory')}
+                      <h4 className="text-sm font-bold text-red-700 dark:text-red-400 uppercase tracking-wide mb-1 flex items-center gap-2">
+                        <X size={14} className="text-red-500 dark:text-red-400" /> {t('workOrders.rejectHistory')}
                       </h4>
                       <ul className="space-y-2">
                         {rejectHistory.map(item => (
@@ -1698,7 +1698,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                   key={idx}
                                   src={media.url}
                                   controls
-                                  className="w-full h-20 object-cover rounded-lg border border-stone-200"
+                                  className="w-full h-20 object-cover rounded-lg border border-stone-200 dark:border-stone-700"
                                   playsInline
                                 />
                               ) : (
@@ -1706,7 +1706,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                                   key={idx}
                                   src={media.url}
                                   alt={`Work photo ${idx + 1}`}
-                                  className="w-full h-20 object-cover rounded-lg border border-stone-200 cursor-pointer hover:opacity-80 transition-opacity"
+                                  className="w-full h-20 object-cover rounded-lg border border-stone-200 dark:border-stone-700 cursor-pointer hover:opacity-80 transition-opacity"
                                   onClick={() => setFullscreenImage(media.url)}
                                 />
                               )
@@ -1917,9 +1917,9 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
 
                 {/* Admin/Head Tech Assignment Block (appears before AI Assistant) */}
                 {(currentUser?.userRole === 'Admin' || currentUser?.userRole === 'Head Technician') && (
-                  <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-5">
-                    <h3 className="text-base font-bold text-purple-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <UserPlus size={16} className="text-purple-600" /> {t('workOrders.assign')}
+                  <div className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/50 dark:to-violet-950/50 border border-purple-200 dark:border-purple-800 rounded-2xl p-5">
+                    <h3 className="text-base font-bold text-purple-900 dark:text-purple-200 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <UserPlus size={16} className="text-purple-600 dark:text-purple-400" /> {t('workOrders.assign')}
                     </h3>
                     <div className="flex flex-col sm:flex-row gap-3">
                       <select
@@ -1947,14 +1947,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 {/* Original Request Images/Videos */}
                 {selectedWOMedia.length > 0 && (
                   <div>
-                    <h3 className="text-base font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <ImageIcon size={16} className="text-teal-600" /> {t('workOrders.originalRequestImages')} ({selectedWOMedia.length})
+                    <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <ImageIcon size={16} className="text-teal-600 dark:text-teal-400" /> {t('workOrders.originalRequestImages')} ({selectedWOMedia.length})
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                       {selectedWOMedia.map((media, idx) => (
                         <div
                           key={idx}
-                          className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-teal-200 hover:border-teal-400 transition-all duration-200"
+                          className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-teal-200 dark:border-teal-700 hover:border-teal-400 dark:hover:border-teal-500 transition-all duration-200"
                           onClick={() => setFullscreenMedia({ items: selectedWOMedia, currentIndex: idx })}
                         >
                           {media.isVideo ? (
@@ -1997,14 +1997,14 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                 {/* Technician Work Images/Videos */}
                 {selectedTechMedia.length > 0 && (
                   <div>
-                    <h3 className="text-base font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <ImageIcon size={16} className="text-violet-600" /> {t('workOrders.technicianWorkImages')} ({selectedTechMedia.length})
+                    <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <ImageIcon size={16} className="text-violet-600 dark:text-violet-400" /> {t('workOrders.technicianWorkImages')} ({selectedTechMedia.length})
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                       {selectedTechMedia.map((media, idx) => (
                         <div
                           key={idx}
-                          className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-violet-200 hover:border-violet-400 transition-all duration-200"
+                          className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-violet-200 dark:border-violet-700 hover:border-violet-400 dark:hover:border-violet-500 transition-all duration-200"
                           onClick={() => setFullscreenMedia({ items: selectedTechMedia, currentIndex: idx })}
                         >
                           {media.isVideo ? (
