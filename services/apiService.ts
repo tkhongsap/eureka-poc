@@ -176,6 +176,33 @@ export const deleteImage = async (imageId: string): Promise<void> => {
   }
 };
 
+// --- Spare Parts API ---
+export interface SparePartInput {
+  part_name: string;
+  category: string;
+  price_per_unit: number;
+  quantity: number;
+}
+
+export interface SparePart extends SparePartInput {
+  id: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export const addSparePart = async (data: SparePartInput): Promise<SparePart> => {
+  const response = await fetch(`${API_BASE_URL}/spare-parts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || 'Failed to add spare part');
+  }
+  return response.json();
+};
+
 // --- Request API ---
 export interface LocationData {
   latitude: number;
