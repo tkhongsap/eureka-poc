@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Search, Filter, AlertCircle, TrendingUp, Package, ArrowDown, ArrowUp } from 'lucide-react';
 import { InventoryItem } from '../types';
 import { predictInventoryNeeds } from '../services/geminiService';
 import { useLanguage } from '../lib/i18n';
-import { listSpareParts, createSparePart, SparePartItem } from '../services/apiService';
 
 const MOCK_INVENTORY: InventoryItem[] = [
     { id: 'P-001', name: 'Hydraulic Filter 50 micron', sku: 'HF-50M', quantity: 12, minLevel: 10, unit: 'pcs', location: 'WH-A-01', category: 'Filters', lastUpdated: '2024-10-20', cost: 45.00 },
@@ -18,30 +17,6 @@ const Inventory: React.FC = () => {
     const [aiRecommendations, setAiRecommendations] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [inventory, setInventory] = useState<InventoryItem[]>(MOCK_INVENTORY);
-        // Load spare parts from backend
-        useEffect(() => {
-            const load = async () => {
-                try {
-                    const items = await listSpareParts();
-                    const mapped: InventoryItem[] = items.map((sp: SparePartItem) => ({
-                        id: `SP-${sp.id}`,
-                        name: sp.part_name,
-                        sku: sp.category.slice(0,3).toUpperCase() + '-' + sp.id,
-                        quantity: sp.quantity,
-                        minLevel: Math.max(1, Math.floor(sp.quantity / 2)),
-                        unit: 'pcs',
-                        location: '',
-                        category: sp.category,
-                        lastUpdated: sp.updated_at?.slice(0,10) || sp.created_at.slice(0,10),
-                        cost: sp.price_per_unit,
-                    }));
-                    setInventory(mapped);
-                } catch (e) {
-                    console.error('Failed to load spare parts', e);
-                }
-            };
-            load();
-        }, []);
     const [search, setSearch] = useState('');
 
     // Add Part Modal State
@@ -270,23 +245,38 @@ const Inventory: React.FC = () => {
                             <button
                                 className="px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700"
                                 onClick={() => {
-                                    if (!newPart.name || !newPart.type) return;
-                                    const now = new Date();
-                                    const item: InventoryItem = {
-                                        id: `P-${Math.floor(Math.random()*900+100)}`,
-                                        name: newPart.name,
-                                        sku: `${newPart.type.slice(0,3).toUpperCase()}-${Math.floor(Math.random()*999)}`,
-                                        quantity: newPart.quantity || 0,
-                                        minLevel: Math.max(1, Math.floor((newPart.quantity || 0)/2) ),
-                                        unit: 'pcs',
-                                        location: '',
-                                        category: newPart.type,
-                                        lastUpdated: now.toISOString().slice(0,10),
-                                        cost: newPart.pricePerUnit || 0,
+                                    const submit = async () => {
+                                        if (!newPart.name || !newPart.type) return;
+                                        try {
+                                            const created = await createSparePart({
+                                                part_name: newPart.name,
+                                                category: newPart.type,
+                                                price_per_unit: newPart.pricePerUnit || 0,
+                                                quantity: newPart.quantity || 0,
+                                            });
+                                            // Refresh list
+                                            const items = await listSpareParts();
+                                            const mapped: InventoryItem[] = items.map((sp: SparePartItem) => ({
+                                                id: `SP-${sp.id}`,
+                                                name: sp.part_name,
+                                                sku: sp.category.slice(0,3).toUpperCase() + '-' + sp.id,
+                                                quantity: sp.quantity,
+                                                minLevel: Math.max(1, Math.floor(sp.quantity / 2)),
+                                                unit: 'pcs',
+                                                location: '',
+                                                category: sp.category,
+                                                lastUpdated: sp.updated_at?.slice(0,10) || sp.created_at.slice(0,10),
+                                                cost: sp.price_per_unit,
+                                            }));
+                                            setInventory(mapped);
+                                            setIsAddOpen(false);
+                                            setNewPart({ name: '', type: '', quantity: 0, pricePerUnit: 0, site: '' });
+                                        } catch (err) {
+                                            console.error('Failed to create spare part', err);
+                                            alert('Failed to create spare part. Please ensure backend is running.');
+                                        }
                                     };
-                                    setInventory(prev => [item, ...prev]);
-                                    setIsAddOpen(false);
-                                    setNewPart({ name: '', type: '', quantity: 0, pricePerUnit: 0, site: '' });
+                                    submit();
                                 }}
                             >
                                 Add Part
