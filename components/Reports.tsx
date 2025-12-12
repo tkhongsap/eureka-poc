@@ -27,7 +27,7 @@ const Reports: React.FC = () => {
       titleTh: 'รายงานใบงาน',
       descEn: 'Analyze work order metrics, completion rates, and trends',
       descTh: 'วิเคราะห์ตัวชี้วัดใบงาน อัตราการเสร็จสิ้น และแนวโน้ม',
-      color: 'bg-blue-50 text-blue-600 border-blue-200',
+      color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
       reports: [
         { id: 'wo-summary', nameEn: 'Work Order Summary', nameTh: 'สรุปใบงาน', available: true },
         { id: 'wo-by-status', nameEn: 'Work Orders by Status', nameTh: 'ใบงานตามสถานะ', available: true },
@@ -42,7 +42,7 @@ const Reports: React.FC = () => {
       titleTh: 'รายงานประสิทธิภาพ',
       descEn: 'Track MTBF, MTTR, and OEE metrics',
       descTh: 'ติดตาม MTBF, MTTR และ OEE',
-      color: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+      color: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
       reports: [
         { id: 'mtbf-mttr', nameEn: 'MTBF/MTTR Analysis', nameTh: 'วิเคราะห์ MTBF/MTTR', available: false },
         { id: 'oee', nameEn: 'OEE Dashboard', nameTh: 'แดชบอร์ด OEE', available: false },
@@ -56,7 +56,7 @@ const Reports: React.FC = () => {
       titleTh: 'รายงานช่าง',
       descEn: 'Monitor technician workload and productivity',
       descTh: 'ติดตามภาระงานและผลิตภาพของช่าง',
-      color: 'bg-purple-50 text-purple-600 border-purple-200',
+      color: 'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
       reports: [
         { id: 'tech-workload', nameEn: 'Technician Workload', nameTh: 'ภาระงานช่าง', available: true },
         { id: 'tech-performance', nameEn: 'Technician Performance', nameTh: 'ประสิทธิภาพช่าง', available: false },
@@ -70,7 +70,7 @@ const Reports: React.FC = () => {
       titleTh: 'รายงานสินค้าคงคลัง',
       descEn: 'Track stock levels, usage, and costs',
       descTh: 'ติดตามระดับสต็อก การใช้งาน และต้นทุน',
-      color: 'bg-amber-50 text-amber-600 border-amber-200',
+      color: 'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
       reports: [
         { id: 'stock-levels', nameEn: 'Stock Level Report', nameTh: 'รายงานระดับสต็อก', available: false },
         { id: 'parts-usage', nameEn: 'Parts Usage Report', nameTh: 'รายงานการใช้อะไหล่', available: false },
@@ -84,7 +84,7 @@ const Reports: React.FC = () => {
       titleTh: 'รายงานการปฏิบัติตามข้อกำหนด',
       descEn: 'PM compliance and audit trail reports',
       descTh: 'รายงาน PM และประวัติการตรวจสอบ',
-      color: 'bg-red-50 text-red-600 border-red-200',
+      color: 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
       reports: [
         { id: 'pm-compliance', nameEn: 'PM Compliance', nameTh: 'การปฏิบัติตาม PM', available: false },
         { id: 'audit-trail', nameEn: 'Audit Trail', nameTh: 'ประวัติการตรวจสอบ', available: false },
@@ -100,14 +100,14 @@ const Reports: React.FC = () => {
   ];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto bg-stone-50/50 dark:bg-stone-900 min-h-full">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-3">
-          <BarChart3 className="text-teal-600" size={28} />
+        <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100 flex items-center gap-3">
+          <BarChart3 className="text-teal-600 dark:text-teal-400" size={28} />
           {language === 'en' ? 'Reports & Analytics' : 'รายงานและการวิเคราะห์'}
         </h1>
-        <p className="text-stone-500 mt-1">
+        <p className="text-stone-500 dark:text-stone-400 mt-1">
           {language === 'en' 
             ? 'Generate reports and analyze maintenance data'
             : 'สร้างรายงานและวิเคราะห์ข้อมูลการบำรุงรักษา'}
@@ -116,47 +116,47 @@ const Reports: React.FC = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-xl border border-stone-200 p-4 shadow-sm">
+        <div className="bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-              <BarChart3 className="text-blue-600" size={20} />
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+              <BarChart3 className="text-blue-600 dark:text-blue-400" size={20} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-stone-900">156</p>
-              <p className="text-xs text-stone-500">{language === 'en' ? 'Total WOs (30d)' : 'ใบงานทั้งหมด (30 วัน)'}</p>
+              <p className="text-2xl font-bold text-stone-900 dark:text-stone-100">156</p>
+              <p className="text-xs text-stone-500 dark:text-stone-400">{language === 'en' ? 'Total WOs (30d)' : 'ใบงานทั้งหมด (30 วัน)'}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-stone-200 p-4 shadow-sm">
+        <div className="bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
-              <TrendingUp className="text-emerald-600" size={20} />
+            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg flex items-center justify-center">
+              <TrendingUp className="text-emerald-600 dark:text-emerald-400" size={20} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-stone-900">87%</p>
-              <p className="text-xs text-stone-500">{language === 'en' ? 'Completion Rate' : 'อัตราความสำเร็จ'}</p>
+              <p className="text-2xl font-bold text-stone-900 dark:text-stone-100">87%</p>
+              <p className="text-xs text-stone-500 dark:text-stone-400">{language === 'en' ? 'Completion Rate' : 'อัตราความสำเร็จ'}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-stone-200 p-4 shadow-sm">
+        <div className="bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
-              <Clock className="text-amber-600" size={20} />
+            <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 rounded-lg flex items-center justify-center">
+              <Clock className="text-amber-600 dark:text-amber-400" size={20} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-stone-900">4.2h</p>
-              <p className="text-xs text-stone-500">{language === 'en' ? 'Avg. Resolution' : 'เวลาแก้ไขเฉลี่ย'}</p>
+              <p className="text-2xl font-bold text-stone-900 dark:text-stone-100">4.2h</p>
+              <p className="text-xs text-stone-500 dark:text-stone-400">{language === 'en' ? 'Avg. Resolution' : 'เวลาแก้ไขเฉลี่ย'}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-stone-200 p-4 shadow-sm">
+        <div className="bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="text-red-600" size={20} />
+            <div className="w-10 h-10 bg-red-100 dark:bg-red-900/50 rounded-lg flex items-center justify-center">
+              <AlertTriangle className="text-red-600 dark:text-red-400" size={20} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-stone-900">3</p>
-              <p className="text-xs text-stone-500">{language === 'en' ? 'Overdue WOs' : 'ใบงานเกินกำหนด'}</p>
+              <p className="text-2xl font-bold text-stone-900 dark:text-stone-100">3</p>
+              <p className="text-xs text-stone-500 dark:text-stone-400">{language === 'en' ? 'Overdue WOs' : 'ใบงานเกินกำหนด'}</p>
             </div>
           </div>
         </div>
@@ -167,16 +167,16 @@ const Reports: React.FC = () => {
         {reportCategories.map((category) => {
           const Icon = category.icon;
           return (
-            <div key={category.id} className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
+            <div key={category.id} className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-700 flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${category.color}`}>
                   <Icon size={20} />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-stone-900">
+                  <h2 className="font-semibold text-stone-900 dark:text-stone-100">
                     {language === 'en' ? category.titleEn : category.titleTh}
                   </h2>
-                  <p className="text-sm text-stone-500">
+                  <p className="text-sm text-stone-500 dark:text-stone-400">
                     {language === 'en' ? category.descEn : category.descTh}
                   </p>
                 </div>
@@ -190,16 +190,16 @@ const Reports: React.FC = () => {
                       onClick={() => setSelectedReport(report.id)}
                       className={`p-4 rounded-xl border text-left transition-all duration-200 ${
                         report.available
-                          ? 'border-stone-200 hover:border-teal-300 hover:bg-teal-50 cursor-pointer'
-                          : 'border-stone-100 bg-stone-50 opacity-60 cursor-not-allowed'
-                      } ${selectedReport === report.id ? 'border-teal-500 bg-teal-50' : ''}`}
+                          ? 'border-stone-200 dark:border-stone-600 hover:border-teal-300 dark:hover:border-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 cursor-pointer'
+                          : 'border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 opacity-60 cursor-not-allowed'
+                      } ${selectedReport === report.id ? 'border-teal-500 dark:border-teal-600 bg-teal-50 dark:bg-teal-900/30' : ''}`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-stone-800">
+                        <span className="font-medium text-stone-800 dark:text-stone-200">
                           {language === 'en' ? report.nameEn : report.nameTh}
                         </span>
                         {!report.available && (
-                          <span className="text-xs bg-stone-200 text-stone-500 px-2 py-0.5 rounded-full">
+                          <span className="text-xs bg-stone-200 dark:bg-stone-700 text-stone-500 dark:text-stone-400 px-2 py-0.5 rounded-full">
                             {language === 'en' ? 'Soon' : 'เร็วๆนี้'}
                           </span>
                         )}
@@ -215,7 +215,7 @@ const Reports: React.FC = () => {
                                   e.stopPropagation();
                                   // TODO: Implement export
                                 }}
-                                className={`p-1.5 rounded-lg hover:bg-white border border-transparent hover:border-stone-200 transition-all ${format.color}`}
+                                className={`p-1.5 rounded-lg hover:bg-white dark:hover:bg-stone-700 border border-transparent hover:border-stone-200 dark:hover:border-stone-600 transition-all ${format.color}`}
                                 title={format.label}
                               >
                                 <FormatIcon size={14} />
@@ -234,19 +234,19 @@ const Reports: React.FC = () => {
       </div>
 
       {/* Date Range Filter (for future use) */}
-      <div className="mt-8 bg-stone-50 rounded-xl border border-stone-200 p-4">
+      <div className="mt-8 bg-stone-50 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Calendar size={20} className="text-stone-400" />
-            <span className="text-stone-600">
+            <Calendar size={20} className="text-stone-400 dark:text-stone-500" />
+            <span className="text-stone-600 dark:text-stone-400">
               {language === 'en' ? 'Date Range:' : 'ช่วงวันที่:'}
             </span>
-            <span className="font-medium text-stone-800">
+            <span className="font-medium text-stone-800 dark:text-stone-200">
               {language === 'en' ? 'Last 30 Days' : '30 วันที่ผ่านมา'}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button className="px-4 py-2 bg-white border border-stone-200 rounded-lg text-sm text-stone-600 hover:bg-stone-50 flex items-center gap-2">
+            <button className="px-4 py-2 bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 rounded-lg text-sm text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-600 flex items-center gap-2">
               <Filter size={16} />
               {language === 'en' ? 'Filters' : 'ตัวกรอง'}
             </button>
@@ -259,7 +259,7 @@ const Reports: React.FC = () => {
       </div>
 
       {/* Footer Note */}
-      <div className="mt-6 text-center text-sm text-stone-400">
+      <div className="mt-6 text-center text-sm text-stone-400 dark:text-stone-500">
         <p>
           {language === 'en' 
             ? 'More reports will be available in future updates'
