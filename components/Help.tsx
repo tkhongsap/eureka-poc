@@ -148,11 +148,11 @@ const Help: React.FC = () => {
     <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-3">
-          <HelpCircle className="text-teal-600" size={28} />
+        <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100 flex items-center gap-3">
+          <HelpCircle className="text-teal-600 dark:text-teal-400" size={28} />
           {language === 'en' ? 'Help & Support' : 'ช่วยเหลือและสนับสนุน'}
         </h1>
-        <p className="text-stone-500 mt-1">
+        <p className="text-stone-500 dark:text-stone-400 mt-1">
           {language === 'en' 
             ? 'Find resources to help you get the most out of Eureka CMMS'
             : 'ค้นหาแหล่งข้อมูลเพื่อใช้งาน Eureka CMMS ได้อย่างเต็มประสิทธิภาพ'}
@@ -166,32 +166,32 @@ const Help: React.FC = () => {
           return (
             <div
               key={idx}
-              className={`bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden ${
+              className={`bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm overflow-hidden ${
                 !section.available ? 'opacity-60' : 'hover:shadow-md cursor-pointer'
               } transition-all duration-200`}
             >
               <div className="p-5">
                 <div className="flex items-start gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${section.color}`}>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${section.color} dark:border-opacity-50`}>
                     <Icon size={24} />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-stone-900">
+                      <h3 className="font-semibold text-stone-900 dark:text-stone-100">
                         {language === 'en' ? section.titleEn : section.titleTh}
                       </h3>
                       {!section.available && (
-                        <span className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">
+                        <span className="text-xs bg-stone-100 dark:bg-stone-700 text-stone-500 dark:text-stone-400 px-2 py-0.5 rounded-full">
                           {t('common.comingSoon')}
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-stone-500 mt-1">
+                    <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
                       {language === 'en' ? section.descEn : section.descTh}
                     </p>
                   </div>
                   {section.available && (
-                    <ExternalLink size={16} className="text-stone-400" />
+                    <ExternalLink size={16} className="text-stone-400 dark:text-stone-500" />
                   )}
                 </div>
               </div>
@@ -201,38 +201,38 @@ const Help: React.FC = () => {
       </div>
 
       {/* FAQs Section */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden mb-8">
-        <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
-          <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
-            <MessageCircle className="text-amber-600" size={20} />
+      <div className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm overflow-hidden mb-8">
+        <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-700 flex items-center gap-3">
+          <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 rounded-xl flex items-center justify-center">
+            <MessageCircle className="text-amber-600 dark:text-amber-400" size={20} />
           </div>
           <div>
-            <h2 className="font-semibold text-stone-900">
+            <h2 className="font-semibold text-stone-900 dark:text-stone-100">
               {language === 'en' ? 'Frequently Asked Questions' : 'คำถามที่พบบ่อย'}
             </h2>
-            <p className="text-sm text-stone-500">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {language === 'en' ? 'Quick answers to common questions' : 'คำตอบสำหรับคำถามทั่วไป'}
             </p>
           </div>
         </div>
-        <div className="divide-y divide-stone-100">
+        <div className="divide-y divide-stone-100 dark:divide-stone-700">
           {faqItems.map((faq, idx) => (
             <div key={idx} className="px-6">
               <button
                 onClick={() => setExpandedFAQ(expandedFAQ === idx ? null : idx)}
-                className="w-full py-4 flex items-center justify-between text-left hover:bg-stone-50 transition-colors -mx-6 px-6"
+                className="w-full py-4 flex items-center justify-between text-left hover:bg-stone-50 dark:hover:bg-stone-700/50 transition-colors -mx-6 px-6"
               >
-                <span className="font-medium text-stone-800">
+                <span className="font-medium text-stone-800 dark:text-stone-200">
                   {language === 'en' ? faq.questionEn : faq.questionTh}
                 </span>
                 {expandedFAQ === idx ? (
-                  <ChevronUp size={18} className="text-stone-400 flex-shrink-0" />
+                  <ChevronUp size={18} className="text-stone-400 dark:text-stone-500 flex-shrink-0" />
                 ) : (
-                  <ChevronDown size={18} className="text-stone-400 flex-shrink-0" />
+                  <ChevronDown size={18} className="text-stone-400 dark:text-stone-500 flex-shrink-0" />
                 )}
               </button>
               {expandedFAQ === idx && (
-                <div className="pb-4 text-stone-600 text-sm leading-relaxed">
+                <div className="pb-4 text-stone-600 dark:text-stone-400 text-sm leading-relaxed">
                   {language === 'en' ? faq.answerEn : faq.answerTh}
                 </div>
               )}
@@ -242,16 +242,16 @@ const Help: React.FC = () => {
       </div>
 
       {/* Keyboard Shortcuts */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden mb-8">
-        <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
-          <div className="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center">
-            <Keyboard className="text-violet-600" size={20} />
+      <div className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm overflow-hidden mb-8">
+        <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-700 flex items-center gap-3">
+          <div className="w-10 h-10 bg-violet-100 dark:bg-violet-900/50 rounded-xl flex items-center justify-center">
+            <Keyboard className="text-violet-600 dark:text-violet-400" size={20} />
           </div>
           <div>
-            <h2 className="font-semibold text-stone-900">
+            <h2 className="font-semibold text-stone-900 dark:text-stone-100">
               {language === 'en' ? 'Keyboard Shortcuts' : 'ปุ่มลัด'}
             </h2>
-            <p className="text-sm text-stone-500">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {language === 'en' ? 'Quick access with keyboard' : 'เข้าถึงได้เร็วด้วยคีย์บอร์ด'}
             </p>
           </div>
@@ -260,17 +260,17 @@ const Help: React.FC = () => {
           <div className="space-y-3">
             {keyboardShortcuts.map((shortcut, idx) => (
               <div key={idx} className="flex items-center justify-between">
-                <span className="text-stone-600">
+                <span className="text-stone-600 dark:text-stone-400">
                   {language === 'en' ? shortcut.descEn : shortcut.descTh}
                 </span>
                 <div className="flex items-center gap-1">
                   {shortcut.keys.map((key, keyIdx) => (
                     <React.Fragment key={keyIdx}>
-                      <kbd className="px-2 py-1 bg-stone-100 border border-stone-200 rounded-lg text-sm font-mono text-stone-700">
+                      <kbd className="px-2 py-1 bg-stone-100 dark:bg-stone-700 border border-stone-200 dark:border-stone-600 rounded-lg text-sm font-mono text-stone-700 dark:text-stone-300">
                         {key}
                       </kbd>
                       {keyIdx < shortcut.keys.length - 1 && (
-                        <span className="text-stone-400 mx-1">+</span>
+                        <span className="text-stone-400 dark:text-stone-500 mx-1">+</span>
                       )}
                     </React.Fragment>
                   ))}
@@ -282,16 +282,16 @@ const Help: React.FC = () => {
       </div>
 
       {/* What's New */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-            <Sparkles className="text-emerald-600" size={20} />
+      <div className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-700 flex items-center gap-3">
+          <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center">
+            <Sparkles className="text-emerald-600 dark:text-emerald-400" size={20} />
           </div>
           <div>
-            <h2 className="font-semibold text-stone-900">
+            <h2 className="font-semibold text-stone-900 dark:text-stone-100">
               {language === 'en' ? "What's New" : 'มีอะไรใหม่'}
             </h2>
-            <p className="text-sm text-stone-500">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {language === 'en' ? 'Latest updates and features' : 'อัปเดตและฟีเจอร์ล่าสุด'}
             </p>
           </div>
@@ -300,15 +300,15 @@ const Help: React.FC = () => {
           {releaseNotes.map((release, idx) => (
             <div key={idx}>
               <div className="flex items-center gap-3 mb-3">
-                <span className="px-2.5 py-1 bg-teal-100 text-teal-700 rounded-lg text-sm font-semibold">
+                <span className="px-2.5 py-1 bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-400 rounded-lg text-sm font-semibold">
                   {release.version}
                 </span>
-                <span className="text-sm text-stone-500">{release.date}</span>
+                <span className="text-sm text-stone-500 dark:text-stone-400">{release.date}</span>
               </div>
               <ul className="space-y-2">
                 {(language === 'en' ? release.notesEn : release.notesTh).map((note, noteIdx) => (
-                  <li key={noteIdx} className="flex items-start gap-2 text-stone-600">
-                    <span className="text-teal-500 mt-1">•</span>
+                  <li key={noteIdx} className="flex items-start gap-2 text-stone-600 dark:text-stone-400">
+                    <span className="text-teal-500 dark:text-teal-400 mt-1">•</span>
                     <span>{note}</span>
                   </li>
                 ))}
@@ -319,7 +319,7 @@ const Help: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="mt-8 text-center text-sm text-stone-400">
+      <div className="mt-8 text-center text-sm text-stone-400 dark:text-stone-500">
         <p>Eureka CMMS v0.1.0 • © 2025 Eureka Platform</p>
       </div>
     </div>
