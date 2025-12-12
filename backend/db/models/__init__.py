@@ -5,6 +5,7 @@ from db.models.image import Image
 from db.models.notification import Notification
 from db.models.user import User, OAuth, OAuthState
 from db.models.audit import AuditLog
+from db.models.spare_part import SparePart as SparePartModel
 
 __all__ = [
     "Base",
@@ -16,4 +17,5 @@ __all__ = [
     "OAuth",
     "OAuthState",
     "AuditLog",
+    "SparePartModel",
 ]
