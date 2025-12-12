@@ -25,8 +25,8 @@ export const STATUS_TRANSITIONS: WorkOrderStatusTransition[] = [
   { from: Status.IN_PROGRESS, to: Status.OPEN, allowedRoles: ['Admin'] },
   
   // Technician completes work (In Progress → Pending)
-  // Allow Admin to move as well
-  { from: Status.IN_PROGRESS, to: Status.PENDING, allowedRoles: ['Technician', 'Admin'] },
+  // Only Technician can move to Pending (Admin cannot)
+  { from: Status.IN_PROGRESS, to: Status.PENDING, allowedRoles: ['Technician'] },
   
   // Head Technician rejects and sends back (Pending → In Progress) - Only Head Tech
   { from: Status.PENDING, to: Status.IN_PROGRESS, allowedRoles: ['Head Technician'] },
@@ -121,10 +121,11 @@ export function getWorkOrderPermissions(
   }
 
   // Technician can update only when assigned and status is In Progress
+  // But cannot drag cards - must use submit button instead
   if (userRole === 'Technician') {
     const isAssigned = assignedTo === currentUserName;
     permissions.canEdit = isAssigned && status === Status.IN_PROGRESS;
-    permissions.canChangeStatus = isAssigned && status === Status.IN_PROGRESS;
+    permissions.canChangeStatus = false; // Cannot drag cards
     permissions.canAssign = false;
     permissions.canDelete = false;
   }

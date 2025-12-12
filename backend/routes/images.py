@@ -15,20 +15,61 @@ from utils import PICTURES_DIR
 
 router = APIRouter(prefix="/api/images", tags=["Images"])
 
+# Supported MIME types mapping
+IMAGE_CONTENT_TYPES = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.bmp': 'image/bmp',
+    '.svg': 'image/svg+xml',
+}
+
+VIDEO_CONTENT_TYPES = {
+    '.mp4': 'video/mp4',
+    '.mov': 'video/quicktime',
+    '.avi': 'video/x-msvideo',
+    '.webm': 'video/webm',
+    '.mkv': 'video/x-matroska',
+    '.m4v': 'video/x-m4v',
+    '.3gp': 'video/3gpp',
+}
+
+def get_media_info(filename: str) -> tuple:
+    """Determine media_type and content_type from filename extension"""
+    ext = os.path.splitext(filename)[1].lower() if filename else ''
+    
+    if ext in VIDEO_CONTENT_TYPES:
+        return 'video', VIDEO_CONTENT_TYPES[ext]
+    elif ext in IMAGE_CONTENT_TYPES:
+        return 'image', IMAGE_CONTENT_TYPES[ext]
+    else:
+        # Default to image/jpeg for unknown types
+        return 'image', 'image/jpeg'
+
 
 @router.post("/upload", response_model=ImageInfo)
 async def upload_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    """Upload an image file, convert to base64, and store in DB"""
+    """Upload an image/video file, convert to base64, and store in DB"""
     image_id = f"IMG-{int(datetime.now().timestamp() * 1000)}-{uuid.uuid4().hex[:8]}"
     ext = os.path.splitext(file.filename)[1] or ".jpg"
     filename = f"{image_id}{ext}"
+
+    # Determine media type and content type
+    media_type, content_type = get_media_info(file.filename)
 
     # Read file content and convert to base64
     content = await file.read()
     b64 = base64.b64encode(content).decode("utf-8")
 
     new_image = ImageModel(
-        id=image_id, original_name=file.filename, filename=filename, base64_data=b64
+        id=image_id, 
+        original_name=file.filename, 
+        filename=filename, 
+        base64_data=b64,
+        media_type=media_type,
+        content_type=content_type
     )
 
     db.add(new_image)
@@ -40,7 +81,7 @@ async def upload_image(file: UploadFile = File(...), db: Session = Depends(get_d
 
 @router.post("/upload-base64", response_model=ImageInfo)
 async def upload_image_base64(payload: dict, db: Session = Depends(get_db)):
-    """Upload an image provided as base64 in JSON { originalName, base64Data }"""
+    """Upload an image/video provided as base64 in JSON { originalName, base64Data }"""
     original_name = payload.get("originalName")
     base64_data = payload.get("base64Data")
     if not original_name or not base64_data:
@@ -51,6 +92,9 @@ async def upload_image_base64(payload: dict, db: Session = Depends(get_db)):
     image_id = f"IMG-{int(datetime.now().timestamp() * 1000)}-{uuid.uuid4().hex[:8]}"
     ext = os.path.splitext(original_name)[1] or ".jpg"
     filename = f"{image_id}{ext}"
+
+    # Determine media type and content type
+    media_type, content_type = get_media_info(original_name)
 
     # Basic validation that it's valid base64
     try:
@@ -63,6 +107,8 @@ async def upload_image_base64(payload: dict, db: Session = Depends(get_db)):
         original_name=original_name,
         filename=filename,
         base64_data=base64_data,
+        media_type=media_type,
+        content_type=content_type,
     )
 
     db.add(new_image)
@@ -88,27 +134,22 @@ async def get_image(image_id: str, db: Session = Depends(get_db)):
 
 @router.get("/{image_id}/raw")
 async def get_image_raw(image_id: str, db: Session = Depends(get_db)):
-    """Get image as binary data for direct display in img src"""
+    """Get image/video as binary data for direct display"""
     from fastapi.responses import Response
     
     image = db.query(ImageModel).filter(ImageModel.id == image_id).first()
 
     if not image:
-        raise HTTPException(status_code=404, detail="Image not found")
+        raise HTTPException(status_code=404, detail="Media not found")
 
     # Decode base64 to binary
     image_bytes = base64.b64decode(image.base64_data)
     
-    # Determine content type from filename
-    ext = os.path.splitext(image.filename)[1].lower()
-    content_types = {
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.png': 'image/png',
-        '.gif': 'image/gif',
-        '.webp': 'image/webp',
-    }
-    content_type = content_types.get(ext, 'image/jpeg')
+    # Use stored content_type if available, otherwise determine from filename
+    if image.content_type:
+        content_type = image.content_type
+    else:
+        _, content_type = get_media_info(image.filename)
     
     return Response(content=image_bytes, media_type=content_type)
 
