@@ -7,7 +7,7 @@
 - 🔄 กำลังทำ  
 - ❌ ยังไม่ได้ทำ
 
-**อัพเดทล่าสุด:** 2025-12-11
+**อัพเดทล่าสุด:** 2025-12-12
 
 ---
 
@@ -424,7 +424,7 @@
 | Mark all as read | ✅ | มี API และ UI แล้ว |
 | User menu dropdown | ✅ | |
 | User avatar with status | ✅ | แสดง avatar ใน Header, รองรับ upload รูปใหม่ได้ |
-| Theme toggle (light/dark) | 🔄 | มีปุ่ม Sun/Moon, toggle state ได้ แต่ไม่มี dark mode CSS จริง |
+| Theme toggle (light/dark) | ✅ | Dark mode CSS เสร็จทุกหน้าหลัก (Dashboard, WorkOrders, Assets, Inventory, TeamSchedule, Reports, Settings, Help, UserRoleManagement) |
 | Language selector | ✅ | TH/EN switcher ใน Header |
 
 ### Sidebar Navigation
@@ -546,6 +546,7 @@
 | Profile avatar upload | ✅ | กดที่รูปโปรไฟล์เพื่อ upload รูปใหม่ |
 | Image serve endpoint | ✅ | /api/images/{id}/raw สำหรับแสดงรูปภาพ |
 | Profile sync to Header | ✅ | อัปเดตรูปใน Header ทันทีหลังบันทึก |
+| Dark Mode Theme | ✅ | รองรับ light/dark mode ทุกหน้าหลัก ใช้ Tailwind dark: classes |
 
 ---
 
@@ -572,7 +573,7 @@
 | Location Services | 3 | 0 | 3 | 6 | 50% |
 | Native Mobile App | 0 | 0 | 5 | 5 | 0% |
 | Integrations | 0 | 0 | 6 | 6 | 0% |
-| Top Navigation | 7 | 3 | 3 | 13 | 54% |
+| Top Navigation | 8 | 2 | 3 | 13 | 62% |
 | Sidebar | 11 | 5 | 3 | 19 | 58% |
 | Dashboard | 10 | 1 | 0 | 11 | 91% |
 | Design System | 11 | 2 | 1 | 14 | 79% |
