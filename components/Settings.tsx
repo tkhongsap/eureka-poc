@@ -231,13 +231,13 @@ const Settings: React.FC = () => {
     <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-stone-900">{t('nav.settings')}</h1>
-        <p className="text-stone-500 mt-1">{t('settings.description')}</p>
+        <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100">{t('nav.settings')}</h1>
+        <p className="text-stone-500 dark:text-stone-400 mt-1">{t('settings.description')}</p>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2">
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm flex items-center gap-2">
           <AlertTriangle size={16} />
           {error}
         </div>
@@ -246,14 +246,14 @@ const Settings: React.FC = () => {
       {/* Settings Sections */}
       <div className="space-y-6">
         {/* Notification Settings */}
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
-              <Bell className="text-orange-600" size={20} />
+        <div className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-700 flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/50 rounded-xl flex items-center justify-center">
+              <Bell className="text-orange-600 dark:text-orange-400" size={20} />
             </div>
             <div>
-              <h2 className="font-semibold text-stone-900">{t('settings.notifications')}</h2>
-              <p className="text-sm text-stone-500">{t('settings.notificationsDescription')}</p>
+              <h2 className="font-semibold text-stone-900 dark:text-stone-100">{t('settings.notifications')}</h2>
+              <p className="text-sm text-stone-500 dark:text-stone-400">{t('settings.notificationsDescription')}</p>
             </div>
           </div>
           {loading ? (
@@ -265,21 +265,21 @@ const Settings: React.FC = () => {
             {notificationPrefs.map((pref) => (
               <div 
                 key={pref.id}
-                className="flex items-center justify-between p-4 bg-stone-50 rounded-xl hover:bg-stone-100 transition-colors"
+                className="flex items-center justify-between p-4 bg-stone-50 dark:bg-stone-700/50 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                  <div className="w-9 h-9 bg-white dark:bg-stone-800 rounded-lg flex items-center justify-center shadow-sm">
                     {pref.icon}
                   </div>
                   <div>
-                    <div className="font-medium text-stone-800">{t(pref.labelKey as any)}</div>
-                    <div className="text-sm text-stone-500">{t(pref.descriptionKey as any)}</div>
+                    <div className="font-medium text-stone-800 dark:text-stone-200">{t(pref.labelKey as any)}</div>
+                    <div className="text-sm text-stone-500 dark:text-stone-400">{t(pref.descriptionKey as any)}</div>
                   </div>
                 </div>
                 <button
                   onClick={() => togglePreference(pref.id)}
                   className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${
-                    pref.enabled ? 'bg-teal-600' : 'bg-stone-300'
+                    pref.enabled ? 'bg-teal-600' : 'bg-stone-300 dark:bg-stone-600'
                   } ${saving === pref.id ? 'opacity-50' : ''}`}
                   disabled={saving === pref.id}
                 >
@@ -300,14 +300,14 @@ const Settings: React.FC = () => {
         </div>
 
         {/* Profile Settings */}
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-              <User className="text-blue-600" size={20} />
+        <div className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-700 flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center">
+              <User className="text-blue-600 dark:text-blue-400" size={20} />
             </div>
             <div>
-              <h2 className="font-semibold text-stone-900">{t('settings.profile')}</h2>
-              <p className="text-sm text-stone-500">{t('settings.profileDescription')}</p>
+              <h2 className="font-semibold text-stone-900 dark:text-stone-100">{t('settings.profile')}</h2>
+              <p className="text-sm text-stone-500 dark:text-stone-400">{t('settings.profileDescription')}</p>
             </div>
           </div>
           {profileLoading ? (
@@ -317,7 +317,7 @@ const Settings: React.FC = () => {
           ) : profile ? (
             <div className="p-6 space-y-6">
               {/* Avatar and Info (read-only info) */}
-              <div className="flex items-center gap-4 pb-4 border-b border-stone-100">
+              <div className="flex items-center gap-4 pb-4 border-b border-stone-100 dark:border-stone-700">
                 {/* Clickable Avatar */}
                 <div className="relative group">
                   <input
@@ -330,7 +330,7 @@ const Settings: React.FC = () => {
                   <button
                     onClick={handleAvatarClick}
                     disabled={avatarUploading}
-                    className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-stone-200 hover:border-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-stone-200 dark:border-stone-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-stone-800"
                   >
                     <img 
                       src={editedProfile.avatar_url || profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`}
@@ -346,22 +346,22 @@ const Settings: React.FC = () => {
                       )}
                     </div>
                   </button>
-                  <p className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-stone-400 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-stone-400 dark:text-stone-500 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
                     {t('settings.changePhoto')}
                   </p>
                 </div>
                 <div>
-                  <div className="font-semibold text-stone-900 text-lg">{profile.name}</div>
-                  <div className="flex items-center gap-1 text-stone-500 text-sm">
+                  <div className="font-semibold text-stone-900 dark:text-stone-100 text-lg">{profile.name}</div>
+                  <div className="flex items-center gap-1 text-stone-500 dark:text-stone-400 text-sm">
                     <AtSign size={14} />
                     {profile.email || '-'}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="px-2 py-0.5 bg-teal-50 text-teal-700 text-xs font-medium rounded-full">
+                    <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-400 text-xs font-medium rounded-full">
                       {profile.userRole}
                     </span>
                     {profile.job_title && (
-                      <span className="flex items-center gap-1 text-stone-500 text-xs">
+                      <span className="flex items-center gap-1 text-stone-500 dark:text-stone-400 text-xs">
                         <Briefcase size={12} />
                         {profile.job_title}
                       </span>
@@ -372,13 +372,13 @@ const Settings: React.FC = () => {
               
               {/* Error/Success messages */}
               {profileError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm flex items-center gap-2">
                   <AlertTriangle size={16} />
                   {profileError}
                 </div>
               )}
               {profileSuccess && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-center gap-2">
+                <div className="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400 text-sm flex items-center gap-2">
                   <CheckCircle size={16} />
                   {t('settings.profileSaved')}
                 </div>
@@ -387,7 +387,7 @@ const Settings: React.FC = () => {
               {/* Editable fields */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                     {t('settings.name')}
                   </label>
                   <div className="relative">
@@ -396,14 +396,14 @@ const Settings: React.FC = () => {
                       type="text"
                       value={editedProfile.name}
                       onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-10 pr-4 py-2.5 bg-stone-50 dark:bg-stone-700 border border-stone-200 dark:border-stone-600 rounded-xl text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder={t('settings.namePlaceholder')}
                     />
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                     {t('settings.phone')}
                   </label>
                   <div className="relative">
@@ -412,7 +412,7 @@ const Settings: React.FC = () => {
                       type="tel"
                       value={editedProfile.phone}
                       onChange={(e) => setEditedProfile(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-10 pr-4 py-2.5 bg-stone-50 dark:bg-stone-700 border border-stone-200 dark:border-stone-600 rounded-xl text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder={t('settings.phonePlaceholder')}
                     />
                   </div>
@@ -436,40 +436,40 @@ const Settings: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="p-6 text-stone-400 text-sm">
+            <div className="p-6 text-stone-400 dark:text-stone-500 text-sm">
               {t('settings.profileError')}
             </div>
           )}
         </div>
 
         {/* About Section */}
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
-            <div className="w-10 h-10 bg-stone-100 rounded-xl flex items-center justify-center">
-              <Info className="text-stone-600" size={20} />
+        <div className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-700 flex items-center gap-3">
+            <div className="w-10 h-10 bg-stone-100 dark:bg-stone-700 rounded-xl flex items-center justify-center">
+              <Info className="text-stone-600 dark:text-stone-400" size={20} />
             </div>
             <div>
-              <h2 className="font-semibold text-stone-900">{t('settings.about')}</h2>
-              <p className="text-sm text-stone-500">{t('settings.aboutDescription')}</p>
+              <h2 className="font-semibold text-stone-900 dark:text-stone-100">{t('settings.about')}</h2>
+              <p className="text-sm text-stone-500 dark:text-stone-400">{t('settings.aboutDescription')}</p>
             </div>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-stone-500">{t('settings.version')}:</span>
-                <span className="ml-2 font-medium text-stone-900">1.0.0-beta</span>
+                <span className="text-stone-500 dark:text-stone-400">{t('settings.version')}:</span>
+                <span className="ml-2 font-medium text-stone-900 dark:text-stone-100">1.0.0-beta</span>
               </div>
               <div>
-                <span className="text-stone-500">{t('settings.tenant')}:</span>
-                <span className="ml-2 font-medium text-stone-900">Acme Corp</span>
+                <span className="text-stone-500 dark:text-stone-400">{t('settings.tenant')}:</span>
+                <span className="ml-2 font-medium text-stone-900 dark:text-stone-100">Acme Corp</span>
               </div>
               <div>
-                <span className="text-stone-500">{t('settings.environment')}:</span>
-                <span className="ml-2 font-medium text-stone-900">Development</span>
+                <span className="text-stone-500 dark:text-stone-400">{t('settings.environment')}:</span>
+                <span className="ml-2 font-medium text-stone-900 dark:text-stone-100">Development</span>
               </div>
               <div>
-                <span className="text-stone-500">{t('settings.lastUpdated')}:</span>
-                <span className="ml-2 font-medium text-stone-900">2025-12-11</span>
+                <span className="text-stone-500 dark:text-stone-400">{t('settings.lastUpdated')}:</span>
+                <span className="ml-2 font-medium text-stone-900 dark:text-stone-100">2025-12-11</span>
               </div>
             </div>
           </div>

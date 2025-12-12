@@ -30,11 +30,11 @@ const Inventory: React.FC = () => {
     };
 
     return (
-        <div className="p-8 h-full flex flex-col">
+        <div className="p-8 h-full flex flex-col bg-stone-50/50 dark:bg-stone-900">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h2 className="font-serif text-3xl text-stone-900">{t('inventory.management')}</h2>
-                    <p className="text-stone-500 mt-1">{t('inventory.trackParts')}</p>
+                    <h2 className="font-serif text-3xl text-stone-900 dark:text-stone-100">{t('inventory.management')}</h2>
+                    <p className="text-stone-500 dark:text-stone-400 mt-1">{t('inventory.trackParts')}</p>
                 </div>
                 <button
                     onClick={runInventoryAI}
@@ -50,25 +50,25 @@ const Inventory: React.FC = () => {
             {aiRecommendations.length > 0 && (
                 <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                     {aiRecommendations.map((rec, idx) => (
-                        <div key={idx} className="bg-gradient-to-br from-teal-50 to-emerald-50 p-4 rounded-2xl border border-teal-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-                            <div className="flex items-center gap-2 text-teal-700 font-bold mb-1">
+                        <div key={idx} className="bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/50 dark:to-emerald-950/50 p-4 rounded-2xl border border-teal-100 dark:border-teal-800 shadow-sm hover:shadow-md transition-shadow duration-200">
+                            <div className="flex items-center gap-2 text-teal-700 dark:text-teal-300 font-bold mb-1">
                                 <AlertCircle size={16} />
                                 <span className="text-sm">{rec.partName}</span>
                             </div>
-                            <p className="text-xs text-stone-700">{rec.recommendation}</p>
+                            <p className="text-xs text-stone-700 dark:text-stone-300">{rec.recommendation}</p>
                         </div>
                     ))}
                 </div>
             )}
 
             {/* Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 flex-1 overflow-hidden flex flex-col">
-                <div className="p-4 border-b border-stone-200 flex gap-4 bg-stone-50">
+            <div className="bg-white dark:bg-stone-800 rounded-2xl shadow-sm border border-stone-200/60 dark:border-stone-700 flex-1 overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-stone-200 dark:border-stone-700 flex gap-4 bg-stone-50 dark:bg-stone-900">
                     <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3.5 top-3 text-stone-400" size={16} />
-                        <input type="text" placeholder={t('inventory.searchBySku')} className="w-full pl-10 pr-4 py-2.5 text-sm border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200" />
+                        <Search className="absolute left-3.5 top-3 text-stone-400 dark:text-stone-500" size={16} />
+                        <input type="text" placeholder={t('inventory.searchBySku')} className="w-full pl-10 pr-4 py-2.5 text-sm border border-stone-200 dark:border-stone-700 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500" />
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm text-stone-600 hover:bg-stone-50 hover:border-stone-300 transition-all duration-200">
+                    <button className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-sm text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-stone-300 dark:hover:border-stone-600 transition-all duration-200">
                         <Filter size={16} />
                         {t('common.filter')}
                     </button>
@@ -76,57 +76,57 @@ const Inventory: React.FC = () => {
 
                 <div className="overflow-auto flex-1">
                     <table className="w-full text-left border-collapse">
-                        <thead className="bg-stone-50 sticky top-0 z-[1] text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                        <thead className="bg-stone-50 dark:bg-stone-900 sticky top-0 z-[1] text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
                             <tr>
-                                <th className="px-6 py-3.5 border-b border-stone-200">{t('inventory.partInfo')}</th>
-                                <th className="px-6 py-3.5 border-b border-stone-200">{t('inventory.category')}</th>
-                                <th className="px-6 py-3.5 border-b border-stone-200">{t('inventory.location')}</th>
-                                <th className="px-6 py-3.5 border-b border-stone-200">{t('inventory.stockLevel')}</th>
-                                <th className="px-6 py-3.5 border-b border-stone-200 text-right">{t('inventory.value')}</th>
-                                <th className="px-6 py-3.5 border-b border-stone-200">{t('inventory.status')}</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200 dark:border-stone-700">{t('inventory.partInfo')}</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200 dark:border-stone-700">{t('inventory.category')}</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200 dark:border-stone-700">{t('inventory.location')}</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200 dark:border-stone-700">{t('inventory.stockLevel')}</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200 dark:border-stone-700 text-right">{t('inventory.value')}</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200 dark:border-stone-700">{t('inventory.status')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 text-sm">
+                        <tbody className="divide-y divide-stone-100 dark:divide-stone-700 text-sm">
                             {MOCK_INVENTORY.map((item) => {
                                 const isLowStock = item.quantity <= item.minLevel;
                                 return (
-                                    <tr key={item.id} className="hover:bg-teal-50/50 transition-colors duration-200">
+                                    <tr key={item.id} className="hover:bg-teal-50/50 dark:hover:bg-teal-900/20 transition-colors duration-200">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-stone-100 rounded-xl flex items-center justify-center text-stone-400">
+                                                <div className="w-10 h-10 bg-stone-100 dark:bg-stone-700 rounded-xl flex items-center justify-center text-stone-400 dark:text-stone-500">
                                                     <Package size={20} />
                                                 </div>
                                                 <div>
-                                                    <div className="font-medium text-stone-900">{item.name}</div>
-                                                    <div className="text-xs text-stone-500">{item.sku}</div>
+                                                    <div className="font-medium text-stone-900 dark:text-stone-100">{item.name}</div>
+                                                    <div className="text-xs text-stone-500 dark:text-stone-400">{item.sku}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-stone-600">{item.category}</td>
-                                        <td className="px-6 py-4 text-stone-600 font-mono text-xs">{item.location}</td>
+                                        <td className="px-6 py-4 text-stone-600 dark:text-stone-300">{item.category}</td>
+                                        <td className="px-6 py-4 text-stone-600 dark:text-stone-400 font-mono text-xs">{item.location}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-bold text-stone-800">{item.quantity}</span>
-                                                <span className="text-xs text-stone-400">{item.unit}</span>
+                                                <span className="font-bold text-stone-800 dark:text-stone-100">{item.quantity}</span>
+                                                <span className="text-xs text-stone-400 dark:text-stone-500">{item.unit}</span>
                                             </div>
-                                            <div className="w-24 h-1.5 bg-stone-100 rounded-full mt-1 overflow-hidden">
+                                            <div className="w-24 h-1.5 bg-stone-100 dark:bg-stone-700 rounded-full mt-1 overflow-hidden">
                                                 <div
                                                     className={`h-full rounded-full ${isLowStock ? 'bg-red-500' : 'bg-teal-500'}`}
                                                     style={{ width: `${Math.min((item.quantity / (item.minLevel * 2)) * 100, 100)}%` }}
                                                 ></div>
                                             </div>
-                                            <div className="text-[10px] text-stone-400 mt-0.5">{t('inventory.minLevel')}: {item.minLevel}</div>
+                                            <div className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5">{t('inventory.minLevel')}: {item.minLevel}</div>
                                         </td>
-                                        <td className="px-6 py-4 text-right font-medium text-stone-700">
+                                        <td className="px-6 py-4 text-right font-medium text-stone-700 dark:text-stone-200">
                                             ${(item.cost * item.quantity).toFixed(2)}
                                         </td>
                                         <td className="px-6 py-4">
                                             {isLowStock ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-red-50 text-red-700 border border-red-100">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
                                                     <ArrowDown size={12} /> {t('inventory.lowStock')}
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                                     <ArrowUp size={12} /> {t('inventory.inStock')}
                                                 </span>
                                             )}

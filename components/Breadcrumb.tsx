@@ -74,7 +74,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({ currentView, onNavigate, userRo
   const breadcrumbs = buildBreadcrumbs();
 
   return (
-    <nav className="flex items-center space-x-1 text-sm text-stone-500 px-6 py-3 bg-white/50 border-b border-stone-100">
+    <nav className="flex items-center space-x-1 text-sm text-stone-500 px-6 py-3 bg-white/50 dark:bg-transparent border-b border-stone-100 dark:border-stone-800">
       {breadcrumbs.map((item, index) => {
         const isLast = index === breadcrumbs.length - 1;
         const isClickable = !isLast;
@@ -82,7 +82,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({ currentView, onNavigate, userRo
         return (
           <React.Fragment key={item.id}>
             {index > 0 && (
-              <ChevronRight size={14} className="text-stone-400 flex-shrink-0" />
+              <ChevronRight size={14} className="text-stone-400 dark:text-stone-500 flex-shrink-0" />
             )}
             <button
               onClick={() => isClickable && onNavigate(item.id)}
@@ -90,8 +90,8 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({ currentView, onNavigate, userRo
               className={`
                 flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors
                 ${isClickable 
-                  ? 'hover:bg-stone-100 hover:text-stone-700 cursor-pointer' 
-                  : 'text-stone-800 font-medium cursor-default'
+                  ? 'hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300 cursor-pointer' 
+                  : 'text-stone-800 dark:text-stone-200 font-medium cursor-default'
                 }
               `}
             >

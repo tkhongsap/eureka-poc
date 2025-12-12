@@ -139,15 +139,17 @@ const StatusCard: React.FC<{
   color: string;
   bgColor: string;
   borderColor: string;
-}> = ({ title, value, icon: Icon, color, bgColor, borderColor }) => (
-  <div className={`bg-white p-5 rounded-xl border ${borderColor} shadow-sm hover:shadow-md transition-all duration-200`}>
+  darkBgColor?: string;
+  darkColor?: string;
+}> = ({ title, value, icon: Icon, color, bgColor, borderColor, darkBgColor, darkColor }) => (
+  <div className={`bg-white dark:bg-stone-800 p-5 rounded-xl border ${borderColor} dark:border-stone-700 shadow-sm hover:shadow-md transition-all duration-200`}>
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-stone-500 text-sm font-medium mb-1">{title}</p>
-        <p className={`text-3xl font-bold ${color}`}>{value}</p>
+        <p className="text-stone-500 dark:text-stone-400 text-sm font-medium mb-1">{title}</p>
+        <p className={`text-3xl font-bold ${color} ${darkColor || ''}`}>{value}</p>
       </div>
-      <div className={`p-3 rounded-xl ${bgColor}`}>
-        <Icon size={24} className={color} />
+      <div className={`p-3 rounded-xl ${bgColor} ${darkBgColor || ''}`}>
+        <Icon size={24} className={`${color} ${darkColor || ''}`} />
       </div>
     </div>
   </div>
@@ -442,6 +444,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
             color="text-blue-600"
             bgColor="bg-blue-100"
             borderColor="border-blue-200"
+            darkBgColor="dark:bg-blue-900/50"
+            darkColor="dark:text-blue-400"
           />
           <StatusCard
             title={t('status.inProgress')}
@@ -450,14 +454,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
             color="text-orange-600"
             bgColor="bg-orange-100"
             borderColor="border-orange-200"
+            darkBgColor="dark:bg-orange-900/50"
+            darkColor="dark:text-orange-400"
           />
           <StatusCard
             title={t('status.pending')}
             value={statusCounts.pending}
             icon={Clock}
             color="text-violet-600"
-            bgColor="bg-violet-100"
+            bgColor="bg-violet-200"
             borderColor="border-violet-200"
+            darkBgColor="dark:bg-violet-900/50"
+            darkColor="dark:text-violet-400"
           />
           <StatusCard
             title={t('dashboard.overdue')}
@@ -466,6 +474,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
             color="text-red-600"
             bgColor="bg-red-100"
             borderColor="border-red-200"
+            darkBgColor="dark:bg-red-900/50"
+            darkColor="dark:text-red-400"
           />
           {/* Average Completion Time Card */}
           <div className="bg-gradient-to-br from-teal-500 to-teal-600 p-4 rounded-xl border border-teal-400 shadow-sm flex items-center">
@@ -757,21 +767,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
             <div className="space-y-3">
               {recentWorkOrders.slice(0, 6).map((wo) => {
                 const priorityColor = {
-                  'Critical': 'bg-red-100 text-red-700 border-red-200',
-                  'High': 'bg-orange-100 text-orange-700 border-orange-200',
-                  'Medium': 'bg-blue-100 text-blue-700 border-blue-200',
-                  'Low': 'bg-green-100 text-green-700 border-green-200',
-                }[wo.priority] || 'bg-stone-100 text-stone-700 border-stone-200';
+                  'Critical': 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
+                  'High': 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
+                  'Medium': 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+                  'Low': 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
+                }[wo.priority] || 'bg-stone-100 text-stone-700 border-stone-200 dark:bg-stone-700 dark:text-stone-300 dark:border-stone-600';
                 
                 // Card background color based on status (matching WorkOrders.tsx statusColors)
                 const statusCardColor = {
-                  'Open': 'bg-blue-50 hover:bg-blue-100 border-l-4 border-l-blue-500',
-                  'In Progress': 'bg-orange-50 hover:bg-orange-100 border-l-4 border-l-orange-500',
-                  'Pending': 'bg-violet-50 hover:bg-violet-100 border-l-4 border-l-violet-500',
-                  'Completed': 'bg-emerald-50 hover:bg-emerald-100 border-l-4 border-l-emerald-500',
-                  'Closed': 'bg-stone-100 hover:bg-stone-200 border-l-4 border-l-stone-500',
-                  'Canceled': 'bg-pink-50 hover:bg-pink-100 border-l-4 border-l-pink-400',
-                }[wo.status] || 'bg-stone-50 hover:bg-stone-100 border-l-4 border-l-stone-400';
+                  'Open': 'bg-blue-50 hover:bg-blue-100 border-l-4 border-l-blue-500 dark:bg-blue-950/50 dark:hover:bg-blue-900/50',
+                  'In Progress': 'bg-orange-50 hover:bg-orange-100 border-l-4 border-l-orange-500 dark:bg-orange-950/50 dark:hover:bg-orange-900/50',
+                  'Pending': 'bg-violet-50 hover:bg-violet-100 border-l-4 border-l-violet-500 dark:bg-violet-950/50 dark:hover:bg-violet-900/50',
+                  'Completed': 'bg-emerald-50 hover:bg-emerald-100 border-l-4 border-l-emerald-500 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/50',
+                  'Closed': 'bg-stone-100 hover:bg-stone-200 border-l-4 border-l-stone-500 dark:bg-stone-800/50 dark:hover:bg-stone-700/50',
+                  'Canceled': 'bg-pink-50 hover:bg-pink-100 border-l-4 border-l-pink-400 dark:bg-pink-950/50 dark:hover:bg-pink-900/50',
+                }[wo.status] || 'bg-stone-50 hover:bg-stone-100 border-l-4 border-l-stone-400 dark:bg-stone-800/50 dark:hover:bg-stone-700/50';
 
                 return (
                   <div 
@@ -781,10 +791,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-stone-800 truncate group-hover:text-teal-700 transition-colors">
+                        <p className="text-sm font-medium text-stone-800 dark:text-stone-100 truncate group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors">
                           {wo.title}
                         </p>
-                        <p className="text-xs text-stone-500">
+                        <p className="text-xs text-stone-500 dark:text-stone-400">
                           {wo.id} • {wo.assignedTo || (language === 'th' ? 'ยังไม่มอบหมาย' : 'Unassigned')}
                         </p>
                       </div>
@@ -793,7 +803,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
                       <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${priorityColor}`}>
                         {wo.priority}
                       </span>
-                      <ChevronRight size={16} className="text-stone-400 group-hover:text-teal-600 transition-colors" />
+                      <ChevronRight size={16} className="text-stone-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
                     </div>
                   </div>
                 );
@@ -829,30 +839,46 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
                 const alertConfig = {
                   'overdue': {
                     icon: Clock,
-                    bgColor: 'bg-red-50',
-                    borderColor: 'border-red-200',
-                    iconColor: 'text-red-500',
+                    bgColor: 'bg-red-50 dark:bg-red-900/40',
+                    borderColor: 'border-red-200 dark:border-red-800',
+                    iconColor: 'text-red-500 dark:text-red-400',
+                    textColor: 'text-stone-800 dark:text-red-100',
+                    subTextColor: 'text-stone-500 dark:text-red-300',
                   },
                   'unassigned': {
                     icon: UserX,
-                    bgColor: 'bg-amber-50',
-                    borderColor: 'border-amber-200',
-                    iconColor: 'text-amber-500',
+                    bgColor: 'bg-amber-50 dark:bg-amber-900/40',
+                    borderColor: 'border-amber-200 dark:border-amber-800',
+                    iconColor: 'text-amber-500 dark:text-amber-400',
+                    textColor: 'text-stone-800 dark:text-amber-100',
+                    subTextColor: 'text-stone-500 dark:text-amber-300',
                   },
                   'high_priority': {
                     icon: AlertTriangle,
-                    bgColor: 'bg-orange-50',
-                    borderColor: 'border-orange-200',
-                    iconColor: 'text-orange-500',
+                    bgColor: 'bg-orange-50 dark:bg-orange-900/40',
+                    borderColor: 'border-orange-200 dark:border-orange-800',
+                    iconColor: 'text-orange-500 dark:text-orange-400',
+                    textColor: 'text-stone-800 dark:text-orange-100',
+                    subTextColor: 'text-stone-500 dark:text-orange-300',
                   },
                 }[alert.type] || {
                   icon: AlertCircle,
-                  bgColor: 'bg-stone-50',
-                  borderColor: 'border-stone-200',
-                  iconColor: 'text-stone-500',
+                  bgColor: 'bg-stone-50 dark:bg-stone-800',
+                  borderColor: 'border-stone-200 dark:border-stone-700',
+                  iconColor: 'text-stone-500 dark:text-stone-400',
+                  textColor: 'text-stone-800 dark:text-stone-100',
+                  subTextColor: 'text-stone-500 dark:text-stone-400',
                 };
                 
                 const AlertIcon = alertConfig.icon;
+
+                // Priority badge colors (same as Recent Work Orders)
+                const priorityColor = {
+                  'Critical': 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
+                  'High': 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
+                  'Medium': 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+                  'Low': 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
+                }[alert.priority] || null;
 
                 return (
                   <div 
@@ -863,14 +889,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
                     <div className="flex items-start gap-3">
                       <AlertIcon size={18} className={`${alertConfig.iconColor} flex-shrink-0 mt-0.5`} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-stone-800 truncate">
-                          {alert.title}
-                        </p>
-                        <p className="text-xs text-stone-500 mt-0.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-sm font-medium truncate ${alertConfig.textColor}`}>
+                            {alert.title}
+                          </p>
+                          {priorityColor && (
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full border flex-shrink-0 ${priorityColor}`}>
+                              {alert.priority}
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-xs mt-0.5 ${alertConfig.subTextColor}`}>
                           {alert.message}
                         </p>
                         {alert.assignedTo && (
-                          <p className="text-xs text-stone-600 mt-1 flex items-center gap-1">
+                          <p className={`text-xs mt-1 flex items-center gap-1 ${alertConfig.subTextColor}`}>
                             <Users size={12} />
                             {alert.assignedTo}
                           </p>
@@ -898,14 +931,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
       {/* Work Orders by Assignee */}
       {workOrdersByAssignee.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-stone-800 dark:text-stone-100 flex items-center gap-2">
             <Users size={20} />
             {t('dashboard.woByTechnician')}
           </h3>
-          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+          <div className="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {workOrdersByAssignee.map((assignee) => (
-                <div key={assignee.name} className="bg-gradient-to-br from-stone-50 to-stone-100 rounded-2xl border border-stone-200 overflow-hidden">
+                <div key={assignee.name} className="bg-gradient-to-br from-stone-50 to-stone-100 dark:from-stone-800 dark:to-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden">
                   {/* Header with name and total */}
                   <div className="bg-gradient-to-r from-teal-600 to-teal-500 px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -923,27 +956,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
                   {/* Stats Grid */}
                   <div className="p-4 grid grid-cols-2 gap-3">
                     {/* In Progress */}
-                    <div className="bg-white rounded-xl p-3 border-l-4 border-l-orange-500 shadow-sm">
-                      <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'กำลังทำ' : 'In Progress'}</p>
-                      <p className="text-2xl font-bold text-orange-600">{assignee.inProgress}</p>
+                    <div className="bg-white dark:bg-stone-800 rounded-xl p-3 border border-stone-100 dark:border-stone-700 border-l-4 !border-l-orange-500 shadow-sm">
+                      <p className="text-xs text-stone-500 dark:text-stone-400 mb-1">{language === 'th' ? 'กำลังทำ' : 'In Progress'}</p>
+                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{assignee.inProgress}</p>
                     </div>
                     
                     {/* Completed */}
-                    <div className="bg-white rounded-xl p-3 border-l-4 border-l-emerald-500 shadow-sm">
-                      <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'เสร็จแล้ว' : 'Completed'}</p>
-                      <p className="text-2xl font-bold text-emerald-600">{assignee.completed}</p>
+                    <div className="bg-white dark:bg-stone-800 rounded-xl p-3 border border-stone-100 dark:border-stone-700 border-l-4 !border-l-emerald-500 shadow-sm">
+                      <p className="text-xs text-stone-500 dark:text-stone-400 mb-1">{language === 'th' ? 'เสร็จแล้ว' : 'Completed'}</p>
+                      <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{assignee.completed}</p>
                     </div>
                     
                     {/* Open */}
-                    <div className="bg-white rounded-xl p-3 border-l-4 border-l-blue-500 shadow-sm">
-                      <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'รอดำเนินการ' : 'Open'}</p>
-                      <p className="text-2xl font-bold text-blue-600">{assignee.open}</p>
+                    <div className="bg-white dark:bg-stone-800 rounded-xl p-3 border border-stone-100 dark:border-stone-700 border-l-4 !border-l-blue-500 shadow-sm">
+                      <p className="text-xs text-stone-500 dark:text-stone-400 mb-1">{language === 'th' ? 'รอดำเนินการ' : 'Open'}</p>
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{assignee.open}</p>
                     </div>
                     
                     {/* Pending */}
-                    <div className="bg-white rounded-xl p-3 border-l-4 border-l-violet-500 shadow-sm">
-                      <p className="text-xs text-stone-500 mb-1">{language === 'th' ? 'รออนุมัติ' : 'Pending'}</p>
-                      <p className="text-2xl font-bold text-violet-600">{assignee.pending}</p>
+                    <div className="bg-white dark:bg-stone-800 rounded-xl p-3 border border-stone-100 dark:border-stone-700 border-l-4 !border-l-violet-500 shadow-sm">
+                      <p className="text-xs text-stone-500 dark:text-stone-400 mb-1">{language === 'th' ? 'รออนุมัติ' : 'Pending'}</p>
+                      <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">{assignee.pending}</p>
                     </div>
                   </div>
                 </div>

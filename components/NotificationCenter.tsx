@@ -137,29 +137,29 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
   const getNotificationColor = (type: NotificationType) => {
     switch (type) {
       case NotificationType.WO_CREATED:
-        return 'bg-teal-50 border-teal-200';
+        return 'bg-teal-50 border-teal-200 dark:bg-teal-900/40 dark:border-teal-700';
       case NotificationType.WO_ASSIGNED:
-        return 'bg-purple-50 border-purple-200';
+        return 'bg-purple-50 border-purple-200 dark:bg-purple-900/40 dark:border-purple-700';
       case NotificationType.WO_COMPLETED:
-        return 'bg-blue-50 border-blue-200';
+        return 'bg-blue-50 border-blue-200 dark:bg-blue-900/40 dark:border-blue-700';
       case NotificationType.WO_APPROVED:
-        return 'bg-emerald-50 border-emerald-200';
+        return 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/40 dark:border-emerald-700';
       case NotificationType.WO_REJECTED:
-        return 'bg-red-50 border-red-200';
+        return 'bg-red-50 border-red-200 dark:bg-red-900/40 dark:border-red-700';
       case NotificationType.WO_CLOSED:
-        return 'bg-stone-50 border-stone-200';
+        return 'bg-stone-50 border-stone-200 dark:bg-stone-700/40 dark:border-stone-600';
       case NotificationType.WO_REMINDER_7_DAYS:
-        return 'bg-amber-50 border-amber-200';
+        return 'bg-amber-50 border-amber-200 dark:bg-amber-900/40 dark:border-amber-700';
       case NotificationType.WO_REMINDER_3_DAYS:
-        return 'bg-orange-50 border-orange-200';
+        return 'bg-orange-50 border-orange-200 dark:bg-orange-900/40 dark:border-orange-700';
       case NotificationType.WO_DUE_7_DAYS:
-        return 'bg-sky-50 border-sky-200';
+        return 'bg-sky-50 border-sky-200 dark:bg-sky-900/40 dark:border-sky-700';
       case NotificationType.WO_DUE_3_DAYS:
-        return 'bg-amber-50 border-amber-200';
+        return 'bg-amber-50 border-amber-200 dark:bg-amber-900/40 dark:border-amber-700';
       case NotificationType.WO_DUE_1_DAY:
-        return 'bg-red-50 border-red-200';
+        return 'bg-red-50 border-red-200 dark:bg-red-900/40 dark:border-red-700';
       default:
-        return 'bg-stone-50 border-stone-200';
+        return 'bg-stone-50 border-stone-200 dark:bg-stone-700/40 dark:border-stone-600';
     }
   };
 
@@ -258,14 +258,14 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
           />
           {/* Notification Panel */}
           <div 
-            className="fixed top-20 right-12 w-96 bg-white rounded-2xl shadow-2xl border border-stone-200 z-[999999] max-h-[calc(100vh-7rem)] flex flex-col overflow-hidden"
+            className="fixed top-20 right-12 w-96 bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-stone-700 z-[999999] max-h-[calc(100vh-7rem)] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="p-4 border-b border-stone-200 flex items-center justify-between bg-gradient-to-r from-teal-50 to-blue-50">
+            <div className="p-4 border-b border-stone-200 dark:border-stone-700 flex items-center justify-between bg-gradient-to-r from-teal-50 to-blue-50 dark:from-teal-900/30 dark:to-blue-900/30">
               <div className="flex items-center gap-2">
-                <Bell size={18} className="text-teal-700" />
-                <h3 className="font-semibold text-stone-900">{t('notif.title')}</h3>
+                <Bell size={18} className="text-teal-700 dark:text-teal-400" />
+                <h3 className="font-semibold text-stone-900 dark:text-stone-100">{t('notif.title')}</h3>
                 {unreadCount > 0 && (
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
                     {unreadCount}
@@ -298,19 +298,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
             <div className="overflow-y-auto flex-1 custom-scrollbar">
               {notifications.length === 0 ? (
                 <div className="p-12 text-center animate-fade-in">
-                  <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-stone-200 border-dashed">
-                    <Bell size={32} className="text-stone-300" />
+                  <div className="w-16 h-16 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-stone-200 dark:border-stone-700 border-dashed">
+                    <Bell size={32} className="text-stone-300 dark:text-stone-600" />
                   </div>
-                  <p className="text-stone-600 font-medium mb-1">{t('notif.allCaughtUp')}</p>
-                  <p className="text-stone-400 text-sm">{t('notif.noNotifications')}</p>
+                  <p className="text-stone-600 dark:text-stone-300 font-medium mb-1">{t('notif.allCaughtUp')}</p>
+                  <p className="text-stone-400 dark:text-stone-500 text-sm">{t('notif.noNotifications')}</p>
                 </div>
               ) : (
-                <div className="divide-y divide-stone-100">
+                <div className="divide-y divide-stone-100 dark:divide-stone-800">
                   {sortedNotifications.map((notification, index) => (
                     <div
                       key={notification.id}
-                      className={`p-4 hover:bg-stone-50 transition-all duration-200 cursor-pointer relative group ${
-                        !notification.isRead ? 'bg-blue-50/40' : ''
+                      className={`p-4 hover:bg-stone-50 dark:hover:bg-stone-800 transition-all duration-200 cursor-pointer relative group ${
+                        !notification.isRead ? 'bg-blue-50/40 dark:bg-blue-900/20' : ''
                       }`}
                       style={{ animationDelay: `${index * 50}ms` }}
                       onClick={async () => {
@@ -338,17 +338,17 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-stone-900 leading-relaxed font-medium">
+                          <p className="text-sm text-stone-900 dark:text-stone-100 leading-relaxed font-medium">
                             {getTranslatedMessage(notification, t)}
                           </p>
                           <div className="flex items-center gap-2 mt-1.5">
-                            <p className="text-xs text-stone-500 font-medium">
+                            <p className="text-xs text-stone-500 dark:text-stone-400 font-medium">
                               {formatTimestamp(notification.createdAt)}
                             </p>
                             {notification.triggeredBy && (
                               <>
-                                <span className="text-xs text-stone-300">•</span>
-                                <p className="text-xs text-stone-500">
+                                <span className="text-xs text-stone-300 dark:text-stone-600">•</span>
+                                <p className="text-xs text-stone-500 dark:text-stone-400">
                                   by {notification.triggeredBy}
                                 </p>
                               </>
@@ -362,7 +362,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                             <button
                               onClick={(e) => handleMarkAsRead(notification.id, e)}
                               disabled={isProcessing}
-                              className="p-1.5 rounded-lg hover:bg-teal-100 text-teal-600 transition-all hover:scale-110 disabled:opacity-50"
+                              className="p-1.5 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-600 dark:text-teal-400 transition-all hover:scale-110 disabled:opacity-50"
                               title={t('notif.markAsRead')}
                             >
                               <Check size={14} />
@@ -371,7 +371,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                           <button
                             onClick={(e) => handleDelete(notification.id, e)}
                             disabled={isProcessing}
-                            className="p-1.5 rounded-lg hover:bg-red-100 text-red-600 transition-all hover:scale-110 disabled:opacity-50"
+                            className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 transition-all hover:scale-110 disabled:opacity-50"
                             title={t('notif.deleteNotification')}
                           >
                             <X size={14} />

@@ -7,7 +7,7 @@
 - 🔄 กำลังทำ  
 - ❌ ยังไม่ได้ทำ
 
-**อัพเดทล่าสุด:** 2025-12-11
+**อัพเดทล่าสุด:** 2025-12-12
 
 ---
 
@@ -418,13 +418,13 @@
 | Global search (Cmd/Ctrl + K) | 🔄 | มี Search bar ใน Header แต่ยังไม่ทำงานจริง, ไม่มี keyboard shortcut |
 | Recent searches dropdown | ❌ | |
 | Quick filters by type | ❌ | |
-| Quick actions (create new) | ❌ | Phase 1 |
+| Quick actions (create new) | ✅ | Dashboard Quick Actions - นำไปหน้า Requests |
 | Notifications bell icon | ✅ | NotificationCenter |
 | Unread count badge | ✅ | |
 | Mark all as read | ✅ | มี API และ UI แล้ว |
 | User menu dropdown | ✅ | |
 | User avatar with status | ✅ | แสดง avatar ใน Header, รองรับ upload รูปใหม่ได้ |
-| Theme toggle (light/dark) | 🔄 | มีปุ่ม Sun/Moon, toggle state ได้ แต่ไม่มี dark mode CSS จริง |
+| Theme toggle (light/dark) | ✅ | Dark mode CSS เสร็จทุกหน้าหลัก (Dashboard, WorkOrders, Assets, Inventory, TeamSchedule, Reports, Settings, Help, UserRoleManagement) |
 | Language selector | ✅ | TH/EN switcher ใน Header |
 
 ### Sidebar Navigation
@@ -440,12 +440,12 @@
 | 📢 Work Notifications menu | ✅ | เรียกว่า "Requests" |
 | 🏭 Assets menu | 🔄 | มี UI แต่ใช้ mock data, ไม่มี backend API |
 | 📦 Inventory menu | 🔄 | มี UI และ AI Analysis แต่ใช้ mock data, ไม่มี backend CRUD |
-| 🔧 Preventive Maintenance menu | ❌ | Phase 2 |
+| 🔧 Preventive Maintenance menu | 🔄 | มี UI placeholder พร้อม Coming Soon, Admin only |
 | 👥 Workforce menu | 🔄 | แสดง users จาก API แต่ไม่มี calendar/schedule จริง |
 | 📊 Reports & Analytics menu | 🔄 | WO Summary/Status/Priority ใช้ได้, ที่เหลือ Coming Soon |
-| 🏢 EOC menu | ❌ | Phase 2 |
-| 🏪 Spare Part Center menu | ❌ | Phase 2 |
-| 🔒 Safety & Compliance menu | ❌ | Phase 2 |
+| 🏢 EOC menu | 🔄 | มี UI placeholder พร้อม Coming Soon, Admin only |
+| 🏪 Spare Part Center menu | 🔄 | มี UI placeholder พร้อม Coming Soon, Admin only |
+| 🔒 Safety & Compliance menu | 🔄 | มี UI placeholder พร้อม Coming Soon, Admin only |
 | ⚙️ Settings menu | ✅ | Profile ✅, Notification Preferences ✅, About ✅ |
 | ❓ Help & Support menu | 🔄 | FAQs ✅, Shortcuts ✅, What's New ✅, User Guide/Video/Contact = Coming Soon |
 | Keyboard shortcuts (Cmd+B toggle) | ✅ | มีใน App.tsx - Ctrl+B / Cmd+B toggle sidebar |
@@ -546,6 +546,7 @@
 | Profile avatar upload | ✅ | กดที่รูปโปรไฟล์เพื่อ upload รูปใหม่ |
 | Image serve endpoint | ✅ | /api/images/{id}/raw สำหรับแสดงรูปภาพ |
 | Profile sync to Header | ✅ | อัปเดตรูปใน Header ทันทีหลังบันทึก |
+| Dark Mode Theme | ✅ | รองรับ light/dark mode ทุกหน้าหลัก ใช้ Tailwind dark: classes |
 
 ---
 
@@ -572,7 +573,7 @@
 | Location Services | 3 | 0 | 3 | 6 | 50% |
 | Native Mobile App | 0 | 0 | 5 | 5 | 0% |
 | Integrations | 0 | 0 | 6 | 6 | 0% |
-| Top Navigation | 7 | 3 | 3 | 13 | 54% |
+| Top Navigation | 8 | 2 | 3 | 13 | 62% |
 | Sidebar | 11 | 5 | 3 | 19 | 58% |
 | Dashboard | 10 | 1 | 0 | 11 | 91% |
 | Design System | 11 | 2 | 1 | 14 | 79% |
