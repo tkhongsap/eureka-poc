@@ -3,6 +3,9 @@ from .workorder import WorkOrderCreate, WorkOrder, WorkOrderUpdate, TechnicianUp
 from .image import ImageInfo
 from .notification import NotificationCreate, Notification
 from .user import User, UserCreate, UserUpdate, UserSettings, RoleUpdateRequest
+from .spare_parts import SparePart, SparePartCreate, SparePartUpdate
+from .sites import Site, SiteCreate, SiteUpdate
+from .tenant import Tenant, TenantCreate, TenantUpdate
 
 __all__ = [
     "LocationData",
@@ -21,4 +24,13 @@ __all__ = [
     "UserUpdate",
     "UserSettings",
     "RoleUpdateRequest",
+    "SparePart",
+    "SparePartCreate",
+    "SparePartUpdate",
+    "Site",
+    "SiteCreate",
+    "SiteUpdate",
+    "Tenant",
+    "TenantCreate",
+    "TenantUpdate",
 ]

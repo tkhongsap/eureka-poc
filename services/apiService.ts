@@ -98,7 +98,7 @@ export const uploadImage = async (file: File): Promise<ImageInfo> => {
 // Helper function to convert base64 to blob
 const base64ToBlob = (base64: string, mimeType: string): Blob => {
   const byteCharacters = atob(base64);
-  const byteArrays: Uint8Array[] = [];
+  const byteArrays: BlobPart[] = [];
   
   for (let offset = 0; offset < byteCharacters.length; offset += 512) {
     const slice = byteCharacters.slice(offset, offset + 512);
@@ -106,7 +106,11 @@ const base64ToBlob = (base64: string, mimeType: string): Blob => {
     for (let i = 0; i < slice.length; i++) {
       byteNumbers[i] = slice.charCodeAt(i);
     }
-    const byteArray = new Uint8Array(byteNumbers);
+    const buffer = new ArrayBuffer(byteNumbers.length);
+    const byteArray = new Uint8Array(buffer);
+    for (let i = 0; i < byteNumbers.length; i++) {
+      byteArray[i] = byteNumbers[i];
+    }
     byteArrays.push(byteArray);
   }
   
@@ -174,6 +178,33 @@ export const deleteImage = async (imageId: string): Promise<void> => {
   if (!response.ok) {
     throw new Error('Failed to delete image');
   }
+};
+
+// --- Spare Parts API ---
+export interface SparePartInput {
+  part_name: string;
+  category: string;
+  price_per_unit: number;
+  quantity: number;
+}
+
+export interface SparePart extends SparePartInput {
+  id: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export const addSparePart = async (data: SparePartInput): Promise<SparePart> => {
+  const response = await fetch(`${API_BASE_URL}/spare-parts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || 'Failed to add spare part');
+  }
+  return response.json();
 };
 
 // --- Request API ---
@@ -1405,4 +1436,68 @@ export const getAssetStatistics = async (): Promise<AssetStatistics> => {
   });
   if (!response.ok) throw new Error('Failed to fetch asset statistics');
   return response.json();
+};
+
+// --- Spare Parts API ---
+export interface SparePartItem {
+  id: number;
+  part_name: string;
+  category: string;
+  price_per_unit: number;
+  quantity: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSparePartData {
+  part_name: string;
+  category: string;
+  price_per_unit: number;
+  quantity: number;
+}
+
+export interface UpdateSparePartData {
+  part_name?: string;
+  category?: string;
+  price_per_unit?: number;
+  quantity?: number;
+}
+
+export const listSpareParts = async (): Promise<SparePartItem[]> => {
+  const response = await fetch(`${API_BASE_URL}/spare-parts/`);
+  if (!response.ok) {
+    throw new Error('Failed to list spare parts');
+  }
+  return response.json();
+};
+
+export const createSparePart = async (data: CreateSparePartData): Promise<SparePartItem> => {
+  const response = await fetch(`${API_BASE_URL}/spare-parts/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create spare part');
+  }
+  return response.json();
+};
+
+export const updateSparePart = async (id: number, data: UpdateSparePartData): Promise<SparePartItem> => {
+  const response = await fetch(`${API_BASE_URL}/spare-parts/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update spare part');
+  }
+  return response.json();
+};
+
+export const deleteSparePart = async (id: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/spare-parts/${id}`, { method: 'DELETE' });
+  if (!response.ok) {
+    throw new Error('Failed to delete spare part');
+  }
 };

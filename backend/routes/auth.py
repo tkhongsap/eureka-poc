@@ -151,8 +151,8 @@ def get_redirect_uri(request: Request) -> str:
         protocol = "https"
 
     # For local development, use frontend port for callback
-    if "localhost:8000" in host:
-        host = "localhost:5000"
+    # if "localhost:8000" in host:
+    #     host = "localhost:5000"
 
     return f"{protocol}://{host}/api/auth/callback"
 
