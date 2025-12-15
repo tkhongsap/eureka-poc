@@ -1,13 +1,14 @@
 from db.base import Base
-from db.models.request import Request
-from db.models.workorder import WorkOrder
-from db.models.image import Image
-from db.models.notification import Notification
-from db.models.user import User, OAuth, OAuthState
-from db.models.audit import AuditLog
 from db.models.asset import Asset
-from db.models.asset_downtime import AssetDowntime, DOWNTIME_REASONS
-from db.models.meter_reading import MeterReading, METER_TYPES
+from db.models.asset_downtime import DOWNTIME_REASONS, AssetDowntime
+from db.models.audit import AuditLog
+from db.models.image import Image
+from db.models.meter_reading import METER_TYPES, MeterReading
+from db.models.notification import Notification
+from db.models.request import Request
+from db.models.spare_part import SparePart
+from db.models.user import OAuth, OAuthState, User
+from db.models.workorder import WorkOrder
 
 __all__ = [
     "Base",
@@ -24,4 +25,5 @@ __all__ = [
     "DOWNTIME_REASONS",
     "MeterReading",
     "METER_TYPES",
+    "SparePart",
 ]
