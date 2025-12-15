@@ -155,14 +155,6 @@ const Inventory: React.FC = () => {
                             placeholder={t('inventory.searchBySku')}
                             className="w-full pl-10 pr-4 py-2.5 text-sm border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
                         />
-                        <Search className="absolute left-3.5 top-3 text-stone-400" size={16} />
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder={t('inventory.searchBySku')}
-                            className="w-full pl-10 pr-4 py-2.5 text-sm border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
-                        />
                     </div>
                     <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm text-stone-600 hover:bg-stone-50 hover:border-stone-300 transition-all duration-200">
                         <Filter size={16} />
