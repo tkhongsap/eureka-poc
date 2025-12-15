@@ -98,7 +98,7 @@ export const uploadImage = async (file: File): Promise<ImageInfo> => {
 // Helper function to convert base64 to blob
 const base64ToBlob = (base64: string, mimeType: string): Blob => {
   const byteCharacters = atob(base64);
-  const byteArrays: Uint8Array[] = [];
+  const byteArrays: BlobPart[] = [];
   
   for (let offset = 0; offset < byteCharacters.length; offset += 512) {
     const slice = byteCharacters.slice(offset, offset + 512);
@@ -106,7 +106,11 @@ const base64ToBlob = (base64: string, mimeType: string): Blob => {
     for (let i = 0; i < slice.length; i++) {
       byteNumbers[i] = slice.charCodeAt(i);
     }
-    const byteArray = new Uint8Array(byteNumbers);
+    const buffer = new ArrayBuffer(byteNumbers.length);
+    const byteArray = new Uint8Array(buffer);
+    for (let i = 0; i < byteNumbers.length; i++) {
+      byteArray[i] = byteNumbers[i];
+    }
     byteArrays.push(byteArray);
   }
   
