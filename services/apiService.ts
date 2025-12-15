@@ -1464,7 +1464,7 @@ export interface UpdateSparePartData {
 }
 
 export const listSpareParts = async (): Promise<SparePartItem[]> => {
-  const response = await fetch(`${API_BASE_URL}/spare-parts/`);
+  const response = await fetch(`${API_BASE_URL}/spare-parts`);
   if (!response.ok) {
     throw new Error('Failed to list spare parts');
   }
@@ -1472,7 +1472,7 @@ export const listSpareParts = async (): Promise<SparePartItem[]> => {
 };
 
 export const createSparePart = async (data: CreateSparePartData): Promise<SparePartItem> => {
-  const response = await fetch(`${API_BASE_URL}/spare-parts/`, {
+  const response = await fetch(`${API_BASE_URL}/spare-parts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
