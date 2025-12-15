@@ -218,25 +218,26 @@
 
 | Feature | สถานะ | หมายเหตุ |
 |---------|-------|----------|
-| Asset hierarchy (tree view) | 🔄 | มี AssetHierarchy.tsx - UI only, ใช้ mock data, ยังไม่มี backend |
-| Functional locations | ❌ | Phase 1 |
-| Equipment list with filters | ❌ | Phase 1 |
-| Asset register | ❌ | Phase 1 - ยังไม่มี database model |
-| Critical assets | 🔄 | มี criticality field ใน mock data |
-| Downtime tracking | ❌ | Phase 1 |
-| Meter readings | ❌ | Phase 1 |
-| Warranties tracking | ❌ | Phase 1 |
-| Asset map (GIS view) | ❌ | Phase 1 |
-| QR code scanning | ❌ | Phase 1 |
-| Asset CRUD operations | ❌ | Phase 1 - ไม่มี backend routes |
-| Asset classifications & criticality | 🔄 | มีใน mock data (High/Medium/Low) |
-| Technical specifications | ❌ | |
+| Asset hierarchy (tree view) | ✅ | Phase 1 - AssetHierarchy.tsx + backend API + PostgreSQL |
+| Functional locations | ✅ | Phase 1 - location field in assets + hierarchy structure |
+| Equipment list with filters | ✅ | Phase 1 - GET /api/assets with filters |
+| Asset register | ✅ | Phase 1 - assets table in DB |
+| Critical assets | ✅ | Phase 1 - criticality field (Critical/High/Medium/Low) |
+| Downtime tracking | ✅ | Phase 1 - asset_downtimes table + API + Tab UI |
+| Meter readings | ✅ | Phase 1 - meter_readings table + API + Tab UI |
+| Warranties tracking | ✅ | Phase 1 - warranty_expiry field |
+| Asset map (GIS view) | ❌ | Phase 2 - ยังไม่ทำ |
+| QR code scanning | ❌ | Phase 2 - ยังไม่ทำ |
+| Asset CRUD operations | ✅ | Phase 1 - Full CRUD via API (Admin/Head Tech) |
+| Asset classifications & criticality | ✅ | Phase 1 - type + criticality fields |
+| Technical specifications | ✅ | Phase 1 - model, manufacturer, serial_number |
 | Manuals/drawings attachment | ❌ | |
 | Bill of Materials (BOM) | ❌ | |
 | TCO calculation | ❌ | |
-| Asset performance dashboards | ❌ | |
-| Log asset downtime | ❌ | |
-| Asset condition/status update | 🔄 | มี status field (Operational/Maintenance/Downtime) ใน mock |
+| Asset performance dashboards | ✅ | Phase 1 - Statistics API (active_downtimes, total_hours, avg_health) |
+| Log asset downtime | ✅ | Phase 1 - /api/assets/downtimes endpoints |
+| Asset condition/status update | ✅ | Phase 1 - status field (Operational/Maintenance/Downtime) |
+| AI Asset Analysis | ✅ | เพิ่มเติม - Gemini AI วิเคราะห์ reliability |
 
 ---
 
