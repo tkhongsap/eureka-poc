@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Search, Filter, AlertCircle, TrendingUp, Package, ArrowDown, ArrowUp } from 'lucide-react';
+import { Search, Filter, AlertCircle, TrendingUp, Package, ArrowDown, ArrowUp, Edit3, Trash2, Plus, Minus } from 'lucide-react';
 import { InventoryItem } from '../types';
 import { predictInventoryNeeds } from '../services/geminiService';
-import { listSpareParts, createSparePart, SparePartItem } from '../services/apiService';
+import { listSpareParts, createSparePart, updateSparePart, deleteSparePart, SparePartItem } from '../services/apiService';
 import { useLanguage } from '../lib/i18n';
 
 // Convert SparePartItem from API to InventoryItem format
@@ -19,6 +19,12 @@ const convertSparePartToInventory = (sparePart: SparePartItem): InventoryItem =>
     cost: sparePart.price_per_unit
 });
 
+// Extract database ID from display ID
+const extractPartId = (displayId: string): number => {
+    const match = displayId.match(/P-(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+};
+
 const Inventory: React.FC = () => {
     const { t } = useLanguage();
     const [aiRecommendations, setAiRecommendations] = useState<any[]>([]);
@@ -30,6 +36,16 @@ const Inventory: React.FC = () => {
     // Add Part Modal State
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [newPart, setNewPart] = useState({
+        part_name: '',
+        category: '',
+        quantity: 0,
+        price_per_unit: 0,
+    });
+
+    // Edit Part Modal State
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editingPart, setEditingPart] = useState<InventoryItem | null>(null);
+    const [editPart, setEditPart] = useState({
         part_name: '',
         category: '',
         quantity: 0,
@@ -111,6 +127,74 @@ const Inventory: React.FC = () => {
         }
     };
 
+    // Handle opening edit modal
+    const handleEditPart = (item: InventoryItem) => {
+        setEditingPart(item);
+        setEditPart({
+            part_name: item.name,
+            category: item.category,
+            quantity: item.quantity,
+            price_per_unit: item.cost,
+        });
+        setIsEditOpen(true);
+    };
+
+    // Handle updating part
+    const handleUpdatePart = async () => {
+        if (!editingPart || !editPart.part_name || !editPart.category || editPart.quantity < 0 || editPart.price_per_unit <= 0) {
+            alert('Please fill all required fields with valid values');
+            return;
+        }
+
+        try {
+            const partId = extractPartId(editingPart.id);
+            const updatedPart = await updateSparePart(partId, {
+                part_name: editPart.part_name,
+                category: editPart.category,
+                quantity: editPart.quantity,
+                price_per_unit: editPart.price_per_unit
+            });
+
+            // Update part in inventory
+            const updatedInventoryItem = convertSparePartToInventory(updatedPart);
+            setInventory(prev => prev.map(item => 
+                item.id === editingPart.id ? updatedInventoryItem : item
+            ));
+
+            setIsEditOpen(false);
+            setEditingPart(null);
+        } catch (error) {
+            console.error('Failed to update spare part:', error);
+            alert('Failed to update spare part. Please try again.');
+        }
+    };
+
+    // Handle deleting part
+    const handleDeletePart = async (item: InventoryItem) => {
+        if (!confirm(`Are you sure you want to delete ${item.name}?`)) {
+            return;
+        }
+
+        try {
+            const partId = extractPartId(item.id);
+            await deleteSparePart(partId);
+
+            // Remove part from inventory
+            setInventory(prev => prev.filter(i => i.id !== item.id));
+        } catch (error) {
+            console.error('Failed to delete spare part:', error);
+            alert('Failed to delete spare part. Please try again.');
+        }
+    };
+
+    // Handle quantity adjustment
+    const adjustQuantity = (delta: number) => {
+        setEditPart(prev => ({
+            ...prev,
+            quantity: Math.max(0, prev.quantity + delta)
+        }));
+    };
+
     return (
         <div className="p-8 h-full flex flex-col">
             <div className="flex justify-between items-center mb-6">
@@ -180,12 +264,13 @@ const Inventory: React.FC = () => {
                                 <th className="px-6 py-3.5 border-b border-stone-200">{t('inventory.stockLevel')}</th>
                                 <th className="px-6 py-3.5 border-b border-stone-200 text-right">{t('inventory.value')}</th>
                                 <th className="px-6 py-3.5 border-b border-stone-200">{t('inventory.status')}</th>
+                                <th className="px-6 py-3.5 border-b border-stone-200">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100 text-sm">
                             {loadingData ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center">
+                                    <td colSpan={7} className="px-6 py-12 text-center">
                                         <div className="flex flex-col items-center gap-4">
                                             <div className="w-8 h-8 border-2 border-teal-600/30 border-t-teal-600 rounded-full animate-spin"/>
                                             <span className="text-stone-500">Loading inventory data...</span>
@@ -194,7 +279,7 @@ const Inventory: React.FC = () => {
                                 </tr>
                             ) : filteredInventory.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center">
+                                    <td colSpan={7} className="px-6 py-12 text-center">
                                         <div className="flex flex-col items-center gap-4">
                                             <Package className="w-12 h-12 text-stone-300" />
                                             <span className="text-stone-500">No inventory items found</span>
@@ -245,6 +330,24 @@ const Inventory: React.FC = () => {
                                                     <ArrowUp size={12} /> {t('inventory.inStock')}
                                                 </span>
                                             )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleEditPart(item)}
+                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                                                    title="Edit Part"
+                                                >
+                                                    <Edit3 size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeletePart(item)}
+                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                                                    title="Delete Part"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 );
@@ -315,6 +418,88 @@ const Inventory: React.FC = () => {
                                 onClick={handleAddPart}
                             >
                                 Add Part
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Part Modal */}
+            {isEditOpen && editingPart && (
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-stone-200">
+                        <div className="px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-stone-900">Edit Part</h3>
+                            <button onClick={() => setIsEditOpen(false)} className="text-stone-500 hover:text-stone-700">✕</button>
+                        </div>
+                        <div className="px-6 py-4 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-stone-700 mb-1">Name</label>
+                                <input
+                                    className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                    value={editPart.part_name}
+                                    onChange={(e) => setEditPart(p => ({ ...p, part_name: e.target.value }))}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-stone-700 mb-1">Category</label>
+                                <input
+                                    className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                    value={editPart.category}
+                                    onChange={(e) => setEditPart(p => ({ ...p, category: e.target.value }))}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-stone-700 mb-1">Quantity</label>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => adjustQuantity(-1)}
+                                            className="p-2 text-stone-500 hover:bg-stone-100 rounded-lg transition-colors"
+                                            disabled={editPart.quantity <= 0}
+                                        >
+                                            <Minus size={16} />
+                                        </button>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            className="flex-1 px-3 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-center"
+                                            value={editPart.quantity}
+                                            onChange={(e) => setEditPart(p => ({ ...p, quantity: Math.max(0, Number(e.target.value)) }))}
+                                        />
+                                        <button
+                                            onClick={() => adjustQuantity(1)}
+                                            className="p-2 text-stone-500 hover:bg-stone-100 rounded-lg transition-colors"
+                                        >
+                                            <Plus size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-stone-700 mb-1">Price / Unit</label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        step="0.01"
+                                        className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                        value={editPart.price_per_unit}
+                                        onChange={(e) => setEditPart(p => ({ ...p, price_per_unit: Number(e.target.value) }))}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 border-t border-stone-200 flex justify-end gap-2">
+                            <button
+                                className="px-4 py-2 rounded-lg border border-stone-300 text-stone-700 hover:bg-stone-50"
+                                onClick={() => setIsEditOpen(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                                onClick={handleUpdatePart}
+                            >
+                                Update Part
                             </button>
                         </div>
                     </div>

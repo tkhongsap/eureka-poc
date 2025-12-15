@@ -25,7 +25,7 @@ const formatDateShort = (dateString: string): string => {
 };
 import { WorkOrder, Status, Priority, User, PartUsage } from '../types';
 import { analyzeMaintenanceIssue, AnalysisResult, generateSmartChecklist } from '../services/geminiService';
-import { getImageDataUrl, getMediaInfo, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, adminCloseWorkOrder, createNotification, getUsersByRole, getTeamHeadTechnician, getWorkOrderRejectHistory, RejectHistoryItem } from '../services/apiService';
+import { getImageDataUrl, getMediaInfo, uploadImage, technicianUpdateWorkOrder, TechnicianUpdateData, updateWorkOrder, adminApproveWorkOrder, adminRejectWorkOrder, adminCloseWorkOrder, createNotification, getUsersByRole, getTeamHeadTechnician, getWorkOrderRejectHistory, RejectHistoryItem, listSpareParts, updateSparePart, SparePartItem } from '../services/apiService';
 import { canDragToStatus, getWorkOrderPermissions } from '../utils/workflowRules';
 import { 
   createWOAssignedNotification, 
@@ -98,13 +98,13 @@ const priorityColors = {
   [Priority.LOW]: 'text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-950/50 border-green-200 dark:border-green-800',
 };
 
-// Mock parts for selection
-const AVAILABLE_PARTS = [
-  { id: 'p1', name: 'Hydraulic Seal Kit', cost: 45.00 },
-  { id: 'p2', name: 'Bearing 6204', cost: 12.50 },
-  { id: 'p3', name: 'Sensor Cable (5m)', cost: 25.00 },
-  { id: 'p4', name: 'Industrial Grease (1kg)', cost: 15.00 },
-];
+// Convert SparePartItem to available parts format
+const convertSparePartToAvailablePart = (sparePart: SparePartItem) => ({
+  id: sparePart.id.toString(),
+  name: sparePart.part_name,
+  cost: sparePart.price_per_unit,
+  quantity: sparePart.quantity
+});
 
 const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, currentUser, technicians = [] }) => {
   const { t, language } = useLanguage();
@@ -198,6 +198,12 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const [technicianNotes, setTechnicianNotes] = useState('');
   const [technicianImages, setTechnicianImages] = useState<string[]>([]);
   const [technicianPreviewUrls, setTechnicianPreviewUrls] = useState<string[]>([]);
+  
+  // Spare Parts Management
+  const [availableParts, setAvailableParts] = useState<Array<{id: string, name: string, cost: number, quantity: number}>>([]);
+  const [loadingSpareParts, setLoadingSpareParts] = useState(false);
+  const [selectedPartId, setSelectedPartId] = useState('');
+  const [partQuantityToAdd, setPartQuantityToAdd] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Admin assignment state
@@ -316,6 +322,24 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     };
     buildPreviews();
   }, [technicianImages]);
+
+  // Load spare parts from database
+  useEffect(() => {
+    const loadSpareParts = async () => {
+      try {
+        setLoadingSpareParts(true);
+        const spareParts = await listSpareParts();
+        const availablePartsData = spareParts.map(convertSparePartToAvailablePart);
+        setAvailableParts(availablePartsData);
+      } catch (error) {
+        console.error('Failed to load spare parts:', error);
+      } finally {
+        setLoadingSpareParts(false);
+      }
+    };
+
+    loadSpareParts();
+  }, []);
 
   // Fetch reject history when selecting a work order
   useEffect(() => {
@@ -519,29 +543,99 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
     }
   };
 
-  const addPartToWo = (partId: string) => {
-    if (!selectedWO) return;
-    const part = AVAILABLE_PARTS.find(p => p.id === partId);
+  const addPartToWo = async () => {
+    if (!selectedWO || !selectedPartId || partQuantityToAdd <= 0) return;
+    
+    const part = availableParts.find(p => p.id === selectedPartId);
     if (!part) return;
+    
+    // Check if we have enough quantity
+    if (part.quantity < partQuantityToAdd) {
+      alert(`Not enough quantity available. Only ${part.quantity} units in stock.`);
+      return;
+    }
 
-    const newPartUsage: PartUsage = {
-      partId: part.id,
-      name: part.name,
-      quantity: 1,
-      cost: part.cost
-    };
+    try {
+      // Update spare part quantity in database
+      await updateSparePart(parseInt(selectedPartId), {
+        quantity: part.quantity - partQuantityToAdd
+      });
 
-    const updatedWo = {
-      ...selectedWO,
-      partsUsed: [...(selectedWO.partsUsed || []), newPartUsage]
-    };
+      // Update local available parts
+      setAvailableParts(prev => prev.map(p => 
+        p.id === selectedPartId 
+          ? { ...p, quantity: p.quantity - partQuantityToAdd }
+          : p
+      ));
 
-    setSelectedWO(updatedWo);
-    setWorkOrders(prev => prev.map(wo => wo.id === updatedWo.id ? updatedWo : wo));
+      // Add part to work order
+      const existingPartIndex = selectedWO.partsUsed?.findIndex(p => p.partId === selectedPartId);
+      let updatedPartsUsed;
+
+      if (existingPartIndex !== undefined && existingPartIndex >= 0) {
+        // Part already exists, increase quantity
+        updatedPartsUsed = [...(selectedWO.partsUsed || [])];
+        updatedPartsUsed[existingPartIndex] = {
+          ...updatedPartsUsed[existingPartIndex],
+          quantity: updatedPartsUsed[existingPartIndex].quantity + partQuantityToAdd
+        };
+      } else {
+        // New part
+        const newPartUsage: PartUsage = {
+          partId: selectedPartId,
+          name: part.name,
+          quantity: partQuantityToAdd,
+          cost: part.cost
+        };
+        updatedPartsUsed = [...(selectedWO.partsUsed || []), newPartUsage];
+      }
+
+      const updatedWo = {
+        ...selectedWO,
+        partsUsed: updatedPartsUsed
+      };
+
+      setSelectedWO(updatedWo);
+      setWorkOrders(prev => prev.map(wo => wo.id === updatedWo.id ? updatedWo : wo));
+
+      // Reset selection
+      setSelectedPartId('');
+      setPartQuantityToAdd(1);
+
+    } catch (error) {
+      console.error('Failed to add part to work order:', error);
+      alert('Failed to add part. Please try again.');
+    }
   };
 
-  const removePartFromWo = (index: number) => {
+  const removePartFromWo = async (index: number) => {
     if (!selectedWO || !selectedWO.partsUsed) return;
+    
+    const partUsage = selectedWO.partsUsed[index];
+    const part = availableParts.find(p => p.id === partUsage.partId);
+    
+    if (part) {
+      try {
+        // Return quantity to spare part in database
+        await updateSparePart(parseInt(partUsage.partId), {
+          quantity: part.quantity + partUsage.quantity
+        });
+
+        // Update local available parts
+        setAvailableParts(prev => prev.map(p => 
+          p.id === partUsage.partId 
+            ? { ...p, quantity: p.quantity + partUsage.quantity }
+            : p
+        ));
+
+      } catch (error) {
+        console.error('Failed to return part quantity:', error);
+        alert('Failed to return part quantity. Please try again.');
+        return;
+      }
+    }
+
+    // Remove from work order
     const updatedParts = [...selectedWO.partsUsed];
     updatedParts.splice(index, 1);
 
@@ -2161,23 +2255,53 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
                       <div className="text-center py-4 text-stone-400 dark:text-stone-500 text-base mb-4">{t('workOrders.noPartsConsumed')}</div>
                     )}
 
-                    {/* Add Part Dropdown - hide for Admin when status is Completed */}
+                    {/* Add Part Section - hide for Admin when status is Completed */}
                     {!(currentUser?.userRole === 'Admin' && selectedWO?.status === Status.COMPLETED) && (
-                      <div className="flex gap-2">
-                        <select
-                          title={t('workOrders.addPartFromInventory')}
-                          aria-label={t('workOrders.addPartFromInventory')}
-                          className="flex-1 text-base border border-stone-200 dark:border-stone-700 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white dark:bg-stone-900 dark:text-stone-100 transition-all duration-200"
-                          onChange={(e) => {
-                            addPartToWo(e.target.value);
-                            e.target.value = ''; // Reset
-                          }}
-                        >
-                          <option value="">{t('workOrders.addPartPlaceholder')}</option>
-                          {AVAILABLE_PARTS.map(p => (
-                            <option key={p.id} value={p.id}>{p.name} (${p.cost})</option>
-                          ))}
-                        </select>
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <select
+                            title={t('workOrders.addPartFromInventory')}
+                            aria-label={t('workOrders.addPartFromInventory')}
+                            className="flex-1 text-base border border-stone-200 dark:border-stone-700 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white dark:bg-stone-900 dark:text-stone-100 transition-all duration-200"
+                            value={selectedPartId}
+                            onChange={(e) => setSelectedPartId(e.target.value)}
+                            disabled={loadingSpareParts}
+                          >
+                            <option value="">
+                              {loadingSpareParts ? 'Loading spare parts...' : t('workOrders.addPartPlaceholder')}
+                            </option>
+                            {availableParts.filter(p => p.quantity > 0).map(p => (
+                              <option key={p.id} value={p.id}>
+                                {p.name} - ${p.cost} (Stock: {p.quantity})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        {selectedPartId && (
+                          <div className="flex gap-2 items-center">
+                            <label className="text-sm font-medium text-stone-700 dark:text-stone-300">
+                              Quantity:
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max={availableParts.find(p => p.id === selectedPartId)?.quantity || 1}
+                              value={partQuantityToAdd}
+                              onChange={(e) => setPartQuantityToAdd(Math.max(1, parseInt(e.target.value) || 1))}
+                              className="w-20 text-base border border-stone-200 dark:border-stone-700 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white dark:bg-stone-900 dark:text-stone-100"
+                            />
+                            <span className="text-sm text-stone-500 dark:text-stone-400">
+                              / {availableParts.find(p => p.id === selectedPartId)?.quantity || 0} available
+                            </span>
+                            <button
+                              onClick={addPartToWo}
+                              className="px-4 py-1.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors"
+                            >
+                              Add Part
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
