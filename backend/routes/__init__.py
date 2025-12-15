@@ -18,4 +18,6 @@ __all__ = [
     "auth_router",
     "dashboard_router",
     "audit_router",
+    "assets_router",
+    "spare_parts_router",
 ]
