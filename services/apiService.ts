@@ -927,3 +927,482 @@ export const checkHealth = async (): Promise<boolean> => {
     return false;
   }
 };
+
+// --- Asset Management API ---
+export interface AssetData {
+  id?: string;
+  name: string;
+  type: 'Site' | 'Line' | 'Facility' | 'Machine' | 'Equipment';
+  status: 'Operational' | 'Downtime' | 'Maintenance';
+  healthScore?: number;
+  location?: string;
+  criticality?: 'Critical' | 'High' | 'Medium' | 'Low';
+  model?: string;
+  manufacturer?: string;
+  serialNumber?: string;
+  installDate?: string;
+  warrantyExpiry?: string;
+  description?: string;
+  parentId?: string;
+}
+
+export interface AssetResponse {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  health_score: number;
+  location: string;
+  criticality: string;
+  model: string | null;
+  manufacturer: string | null;
+  serial_number: string | null;
+  install_date: string | null;
+  warranty_expiry: string | null;
+  description: string | null;
+  parent_id: string | null;
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+  children: AssetResponse[];
+}
+
+export interface AssetTreeNode {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  healthScore: number;
+  location: string;
+  criticality: string;
+  model?: string;
+  installDate?: string;
+  children: AssetTreeNode[];
+}
+
+// Get all assets with optional filters
+export const getAssets = async (params?: {
+  type?: string;
+  status?: string;
+  criticality?: string;
+  parent_id?: string;
+  search?: string;
+}): Promise<AssetResponse[]> => {
+  const searchParams = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) searchParams.append(key, value);
+    });
+  }
+
+  const url = searchParams.toString() 
+    ? `${API_BASE_URL}/assets?${searchParams.toString()}`
+    : `${API_BASE_URL}/assets`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch assets');
+  }
+
+  return response.json();
+};
+
+// Get assets as tree structure
+export const getAssetTree = async (): Promise<AssetTreeNode[]> => {
+  const response = await fetch(`${API_BASE_URL}/assets/tree`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch asset tree');
+  }
+
+  return response.json();
+};
+
+// Get single asset
+export const getAsset = async (id: string): Promise<AssetResponse> => {
+  const response = await fetch(`${API_BASE_URL}/assets/${id}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch asset');
+  }
+
+  return response.json();
+};
+
+// Create new asset (Admin, Head Technician only)
+export const createAsset = async (data: AssetData): Promise<AssetResponse> => {
+  const payload = {
+    id: data.id,
+    name: data.name,
+    type: data.type,
+    status: data.status,
+    health_score: data.healthScore ?? 100,
+    location: data.location ?? '',
+    criticality: data.criticality ?? 'Medium',
+    model: data.model,
+    manufacturer: data.manufacturer,
+    serial_number: data.serialNumber,
+    install_date: data.installDate,
+    warranty_expiry: data.warrantyExpiry,
+    description: data.description,
+    parent_id: data.parentId,
+  };
+
+  const url = currentUserName 
+    ? `${API_BASE_URL}/assets?created_by=${encodeURIComponent(currentUserName)}`
+    : `${API_BASE_URL}/assets`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Failed to create asset' }));
+    throw new Error(error.detail || 'Failed to create asset');
+  }
+
+  return response.json();
+};
+
+// Update asset (Admin, Head Technician only)
+export const updateAsset = async (id: string, data: Partial<AssetData>): Promise<AssetResponse> => {
+  const payload: Record<string, unknown> = {};
+  
+  if (data.name !== undefined) payload.name = data.name;
+  if (data.type !== undefined) payload.type = data.type;
+  if (data.status !== undefined) payload.status = data.status;
+  if (data.healthScore !== undefined) payload.health_score = data.healthScore;
+  if (data.location !== undefined) payload.location = data.location;
+  if (data.criticality !== undefined) payload.criticality = data.criticality;
+  if (data.model !== undefined) payload.model = data.model;
+  if (data.manufacturer !== undefined) payload.manufacturer = data.manufacturer;
+  if (data.serialNumber !== undefined) payload.serial_number = data.serialNumber;
+  if (data.installDate !== undefined) payload.install_date = data.installDate;
+  if (data.warrantyExpiry !== undefined) payload.warranty_expiry = data.warrantyExpiry;
+  if (data.description !== undefined) payload.description = data.description;
+  if (data.parentId !== undefined) payload.parent_id = data.parentId;
+
+  const url = currentUserName 
+    ? `${API_BASE_URL}/assets/${id}?updated_by=${encodeURIComponent(currentUserName)}`
+    : `${API_BASE_URL}/assets/${id}`;
+
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Failed to update asset' }));
+    throw new Error(error.detail || 'Failed to update asset');
+  }
+
+  return response.json();
+};
+
+// Delete asset (Admin only)
+export const deleteAsset = async (id: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/assets/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete asset');
+  }
+};
+
+// Seed demo assets
+export const seedAssets = async (): Promise<{ message: string; count: number }> => {
+  const response = await fetch(`${API_BASE_URL}/assets/seed`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to seed assets');
+  }
+
+  return response.json();
+};
+
+// Seed assets with GIS coordinates
+export const seedAssetsWithGIS = async (): Promise<{ message: string }> => {
+  const response = await fetch(`${API_BASE_URL}/assets/seed-with-gis`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to seed GIS data');
+  }
+
+  return response.json();
+};
+
+// ============ DOWNTIME API ============
+
+export interface DowntimeRecord {
+  id: number;
+  asset_id: string;
+  start_time: string;
+  end_time: string | null;
+  reason: string;
+  description: string | null;
+  production_loss: number | null;
+  work_order_id: number | null;
+  reported_by: string | null;
+  resolved_by: string | null;
+  created_at: string;
+  updated_at: string;
+  duration_minutes: number | null;
+  is_active: boolean;
+  asset_name: string | null;
+}
+
+export const getDowntimeReasons = async (): Promise<{ reasons: string[] }> => {
+  const response = await fetch(`${API_BASE_URL}/assets/downtimes/reasons`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) throw new Error('Failed to fetch downtime reasons');
+  return response.json();
+};
+
+export const getDowntimes = async (params?: {
+  asset_id?: string;
+  active_only?: boolean;
+  limit?: number;
+}): Promise<DowntimeRecord[]> => {
+  const searchParams = new URLSearchParams();
+  if (params?.asset_id) searchParams.append('asset_id', params.asset_id);
+  if (params?.active_only) searchParams.append('active_only', 'true');
+  if (params?.limit) searchParams.append('limit', params.limit.toString());
+
+  const url = searchParams.toString()
+    ? `${API_BASE_URL}/assets/downtimes?${searchParams.toString()}`
+    : `${API_BASE_URL}/assets/downtimes`;
+
+  const response = await fetch(url, { headers: getAuthHeaders() });
+  if (!response.ok) throw new Error('Failed to fetch downtimes');
+  return response.json();
+};
+
+export const createDowntime = async (data: {
+  asset_id: string;
+  start_time: string;
+  end_time?: string;
+  reason: string;
+  description?: string;
+  production_loss?: number;
+  work_order_id?: number;
+  reported_by?: string;
+}): Promise<DowntimeRecord> => {
+  const response = await fetch(`${API_BASE_URL}/assets/downtimes`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to create downtime');
+  return response.json();
+};
+
+export const updateDowntime = async (id: number, data: {
+  end_time?: string;
+  reason?: string;
+  description?: string;
+  production_loss?: number;
+  resolved_by?: string;
+}): Promise<DowntimeRecord> => {
+  const response = await fetch(`${API_BASE_URL}/assets/downtimes/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to update downtime');
+  return response.json();
+};
+
+export const deleteDowntime = async (id: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/assets/downtimes/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) throw new Error('Failed to delete downtime');
+};
+
+// ============ METER READING API ============
+
+export interface MeterReading {
+  id: number;
+  asset_id: string;
+  meter_type: string;
+  value: number;
+  unit: string;
+  previous_value: number | null;
+  reading_date: string;
+  source: string | null;
+  notes: string | null;
+  recorded_by: string | null;
+  created_at: string;
+  delta: number | null;
+  asset_name: string | null;
+}
+
+export interface MeterType {
+  type: string;
+  unit: string;
+}
+
+export const getMeterTypes = async (): Promise<{ types: MeterType[] }> => {
+  const response = await fetch(`${API_BASE_URL}/assets/meters/types`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) throw new Error('Failed to fetch meter types');
+  return response.json();
+};
+
+export const getMeterReadings = async (params?: {
+  asset_id?: string;
+  meter_type?: string;
+  limit?: number;
+}): Promise<MeterReading[]> => {
+  const searchParams = new URLSearchParams();
+  if (params?.asset_id) searchParams.append('asset_id', params.asset_id);
+  if (params?.meter_type) searchParams.append('meter_type', params.meter_type);
+  if (params?.limit) searchParams.append('limit', params.limit.toString());
+
+  const url = searchParams.toString()
+    ? `${API_BASE_URL}/assets/meters?${searchParams.toString()}`
+    : `${API_BASE_URL}/assets/meters`;
+
+  const response = await fetch(url, { headers: getAuthHeaders() });
+  if (!response.ok) throw new Error('Failed to fetch meter readings');
+  return response.json();
+};
+
+export const createMeterReading = async (data: {
+  asset_id: string;
+  meter_type: string;
+  value: number;
+  unit: string;
+  reading_date?: string;
+  source?: string;
+  notes?: string;
+  recorded_by?: string;
+}): Promise<MeterReading> => {
+  const response = await fetch(`${API_BASE_URL}/assets/meters`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to create meter reading');
+  return response.json();
+};
+
+export const deleteMeterReading = async (id: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/assets/meters/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) throw new Error('Failed to delete meter reading');
+};
+
+// ============ ASSET MAP API ============
+
+export interface AssetMapPoint {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  criticality: string;
+  latitude: number;
+  longitude: number;
+  health_score: number;
+}
+
+export const getAssetsForMap = async (params?: {
+  type?: string;
+  status?: string;
+}): Promise<AssetMapPoint[]> => {
+  const searchParams = new URLSearchParams();
+  if (params?.type) searchParams.append('type', params.type);
+  if (params?.status) searchParams.append('status', params.status);
+
+  const url = searchParams.toString()
+    ? `${API_BASE_URL}/assets/map?${searchParams.toString()}`
+    : `${API_BASE_URL}/assets/map`;
+
+  const response = await fetch(url, { headers: getAuthHeaders() });
+  if (!response.ok) throw new Error('Failed to fetch assets for map');
+  return response.json();
+};
+
+export const updateAssetLocation = async (assetId: string, latitude: number, longitude: number): Promise<{ message: string }> => {
+  const response = await fetch(
+    `${API_BASE_URL}/assets/${assetId}/location?latitude=${latitude}&longitude=${longitude}`,
+    {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!response.ok) throw new Error('Failed to update asset location');
+  return response.json();
+};
+
+// ============ QR CODE API ============
+
+export interface QRCodeData {
+  asset_id: string;
+  qr_data: string;
+  asset_name: string;
+  asset_type: string;
+}
+
+export const getAssetQR = async (assetId: string): Promise<QRCodeData> => {
+  const response = await fetch(`${API_BASE_URL}/assets/${assetId}/qr`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) throw new Error('Failed to get QR code');
+  return response.json();
+};
+
+export const lookupAssetByQR = async (qrData: string): Promise<AssetResponse> => {
+  const response = await fetch(`${API_BASE_URL}/assets/lookup/qr/${encodeURIComponent(qrData)}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) throw new Error('Asset not found');
+  return response.json();
+};
+
+// ============ ASSET STATISTICS API ============
+
+export interface AssetStatistics {
+  total_assets: number;
+  by_type: Record<string, number>;
+  by_status: Record<string, number>;
+  by_criticality: Record<string, number>;
+  total_downtime_hours: number;
+  active_downtimes: number;
+  avg_health_score: number;
+}
+
+export const getAssetStatistics = async (): Promise<AssetStatistics> => {
+  const response = await fetch(`${API_BASE_URL}/assets/statistics/summary`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) throw new Error('Failed to fetch asset statistics');
+  return response.json();
+};
