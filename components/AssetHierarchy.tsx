@@ -4,6 +4,12 @@ import {
   AlertCircle, Clock, Gauge, Play, Square, Building2, Factory, Cog, Settings2, Settings, Search, Check
 } from 'lucide-react';
 import { Asset, User } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  ChevronRight, ChevronDown, ChevronUp, Activity, Zap, Plus, Edit2, Trash2, Save, X, RefreshCw, 
+  AlertCircle, Clock, Gauge, Play, Square, Building2, Factory, Cog, Settings2, Settings, Search, Check
+} from 'lucide-react';
+import { Asset, User } from '../types';
 import { analyzeAssetReliability } from '../services/geminiService';
 import { useLanguage } from '../lib/i18n';
 import { 
@@ -281,14 +287,15 @@ const AssetNode: React.FC<{ asset: Asset; onSelect: (a: Asset) => void; selected
   return (
     <div className="select-none">
       <div 
-        className={`flex items-center py-2 px-2 cursor-pointer transition-colors rounded-lg ${paddingLeftClass} ${isSelected ? 'bg-teal-50 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 font-medium' : 'hover:bg-stone-50 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300'}`}
-        onClick={(e) => { e.stopPropagation(); onSelect(asset); }}
+        className={`flex items-center py-2 px-2 cursor-pointer transition-colors rounded-lg ${isSelected ? 'bg-brand-50 text-brand-700 font-medium' : 'hover:bg-slate-50 text-slate-700'}`}
+        style={{ paddingLeft: `${level * 16 + 8}px` }}
+        onClick={(e) => {
+            e.stopPropagation();
+            onSelect(asset);
+        }}
       >
         <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            setExpanded(!expanded);
-          }}
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
           className={`mr-2 p-1 rounded hover:bg-slate-200 text-slate-400 ${!hasChildren ? 'invisible' : ''}`}
         >
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -772,22 +779,85 @@ const AssetHierarchy: React.FC<AssetHierarchyProps> = ({ currentUser }) => {
     setLoadingAi(true);
     setAiInsight(null);
     try {
-        const result = await analyzeAssetReliability(selectedAsset.name, `Recent WOs: 2 Breakdowns in last month. Age: 3 years. Health Score: ${selectedAsset.healthScore}`);
-        setAiInsight(result);
-    } catch (e) {
-        console.error(e);
-    } finally {
-        setLoadingAi(false);
-    }
+      const result = await analyzeAssetReliability(selectedAsset.name, `Recent WOs: 2 Breakdowns in last month. Age: 3 years. Health Score: ${selectedAsset.healthScore}`);
+      setAiInsight(result);
+    } catch (e) { console.error(e); }
+    finally { setLoadingAi(false); }
   };
 
-  return (
-    <div className="flex h-full bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200 m-8">
-      {/* Left Pane: Tree */}
+  const handleCreateAsset = async (data: AssetData) => {
+    await createAsset(data);
+    setShowForm(false);
+    await loadAssets();
+    await loadStats();
+  };
+
+  const handleUpdateAsset = async (data: AssetData) => {
+    if (!editingAsset) return;
+    await updateAsset(editingAsset.id, data);
+    setEditingAsset(null);
+    await loadAssets();
+    await loadStats();
+  };
+
+  const handleDeleteAsset = async (id: string) => {
+    await deleteAsset(id);
+    setShowDeleteConfirm(null);
+    if (selectedAsset?.id === id) setSelectedAsset(null);
+    await loadAssets();
+    await loadStats();
+  };
+
+  const handleCreateDowntime = async (data: { asset_id: string; start_time: string; reason: string; description?: string; reported_by?: string }) => {
+    await createDowntime(data);
+    setShowDowntimeForm(false);
+    await loadDowntimeData();
+    await loadStats();
+  };
+
+  const handleEndDowntime = async (id: number) => {
+    await updateDowntime(id, { end_time: new Date().toISOString(), resolved_by: currentUser?.name || undefined });
+    await loadDowntimeData();
+    await loadStats();
+  };
+
+  const handleCreateMeterReading = async (data: { asset_id: string; meter_type: string; value: number; unit: string; recorded_by?: string }) => {
+    await createMeterReading(data);
+    setShowMeterForm(false);
+    await loadMeterData();
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-full m-8"><RefreshCw className="animate-spin text-brand-600" size={32} /></div>;
+  }
+
+  if (showForm) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 m-8 max-w-3xl mx-auto overflow-visible">
+        <AssetForm parentOptions={getAllAssetsForPicker(assets)} onSave={handleCreateAsset} onCancel={() => setShowForm(false)} t={t} />
+      </div>
+    );
+  }
+
+  if (editingAsset) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 m-8 max-w-3xl mx-auto overflow-visible">
+        <AssetForm asset={editingAsset} parentOptions={getAllAssetsForPicker(assets)} onSave={handleUpdateAsset} onCancel={() => setEditingAsset(null)} isEdit t={t} />
+      </div>
+    );
+  }
+
+  // Tab content renderers
+  const renderHierarchyTab = () => (
+    <div className="flex min-h-[600px]">
+      {/* Left: Tree */}
       <div className="w-1/3 border-r border-slate-200 flex flex-col bg-slate-50/50">
         <div className="p-4 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center">
-            <span>{t('assets.hierarchy')}</span>
-            <span className="text-xs bg-slate-200 px-2 py-1 rounded-full text-slate-600">Plant A</span>
+          <span>{t('assets.hierarchy')}</span>
+          <div className="flex items-center gap-2">
+            <button onClick={loadAssets} className="p-1 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded" title={t('common.refresh')}><RefreshCw size={16} /></button>
+            {canManageAssets && <button onClick={() => setShowForm(true)} className="p-1 text-brand-600 hover:bg-brand-50 rounded" title={t('assets.addAsset')}><Plus size={18} /></button>}
+          </div>
         </div>
         {error && <div className="p-4 bg-red-50 text-red-600 text-sm flex items-center gap-2"><AlertCircle size={16} />{error}</div>}
         <div className="p-2 flex-1">
@@ -800,95 +870,522 @@ const AssetHierarchy: React.FC<AssetHierarchyProps> = ({ currentUser }) => {
           ) : assets.map(asset => <AssetNode key={asset.id} asset={asset} onSelect={(a) => { setSelectedAsset(a); setAiInsight(null); }} selectedId={selectedAsset?.id} />)}
         </div>
       </div>
+      {/* Right: Details */}
+      <div className="w-2/3 flex flex-col">
+        {selectedAsset ? (
+          <div className="p-8">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <div className="text-sm text-slate-500 mb-1">{selectedAsset.type} • {selectedAsset.id}</div>
+                <h2 className="text-3xl font-bold text-slate-900">{selectedAsset.name}</h2>
+              </div>
+              <div className="flex items-center gap-3">
+                {canManageAssets && (
+                  <>
+                    <button onClick={() => setEditingAsset(selectedAsset)} className="p-2 text-slate-500 hover:text-brand-600 hover:bg-slate-100 rounded-lg" title={t('common.edit')}><Edit2 size={18} /></button>
+                    <button onClick={() => setShowDeleteConfirm(selectedAsset.id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg" title={t('common.delete')}><Trash2 size={18} /></button>
+                  </>
+                )}
+                <div className={`px-3 py-1 rounded-full text-sm font-bold flex items-center gap-2 ${selectedAsset.status === 'Operational' ? 'bg-green-100 text-green-700' : selectedAsset.status === 'Downtime' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                  <div className={`w-2 h-2 rounded-full ${selectedAsset.status === 'Operational' ? 'bg-green-600' : selectedAsset.status === 'Downtime' ? 'bg-red-600' : 'bg-yellow-600'}`}></div>
+                  {selectedAsset.status}
+                </div>
+              </div>
+            </div>
+            {showDeleteConfirm === selectedAsset.id && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 mb-3">{t('assets.deleteConfirm')}</p>
+                <div className="flex gap-2">
+                  <button onClick={() => handleDeleteAsset(selectedAsset.id)} className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">{t('common.delete')}</button>
+                  <button onClick={() => setShowDeleteConfirm(null)} className="px-3 py-1 bg-slate-200 text-slate-700 rounded text-sm hover:bg-slate-300">{t('common.cancel')}</button>
+                </div>
+              </div>
+            )}
+            {/* KPIs */}
+            <div className="grid grid-cols-3 gap-6 mb-8">
+              <div className="p-4 bg-slate-50 rounded-xl border"><div className="text-slate-500 text-sm mb-1">{t('assets.healthScore')}</div><div className="text-3xl font-bold text-brand-600">{selectedAsset.healthScore}%</div></div>
+              <div className="p-4 bg-slate-50 rounded-xl border"><div className="text-slate-500 text-sm mb-1">{t('assets.criticality')}</div><div className={`text-3xl font-bold ${selectedAsset.criticality === 'Critical' ? 'text-red-600' : 'text-slate-700'}`}>{selectedAsset.criticality}</div></div>
+              <div className="p-4 bg-slate-50 rounded-xl border"><div className="text-slate-500 text-sm mb-1">{t('assets.location')}</div><div className="text-lg font-bold text-slate-700 mt-1">{selectedAsset.location}</div></div>
+            </div>
+            {/* Details */}
+            <div className="mb-8">
+              <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">{t('assets.technicalDetails')}</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex justify-between py-2 border-b border-slate-100"><span className="text-slate-500">{t('assets.model')}</span><span className="font-medium">{selectedAsset.model || 'N/A'}</span></div>
+                <div className="flex justify-between py-2 border-b border-slate-100"><span className="text-slate-500">{t('assets.installDate')}</span><span className="font-medium">{formatDateDDMMYYYY(selectedAsset.installDate)}</span></div>
+              </div>
+            </div>
+            {/* AI */}
+            <div className="bg-gradient-to-r from-violet-50 to-purple-50 p-6 rounded-xl border border-violet-100">
+              <div className="flex items-center gap-2 mb-4"><Zap className="text-violet-600" size={20} /><h3 className="text-lg font-bold text-violet-900">{t('assets.aiAnalysis')}</h3></div>
+              {!aiInsight ? (
+                <div className="text-center py-4">
+                  <p className="text-slate-600 mb-4 text-sm">{t('assets.analyzeDesc')}</p>
+                  <button onClick={handleAnalyze} disabled={loadingAi} className="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 disabled:opacity-70 flex items-center gap-2 mx-auto">
+                    {loadingAi ? <Activity className="animate-spin" size={16} /> : <Zap size={16} />}{t('assets.runDiagnostic')}
+                  </button>
+                </div>
+              ) : (
+                <div className="animate-fade-in">
+                  <div className="bg-white/80 p-4 rounded-lg border border-violet-100 text-slate-700 text-sm leading-relaxed">{aiInsight}</div>
+                  <button onClick={handleAnalyze} className="text-xs text-violet-600 underline mt-3">{t('assets.updateAnalysis')}</button>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-slate-400"><Activity size={48} className="mb-4 opacity-20" /><p>{t('assets.selectToView')}</p></div>
+        )}
+      </div>
+    </div>
+  );
 
-      {/* Right Pane: Details */}
-      <div className="w-2/3 flex flex-col overflow-y-auto">
-         {selectedAsset ? (
-             <div className="p-8">
-                <div className="flex justify-between items-start mb-6">
+  const renderDowntimeTab = () => (
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-bold text-slate-800">{t('assets.downtimeTracking')}</h3>
+        {canManageAssets && <button onClick={() => setShowDowntimeForm(true)} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"><Clock size={16} />{t('assets.recordDowntime')}</button>}
+      </div>
+      {showDowntimeForm && (
+        <DowntimeForm assets={getAllAssetsForPicker(assets)} onSave={handleCreateDowntime} onCancel={() => setShowDowntimeForm(false)} currentUser={currentUser?.name || null} t={t} />
+      )}
+      {/* Stats */}
+      {stats && (
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="p-4 bg-red-50 rounded-xl border border-red-100"><div className="text-red-500 text-sm">{t('assets.activeDowntimes')}</div><div className="text-2xl font-bold text-red-700">{stats.active_downtimes}</div></div>
+          <div className="p-4 bg-slate-50 rounded-xl border"><div className="text-slate-500 text-sm">{t('assets.totalDowntimeHours')}</div><div className="text-2xl font-bold text-slate-700">{stats.total_downtime_hours}h</div></div>
+          <div className="p-4 bg-slate-50 rounded-xl border"><div className="text-slate-500 text-sm">{t('assets.avgHealthScore')}</div><div className="text-2xl font-bold text-brand-600">{stats.avg_health_score}%</div></div>
+        </div>
+      )}
+      {/* List */}
+      <div className="space-y-3">
+        {downtimes.length === 0 ? (
+          <div className="text-center py-12 text-slate-400">
+            <Clock size={48} className="mx-auto mb-3 opacity-30" />
+            <p className="text-lg">{t('assets.noDowntimes')}</p>
+            <p className="text-sm mt-1">{t('assets.downtimeHint')}</p>
+          </div>
+        ) : downtimes.map(dt => (
+          <div key={dt.id} className={`p-5 rounded-xl border-2 transition-all ${dt.is_active ? 'bg-red-50 border-red-300 shadow-sm' : 'bg-white border-slate-200'}`}>
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className={`w-3 h-3 rounded-full ${dt.is_active ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></span>
+                  <span className="font-semibold text-lg text-slate-800">{dt.asset_name || dt.asset_id}</span>
+                </div>
+                <div className="mt-2 flex items-center gap-3">
+                  <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-sm font-medium">{dt.reason}</span>
+                  {dt.description && <span className="text-sm text-slate-500">{dt.description}</span>}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${dt.is_active ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                  {dt.is_active ? `⏱ ${t('assets.downtimeOngoing')}` : `✓ ${t('assets.downtimeResolved')}`}
+                </div>
+                <div className="text-sm text-slate-500 mt-2">{t('assets.startTime')}: {formatDateTime(dt.start_time)}</div>
+                {dt.duration_minutes != null && dt.duration_minutes > 0 && (
+                  <div className="text-sm font-medium text-orange-600 mt-1">
+                    ⏰ {t('assets.durationFormat').replace('{hours}', String(Math.floor(dt.duration_minutes / 60))).replace('{minutes}', String(dt.duration_minutes % 60))}
+                  </div>
+                )}
+              </div>
+            </div>
+            {dt.is_active && canManageAssets && (
+              <div className="mt-4 pt-4 border-t border-red-200">
+                <button 
+                  onClick={() => handleEndDowntime(dt.id)} 
+                  className="flex items-center gap-2 px-5 py-2.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold shadow-sm transition-all hover:shadow-md"
+                >
+                  <Square size={16} fill="white" />{t('assets.endDowntime')}
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Get only Equipment assets for threshold settings
+  const getEquipmentAssets = (): AssetTreeOption[] => {
+    return getAllAssetsForPicker(assets).filter(a => a.type === 'Equipment');
+  };
+
+  const saveThreshold = (assetId: string, meterType: string, interval: number, currentValue: number = 0) => {
+    const newSettings = { ...thresholdSettings };
+    if (!newSettings[assetId]) newSettings[assetId] = {};
+    if (interval > 0) {
+      // Calculate next alert based on interval and current value
+      // e.g., if interval=500 and current=0, next=500
+      // if interval=500 and current=594, next=1000 (next multiple above current)
+      const nextAlert = Math.ceil((currentValue + 1) / interval) * interval;
+      newSettings[assetId][meterType] = { interval, nextAlert };
+    } else {
+      delete newSettings[assetId][meterType];
+    }
+    setThresholdSettings(newSettings);
+    localStorage.setItem('meterThresholdsPerAsset_v2', JSON.stringify(newSettings));
+  };
+
+  const getAssetThreshold = (assetId: string, meterType: string): { interval: number; nextAlert: number } | null => {
+    return thresholdSettings[assetId]?.[meterType] || null;
+  };
+
+  // Advance to next cycle when acknowledged - e.g., 500→1000→1500
+  const advanceToNextCycle = (assetId: string, meterType: string, currentValue: number) => {
+    const threshold = getAssetThreshold(assetId, meterType);
+    if (!threshold) return;
+    
+    // Calculate next alert milestone
+    // e.g., current=594, interval=500 → next=1000
+    const nextAlert = Math.ceil((currentValue + 1) / threshold.interval) * threshold.interval;
+    
+    const newSettings = { ...thresholdSettings };
+    newSettings[assetId][meterType] = { ...threshold, nextAlert };
+    setThresholdSettings(newSettings);
+    localStorage.setItem('meterThresholdsPerAsset_v2', JSON.stringify(newSettings));
+  };
+
+  // Set custom next alert value
+  const setCustomNextAlert = (assetId: string, meterType: string, nextAlert: number) => {
+    const threshold = getAssetThreshold(assetId, meterType);
+    if (!threshold) return;
+    
+    const newSettings = { ...thresholdSettings };
+    newSettings[assetId][meterType] = { ...threshold, nextAlert };
+    setThresholdSettings(newSettings);
+    localStorage.setItem('meterThresholdsPerAsset_v2', JSON.stringify(newSettings));
+  };
+
+  const renderMetersTab = () => {
+    // Group readings by asset and calculate CUMULATIVE totals from deltas
+    const assetSummaries: Record<string, { 
+      name: string; 
+      readings: MeterReading[]; 
+      cumulativeByType: Record<string, { total: number; unit: string; count: number }>;
+      alertTypes: string[];
+    }> = {};
+    
+    meterReadings.forEach(mr => {
+      const assetKey = mr.asset_id;
+      if (!assetSummaries[assetKey]) {
+        assetSummaries[assetKey] = { 
+          name: mr.asset_name || mr.asset_id, 
+          readings: [], 
+          cumulativeByType: {},
+          alertTypes: []
+        };
+      }
+      assetSummaries[assetKey].readings.push(mr);
+      
+      // Calculate cumulative from deltas (or use value if no delta)
+      if (!assetSummaries[assetKey].cumulativeByType[mr.meter_type]) {
+        assetSummaries[assetKey].cumulativeByType[mr.meter_type] = { total: 0, unit: mr.unit, count: 0 };
+      }
+      // Use delta if available, otherwise use value for first reading
+      const addValue = mr.delta !== null && mr.delta !== 0 ? Math.abs(mr.delta) : (assetSummaries[assetKey].cumulativeByType[mr.meter_type].count === 0 ? mr.value : 0);
+      assetSummaries[assetKey].cumulativeByType[mr.meter_type].total += addValue;
+      assetSummaries[assetKey].cumulativeByType[mr.meter_type].count++;
+    });
+
+    // Check thresholds for alerts (interval-based: alert when total >= nextAlert)
+    Object.entries(assetSummaries).forEach(([assetId, summary]) => {
+      Object.entries(summary.cumulativeByType).forEach(([type, data]) => {
+        const threshold = getAssetThreshold(assetId, type);
+        // Alert when cumulative total >= nextAlert milestone
+        if (threshold && data.total >= threshold.nextAlert) {
+          summary.alertTypes.push(type);
+        }
+      });
+    });
+
+    // Calculate overall stats
+    const totalRuntimeHours = Object.values(assetSummaries).reduce((sum, a) => 
+      sum + (a.cumulativeByType['Runtime Hours']?.total || 0), 0);
+    const assetsWithAlerts = Object.values(assetSummaries).filter(a => a.alertTypes.length > 0).length;
+    const assetsWithThresholds = Object.keys(thresholdSettings).length;
+    const uniqueAssets = Object.keys(assetSummaries).length;
+
+    return (
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="text-xl font-bold text-slate-800">{t('assets.meterReadings')}</h3>
+            <p className="text-sm text-slate-500 mt-1">{t('assets.meterPurpose')}</p>
+          </div>
+          {canManageAssets && (
+            <button 
+              onClick={() => setShowMeterForm(true)} 
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-sm transition-all"
+            >
+              <Gauge size={18} />{t('assets.recordMeterReading')}
+            </button>
+          )}
+        </div>
+
+        {showMeterForm && (
+          <MeterForm assets={getAllAssetsForPicker(assets)} meterTypes={meterTypes} onSave={handleCreateMeterReading} onCancel={() => setShowMeterForm(false)} currentUser={currentUser?.name || null} t={t} />
+        )}
+
+        {meterReadings.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="bg-blue-50 rounded-2xl p-8 max-w-2xl mx-auto">
+              <Gauge size={48} className="mx-auto mb-4 text-blue-400" />
+              <h4 className="text-lg font-semibold text-slate-800 mb-2">{t('assets.whyMeterReadings')}</h4>
+              <div className="text-sm text-slate-600 space-y-2 text-left max-w-md mx-auto">
+                <p>📊 <strong>{t('assets.meterBenefit1Title')}</strong> - {t('assets.meterBenefit1Desc')}</p>
+                <p>🔧 <strong>{t('assets.meterBenefit2Title')}</strong> - {t('assets.meterBenefit2Desc')}</p>
+                <p>💰 <strong>{t('assets.meterBenefit3Title')}</strong> - {t('assets.meterBenefit3Desc')}</p>
+              </div>
+              {canManageAssets && (
+                <button 
+                  onClick={() => setShowMeterForm(true)} 
+                  className="mt-6 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold inline-flex items-center gap-2"
+                >
+                  <Gauge size={18} />{t('assets.recordFirstReading')}
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl text-white">
+                <div className="text-blue-100 text-sm">{t('assets.totalRuntimeHours')}</div>
+                <div className="text-3xl font-bold mt-1">{totalRuntimeHours.toLocaleString()}h</div>
+                <div className="text-blue-200 text-xs mt-1">{t('assets.allAssets')}</div>
+              </div>
+              <div className="p-4 bg-white rounded-xl border-2 border-slate-200">
+                <div className="text-slate-500 text-sm">{t('assets.assetsTracked')}</div>
+                <div className="text-3xl font-bold text-slate-800 mt-1">{uniqueAssets}</div>
+                <div className="text-slate-400 text-xs mt-1">{t('assets.withReadings')}</div>
+              </div>
+              <div className="p-4 bg-white rounded-xl border-2 border-slate-200">
+                <div className="text-slate-500 text-sm">{t('assets.totalReadings')}</div>
+                <div className="text-3xl font-bold text-slate-800 mt-1">{meterReadings.length}</div>
+                <div className="text-slate-400 text-xs mt-1">{t('assets.records')}</div>
+              </div>
+              <div className={`p-4 rounded-xl ${assetsWithAlerts > 0 ? 'bg-gradient-to-br from-orange-500 to-red-500 text-white' : 'bg-white border-2 border-slate-200'}`}>
+                <div className={`text-sm flex items-center gap-1 ${assetsWithAlerts > 0 ? 'text-orange-100' : 'text-slate-500'}`}>
+                  <AlertCircle size={14} />{t('assets.thresholdAlerts')}
+                </div>
+                <div className={`text-3xl font-bold mt-1 ${assetsWithAlerts > 0 ? 'text-white' : 'text-slate-800'}`}>{assetsWithAlerts}</div>
+                <div className={`text-xs mt-1 ${assetsWithAlerts > 0 ? 'text-orange-200' : 'text-slate-400'}`}>
+                  {assetsWithAlerts > 0 ? t('assets.needsMaintenance') : `${assetsWithThresholds} ${t('assets.configured')}`}
+                </div>
+              </div>
+            </div>
+
+            {/* Threshold Settings Modal - Per Asset */}
+            {showThresholdModal && selectedThresholdAsset && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={(e) => { if (e.target === e.currentTarget) { setShowThresholdModal(false); setSelectedThresholdAsset(null); }}}>
+                <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[85vh] overflow-y-auto">
+                  <div className="flex justify-between items-center mb-4">
                     <div>
-                        <div className="text-sm text-slate-500 mb-1">{selectedAsset.type} • {selectedAsset.id}</div>
-                        <h2 className="text-3xl font-bold text-slate-900">{selectedAsset.name}</h2>
+                      <h4 className="text-lg font-bold text-slate-800">{t('assets.setAlertThresholds')}</h4>
+                      {(() => {
+                        const assetInfo = getAllAssetsForPicker(assets).find(a => a.id === selectedThresholdAsset);
+                        const summaryInfo = Object.values(assetSummaries).find((_, idx) => Object.keys(assetSummaries)[idx] === selectedThresholdAsset);
+                        return assetInfo ? (
+                          <div className="text-sm text-slate-500 mt-1">
+                            <span className="font-medium text-blue-600">{summaryInfo?.name || assetInfo.name}</span>
+                            {assetInfo.path.length > 0 && (
+                              <span className="ml-2 text-xs">📍 {assetInfo.path.join(' > ')}</span>
+                            )}
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-sm font-bold flex items-center gap-2 ${
-                        selectedAsset.status === 'Operational' ? 'bg-green-100 text-green-700' : 
-                        selectedAsset.status === 'Downtime' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                        <div className={`w-2 h-2 rounded-full ${
-                             selectedAsset.status === 'Operational' ? 'bg-green-600' : 
-                             selectedAsset.status === 'Downtime' ? 'bg-red-600' : 'bg-yellow-600'
-                        }`}></div>
-                        {selectedAsset.status}
-                    </div>
-                </div>
+                    <button onClick={() => { setShowThresholdModal(false); setSelectedThresholdAsset(null); }} title={t('common.close')} className="p-1 hover:bg-slate-100 rounded-full">
+                      <X size={20} className="text-slate-400" />
+                    </button>
+                  </div>
+                  
+                  <p className="text-xs text-slate-500 bg-blue-50 p-2 rounded mb-4">
+                    💡 ตั้งค่า Interval = แจ้งเตือนทุกๆ X unit (เช่น 500 → 1000 → 1500...)
+                  </p>
+                  
+                  {/* Threshold inputs for this asset */}
+                  <div className="space-y-3">
+                    {meterTypes.map(mt => {
+                      const currentThreshold = thresholdSettings[selectedThresholdAsset]?.[mt.type];
+                      return (
+                        <div key={mt.type} className="p-3 bg-slate-50 rounded-lg border">
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-medium text-slate-700">{mt.type}</label>
+                            {currentThreshold && (
+                              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                                {t('assets.nextAlertAt')}: {currentThreshold.nextAlert} {mt.unit}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-500 whitespace-nowrap">{t('assets.everyInterval')}</span>
+                            <input
+                              type="number"
+                              value={currentThreshold?.interval || ''}
+                              onChange={(e) => saveThreshold(selectedThresholdAsset, mt.type, Number(e.target.value), 0)}
+                              placeholder="500"
+                              className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            />
+                            <span className="text-xs text-slate-400">{mt.unit}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
 
-                {/* KPI Grid */}
-                <div className="grid grid-cols-3 gap-6 mb-8">
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="text-slate-500 text-sm mb-1">{t('assets.healthScore')}</div>
-                        <div className="text-3xl font-bold text-brand-600">{selectedAsset.healthScore}%</div>
-                    </div>
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="text-slate-500 text-sm mb-1">{t('assets.criticality')}</div>
-                        <div className={`text-3xl font-bold ${selectedAsset.criticality === 'Critical' ? 'text-red-600' : 'text-slate-700'}`}>
-                            {selectedAsset.criticality}
-                        </div>
-                    </div>
-                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="text-slate-500 text-sm mb-1">{t('assets.location')}</div>
-                        <div className="text-lg font-bold text-slate-700 mt-1">{selectedAsset.location}</div>
-                    </div>
+                  <div className="mt-6 pt-4 border-t flex justify-end">
+                    <button 
+                      onClick={() => { setShowThresholdModal(false); setSelectedThresholdAsset(null); }}
+                      className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                    >
+                      {t('common.close')}
+                    </button>
+                  </div>
                 </div>
+              </div>
+            )}
 
-                {/* Details Tab */}
-                <div className="mb-8">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">{t('assets.technicalDetails')}</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="flex justify-between py-2 border-b border-slate-100">
-                            <span className="text-slate-500">{t('assets.model')}</span>
-                            <span className="font-medium text-slate-800">{selectedAsset.model || 'N/A'}</span>
+            {/* Grouped by Asset */}
+            <div className="space-y-4">
+              {Object.entries(assetSummaries).map(([assetId, summary]) => {
+                const isExpanded = expandedAssets[assetId];
+                const displayReadings = isExpanded ? summary.readings : summary.readings.slice(0, 3);
+                const hasMore = summary.readings.length > 3;
+                
+                return (
+                  <div key={assetId} className={`bg-white rounded-xl border-2 ${summary.alertTypes.length > 0 ? 'border-orange-300 ring-2 ring-orange-100' : 'border-slate-200'} overflow-hidden`}>
+                    {/* Asset Header */}
+                    <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${summary.alertTypes.length > 0 ? 'bg-orange-100' : 'bg-blue-100'}`}>
+                          <Gauge size={20} className={summary.alertTypes.length > 0 ? 'text-orange-600' : 'text-blue-600'} />
                         </div>
-                        <div className="flex justify-between py-2 border-b border-slate-100">
-                            <span className="text-slate-500">{t('assets.installDate')}</span>
-                            <span className="font-medium text-slate-800">{formatDateDDMMYYYY(selectedAsset.installDate)}</span>
+                        <div>
+                          <div className="font-semibold text-slate-800">{summary.name}</div>
+                          <div className="text-xs text-slate-500">{summary.readings.length} {t('assets.readingsRecorded')}</div>
                         </div>
-                        <div className="flex justify-between py-2 border-b border-slate-100">
-                            <span className="text-slate-500">{t('assets.serialNumber')}</span>
-                            <span className="font-medium text-slate-800">SN-{selectedAsset.id}-2022</span>
-                        </div>
-                        <div className="flex justify-between py-2 border-b border-slate-100">
-                            <span className="text-slate-500">{t('assets.manufacturer')}</span>
-                            <span className="font-medium text-slate-800">Industrial Corp Ltd.</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* AI Section */}
-                <div className="bg-gradient-to-r from-violet-50 to-purple-50 p-6 rounded-xl border border-violet-100">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Zap className="text-violet-600" size={20} />
-                        <h3 className="text-lg font-bold text-violet-900">{t('assets.aiAnalysis')}</h3>
+                        {/* Settings button for this equipment */}
+                        {canManageAssets && (
+                          <button
+                            onClick={() => { setSelectedThresholdAsset(assetId); setShowThresholdModal(true); }}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title={t('assets.setAlertThresholds')}
+                          >
+                            <Settings size={16} />
+                          </button>
+                        )}
+                      </div>
+                      {/* Cumulative Totals */}
+                      <div className="flex items-center gap-2 flex-wrap justify-end">
+                        {Object.entries(summary.cumulativeByType).map(([type, data]) => {
+                          const threshold = getAssetThreshold(assetId, type);
+                          const isOverThreshold = threshold && data.total >= threshold.nextAlert;
+                          return (
+                            <div key={type} className={`px-3 py-1.5 rounded-lg text-sm font-semibold ${isOverThreshold ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                              {type === 'Runtime Hours' && '⏱️ '}
+                              {type === 'Cycle Count' && '🔄 '}
+                              {type === 'Power Consumption' && '⚡ '}
+                              {data.total.toLocaleString()}{data.unit}
+                              {threshold && (
+                                <span className="ml-1 text-xs opacity-70">/{threshold.nextAlert}</span>
+                              )}
+                              {isOverThreshold && <span className="ml-1">⚠️</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                     
-                    {!aiInsight ? (
-                        <div className="text-center py-4">
-                            <p className="text-slate-600 mb-4 text-sm">{t('assets.analyzeDesc')}</p>
-                            <button 
-                                onClick={handleAnalyze}
-                                disabled={loadingAi}
-                                className="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors disabled:opacity-70 flex items-center gap-2 mx-auto"
-                            >
-                                {loadingAi ? <Activity className="animate-spin" size={16} /> : <Zap size={16} />}
-                                {t('assets.runDiagnostic')}
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="animate-fade-in">
-                            <div className="bg-white/80 p-4 rounded-lg border border-violet-100 text-slate-700 text-sm leading-relaxed">
-                                {aiInsight}
+                    {/* Alert Banner with Next Cycle */}
+                    {summary.alertTypes.length > 0 && (
+                      <div className="px-5 py-3 bg-orange-50 border-b border-orange-200">
+                        {summary.alertTypes.map(alertType => {
+                          const threshold = getAssetThreshold(assetId, alertType);
+                          const currentValue = summary.cumulativeByType[alertType]?.total || 0;
+                          const nextCycle = threshold ? Math.ceil((currentValue + 1) / threshold.interval) * threshold.interval : 0;
+                          
+                          return (
+                            <div key={alertType} className="flex flex-col gap-2 mb-3 last:mb-0 p-3 bg-white rounded-lg border border-orange-200">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <AlertCircle size={16} className="text-orange-600" />
+                                  <span className="text-sm font-medium text-orange-700">
+                                    {alertType} {t('assets.thresholdExceeded')}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {currentValue.toLocaleString()} / {threshold?.nextAlert.toLocaleString()} {summary.cumulativeByType[alertType]?.unit}
+                                </div>
+                              </div>
+                              {canManageAssets && threshold && (
+                                <div className="flex items-center gap-2 pt-2 border-t border-orange-100">
+                                  <button
+                                    onClick={() => advanceToNextCycle(assetId, alertType, currentValue)}
+                                    className="flex-1 text-xs px-3 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 flex items-center justify-center gap-1"
+                                  >
+                                    <Check size={14} />
+                                    {t('assets.markMaintained')} → {t('assets.nextAt')} {nextCycle.toLocaleString()}
+                                  </button>
+                                  <div className="flex items-center gap-1 text-xs">
+                                    <span className="text-slate-500">{t('assets.orSetCustom')}:</span>
+                                    <input
+                                      type="number"
+                                      defaultValue={nextCycle}
+                                      placeholder="1000"
+                                      title="Custom next alert value"
+                                      className="w-20 px-2 py-1 border rounded text-center"
+                                      onBlur={(e) => {
+                                        const val = parseInt(e.target.value);
+                                        if (val > currentValue) setCustomNextAlert(assetId, alertType, val);
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                            <button onClick={handleAnalyze} className="text-xs text-violet-600 underline mt-3 hover:text-violet-800">{t('assets.updateAnalysis')}</button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    
+                    {/* All Readings */}
+                    <div className="divide-y divide-slate-100">
+                      {displayReadings.map(mr => (
+                        <div key={mr.id} className="px-5 py-3 flex justify-between items-center hover:bg-slate-50 group">
+                          <div className="flex items-center gap-3">
+                            <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">{mr.meter_type}</span>
+                            <span className="text-xs text-slate-400">{formatDateTime(mr.reading_date)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-blue-600">{mr.value}</span>
+                            <span className="text-sm text-slate-400">{mr.unit}</span>
+                            {mr.delta !== null && mr.delta !== 0 && (
+                              <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${mr.delta > 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                                {mr.delta > 0 ? '↑+' : '↓'}{Math.abs(mr.delta).toFixed(1)}
+                              </span>
+                            )}
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                    
+                    {/* Show More Button */}
+                    {hasMore && (
+                      <div className="px-5 py-2 bg-slate-50 border-t border-slate-200">
+                        <button 
+                          onClick={() => setExpandedAssets(prev => ({ ...prev, [assetId]: !isExpanded }))}
+                          className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                        >
+                          {isExpanded ? (
+                            <><ChevronUp size={16} />{t('assets.showLess')}</>
+                          ) : (
+                            <><ChevronDown size={16} />{t('assets.showAllHistory')} ({summary.readings.length - 3} {t('assets.moreRecords')})</>
+                          )}
+                        </button>
+                      </div>
                     )}
                   </div>
                 );
@@ -905,14 +1402,10 @@ const AssetHierarchy: React.FC<AssetHierarchyProps> = ({ currentUser }) => {
                   <p className="font-medium text-slate-700 mb-1">{t('assets.meterTrackingHelps')}</p>
                   <p className="text-slate-500">{t('assets.meterTrackingDesc')}</p>
                 </div>
-
-             </div>
-         ) : (
-             <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                 <Activity size={48} className="mb-4 opacity-20" />
-                 <p>{t('assets.selectToView')}</p>
-             </div>
-         )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     );
   };
