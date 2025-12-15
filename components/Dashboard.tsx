@@ -311,23 +311,23 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
     statusCounts.closed;
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
         <div>
-          <h2 className="font-serif text-3xl text-stone-900">
+          <h2 className="font-serif text-2xl md:text-3xl text-stone-900">
             {t('dashboard.title')}
           </h2>
-          <p className="text-stone-500 mt-1">
+          <p className="text-stone-500 mt-1 text-sm md:text-base">
             {t('dashboard.subtitle')}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           {/* Quick Actions Dropdown */}
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <button
               onClick={() => setShowQuickActions(!showQuickActions)}
-              className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm"
             >
               <Plus size={18} />
               <span className="font-medium">{language === 'th' ? 'สร้างใหม่' : 'Create New'}</span>
@@ -413,7 +413,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
             )}
           </div>
           
-          <div className="text-sm text-stone-500 bg-stone-100 px-3 py-1.5 rounded-lg">
+          <div className="text-xs md:text-sm text-stone-500 bg-stone-100 px-3 py-1.5 rounded-lg w-full sm:w-auto text-center">
             {t('dashboard.lastUpdated')}: {t('dashboard.justNow')}
           </div>
         </div>
@@ -436,7 +436,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
           <StatusCard
             title={t('status.open')}
             value={statusCounts.open}
@@ -495,9 +495,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
       </div>
 
       {/* Priority Distribution & Work Orders Trend - Side by Side */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
         {/* Priority Pie Chart - Left Side (1/5) */}
-        <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+        <div className="xl:col-span-2 bg-white p-4 md:p-6 rounded-2xl border border-stone-200 shadow-sm">
           <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2 mb-4">
             <PieChartIcon size={20} />
             {t('dashboard.priorityDistribution')}
@@ -577,10 +577,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
           })()}
         </div>
 
-        {/* Work Orders Trend Chart - Right Side (4/5) */}
-        <div className="lg:col-span-4 bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+        {/* Work Orders Trend Chart - Right Side (3/5) */}
+        <div className="xl:col-span-3 bg-white p-4 md:p-6 rounded-2xl border border-stone-200 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-            <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
+            <h3 className="text-base md:text-lg font-semibold text-stone-800 flex items-center gap-2">
               <Calendar size={20} />
               {t('dashboard.woTrend')}
             </h3>
@@ -753,11 +753,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
       </div>
 
       {/* Recent Work Orders & Alerts Panel - Side by Side */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
         {/* Recent Work Orders - Left Side (3/5) */}
-        <div className="lg:col-span-3 bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+        <div className="xl:col-span-3 bg-white p-4 md:p-6 rounded-2xl border border-stone-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
+            <h3 className="text-base md:text-lg font-semibold text-stone-800 flex items-center gap-2">
               <FileText size={20} />
               {language === 'th' ? 'ใบงานล่าสุด' : 'Recent Work Orders'}
             </h3>
@@ -820,9 +820,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToWorkOrder, onNavigate
         </div>
 
         {/* Alerts Panel - Right Side (2/5) */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-stone-200 shadow-sm flex flex-col">
+        <div className="xl:col-span-2 bg-white p-4 md:p-6 rounded-2xl border border-stone-200 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
+            <h3 className="text-base md:text-lg font-semibold text-stone-800 flex items-center gap-2">
               <AlertTriangle size={20} className="text-amber-500" />
               {language === 'th' ? 'การแจ้งเตือน' : 'Alerts'}
             </h3>

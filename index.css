@@ -3,6 +3,16 @@
 /* Tailwind CSS 4 - Enable class-based dark mode */
 @variant dark (&:where(.dark, .dark *));
 
+/* Custom utility classes */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Eureka CMMS - Custom Styles and Animations */
 
 /* Leaflet Map Fixes */

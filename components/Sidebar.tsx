@@ -69,7 +69,24 @@ const Sidebar: React.FC<SidebarProps> = ({
   const filteredItems = allMenuItems.filter(item => item.roles.includes(userRole));
 
   return (
-    <div className={`${isCollapsed ? 'w-20' : 'w-64'} bg-stone-900 text-white flex flex-col h-screen fixed left-0 top-0 shadow-xl z-20 transition-all duration-300`}>
+    <>
+      {/* Mobile Overlay - only show when sidebar is expanded on mobile */}
+      {!isCollapsed && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden" 
+          onClick={toggleCollapse}
+        />
+      )}
+      
+      <div className={`${
+        isCollapsed 
+          ? 'w-20 md:w-20' 
+          : 'w-64 md:w-64'
+      } bg-stone-900 text-white flex flex-col h-screen fixed left-0 top-0 shadow-xl transition-all duration-300 ${
+        isCollapsed 
+          ? '-translate-x-full md:translate-x-0 z-30' 
+          : 'translate-x-0 z-30'
+      }`}>
       {/* Header */}
       <div className={`p-4 border-b border-stone-700 ${isCollapsed ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between'}`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} overflow-hidden`}>
@@ -156,6 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
     </div>
+    </>
   );
 };
 
