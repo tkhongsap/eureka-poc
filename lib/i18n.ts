@@ -593,6 +593,14 @@ const translations = {
     'inventory.inStock': 'In Stock',
     'inventory.lowStock': 'Low Stock',
     'inventory.minLevel': 'Min',
+    'inventory.addPart': 'Add Part',
+    'inventory.addParts': 'Add Parts',
+    'inventory.editPart': 'Edit Part',
+    'inventory.updatePart': 'Update Part',
+    'inventory.name': 'Name',
+    'inventory.quantity': 'Quantity',
+    'inventory.pricePerUnit': 'Price / Unit',
+    'inventory.actions': 'Actions',
 
     // ============== Work Orders Page ==============
     'workOrders.manageTrack': 'Manage and track all maintenance work orders',
@@ -1327,6 +1335,14 @@ const translations = {
     'inventory.inStock': 'มีสต็อก',
     'inventory.lowStock': 'สต็อกต่ำ',
     'inventory.minLevel': 'ขั้นต่ำ',
+    'inventory.addPart': 'เพิ่มอะไหล่',
+    'inventory.addParts': 'เพิ่มอะไหล่',
+    'inventory.editPart': 'แก้ไขอะไหล่',
+    'inventory.updatePart': 'อัปเดตอะไหล่',
+    'inventory.name': 'ชื่อ',
+    'inventory.quantity': 'จำนวน',
+    'inventory.pricePerUnit': 'ราคา / หน่วย',
+    'inventory.actions': 'การดำเนินการ',
 
     // ============== Work Orders Page ==============
     'workOrders.manageTrack': 'จัดการและติดตามใบงานบำรุงรักษาทั้งหมด',

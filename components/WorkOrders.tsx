@@ -1040,21 +1040,21 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
   const columns = [Status.OPEN, Status.IN_PROGRESS, Status.PENDING, Status.COMPLETED, Status.CANCELED];
 
   return (
-    <div className="p-4 lg:p-6 h-full flex flex-col bg-stone-50/50 dark:bg-stone-900 overflow-hidden">
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+    <div className="p-3 md:p-4 lg:p-6 h-full flex flex-col bg-stone-50/50 dark:bg-stone-900 overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
         <div>
-          <h2 className="font-serif text-2xl lg:text-3xl text-stone-900 dark:text-stone-100">{t('workOrders.title')}</h2>
-          <p className="text-stone-500 dark:text-stone-400 text-sm lg:text-base">
+          <h2 className="font-serif text-xl md:text-2xl lg:text-3xl text-stone-900 dark:text-stone-100">{t('workOrders.title')}</h2>
+          <p className="text-stone-500 dark:text-stone-400 text-xs md:text-sm lg:text-base">
             {currentUser?.userRole === 'Technician' ? t('workOrders.myAssignedTasks') : t('workOrders.manageMaintenanceTasks')}
           </p>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="mb-3 bg-white dark:bg-stone-800 p-3 rounded-xl border border-stone-200/60 dark:border-stone-700 shadow-sm">
+      <div className="mb-3 bg-white dark:bg-stone-800 p-2 md:p-3 rounded-xl border border-stone-200/60 dark:border-stone-700 shadow-sm">
         {/* Row 1: View toggle + Search + Order count */}
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2 flex-wrap order-2 sm:order-1">
             {/* View Toggles */}
             <div className="bg-stone-100 dark:bg-stone-700 p-0.5 rounded-lg flex border border-stone-200 dark:border-stone-600">
               <button
@@ -1132,13 +1132,13 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
             )}
 
             {/* Text search */}
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <input
                 type="text"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 placeholder={t('common.search')}
-                className="text-sm pl-8 pr-3 py-1.5 rounded-lg border border-stone-200 dark:border-stone-600 bg-stone-50 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-40 lg:w-52 transition-all"
+                className="text-sm pl-8 pr-3 py-1.5 rounded-lg border border-stone-200 dark:border-stone-600 bg-stone-50 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full sm:w-40 lg:w-52 transition-all"
               />
               <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1147,7 +1147,7 @@ const WorkOrders: React.FC<WorkOrdersProps> = ({ workOrders: initialWorkOrders, 
           </div>
 
           {/* Order count badge */}
-          <div className="flex items-center gap-1.5 text-sm font-semibold text-teal-700 dark:text-teal-400 px-2.5 py-1 bg-teal-50 dark:bg-teal-900/50 rounded-lg border border-teal-100 dark:border-teal-800">
+          <div className="flex items-center gap-1.5 text-sm font-semibold text-teal-700 dark:text-teal-400 px-2.5 py-1 bg-teal-50 dark:bg-teal-900/50 rounded-lg border border-teal-100 dark:border-teal-800 order-1 sm:order-2 w-full sm:w-auto justify-center sm:justify-start">
             <span className="text-base">{filteredWorkOrders.length}</span>
             <span className="text-teal-600 font-medium">{t('workOrders.orders')}</span>
           </div>

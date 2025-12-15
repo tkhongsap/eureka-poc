@@ -159,7 +159,22 @@ const App: React.FC = () => {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(MOCK_WOS);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Start collapsed on mobile
+
+  // Check screen size and update sidebar state
+  useEffect(() => {
+    const checkScreenSize = () => {
+      if (window.innerWidth >= 768) { // md breakpoint
+        setSidebarCollapsed(false); // Expanded on desktop
+      } else {
+        setSidebarCollapsed(true); // Collapsed on mobile
+      }
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Check for logged in user from server session on mount
   useEffect(() => {
@@ -579,11 +594,12 @@ const App: React.FC = () => {
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
-      <div className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} flex flex-col h-screen transition-all duration-300`}>
+      <div className={`flex-1 ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'} ml-0 flex flex-col h-screen transition-all duration-300`}>
         <Header
           user={currentUser}
           notifications={notifications}
           onNotificationsUpdate={loadNotifications}
+          onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
           onNavigateToWorkOrder={(woId) => {
             // Requester goes to my-work-orders, others go to work-orders
             const targetView = currentUser.userRole === 'Requester' ? 'my-work-orders' : 'work-orders';
