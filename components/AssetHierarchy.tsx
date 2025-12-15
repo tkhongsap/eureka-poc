@@ -4,12 +4,6 @@ import {
   AlertCircle, Clock, Gauge, Play, Square, Building2, Factory, Cog, Settings2, Settings, Search, Check
 } from 'lucide-react';
 import { Asset, User } from '../types';
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  ChevronRight, ChevronDown, ChevronUp, Activity, Zap, Plus, Edit2, Trash2, Save, X, RefreshCw, 
-  AlertCircle, Clock, Gauge, Play, Square, Building2, Factory, Cog, Settings2, Settings, Search, Check
-} from 'lucide-react';
-import { Asset, User } from '../types';
 import { analyzeAssetReliability } from '../services/geminiService';
 import { useLanguage } from '../lib/i18n';
 import { 
