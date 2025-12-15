@@ -449,13 +449,13 @@ const Inventory: React.FC = () => {
                                     onChange={(e) => setEditPart(p => ({ ...p, category: e.target.value }))}
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
+                            <div className="grid grid-cols-5 gap-4">
+                                <div className="col-span-3">
                                     <label className="block text-sm font-medium text-stone-700 mb-1">Quantity</label>
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => adjustQuantity(-1)}
-                                            className="p-2 text-stone-500 hover:bg-stone-100 rounded-lg transition-colors"
+                                            className="p-2 text-stone-500 hover:bg-stone-100 rounded-lg transition-colors flex-shrink-0"
                                             disabled={editPart.quantity <= 0}
                                         >
                                             <Minus size={16} />
@@ -469,13 +469,13 @@ const Inventory: React.FC = () => {
                                         />
                                         <button
                                             onClick={() => adjustQuantity(1)}
-                                            className="p-2 text-stone-500 hover:bg-stone-100 rounded-lg transition-colors"
+                                            className="p-2 text-stone-500 hover:bg-stone-100 rounded-lg transition-colors flex-shrink-0"
                                         >
                                             <Plus size={16} />
                                         </button>
                                     </div>
                                 </div>
-                                <div>
+                                <div className="col-span-2">
                                     <label className="block text-sm font-medium text-stone-700 mb-1">Price / Unit</label>
                                     <input
                                         type="number"
